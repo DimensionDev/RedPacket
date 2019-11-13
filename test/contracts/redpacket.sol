@@ -3,15 +3,20 @@ pragma solidity >0.4.22;
 contract RedPacket{
 
     struct Claimer{
-        uint amount;
         uint index;
-        address addr;
+        address addr; 
+        uint claimed_amount;
     }
+    
+    //1 ETH = 1000000000000000000(10^18) WEI
+    uint constant min_amount = 1000 * 1000;
+    uint constant max_amount = 1 * 10**18;
 
     address creator;
     uint total_number;
-    uint claimed_number;
+    uint claimed_number; // nonce
     uint remaining;
+    string claimed_list_str;
     bool random;
     bytes32[] public hashes;
     Claimer[] public claimers;
@@ -22,6 +27,7 @@ contract RedPacket{
         require(msg.value > 0)
         require(_hashes.length > 0)
 
+        claimed_list_str = "";
         creator = msg.sender;
         claimed_number = 0;
         total_number = _hashes.length;
@@ -35,12 +41,40 @@ contract RedPacket{
     // Skeleton
     // Here I am planning to adopt an interactive way of generating randint
     // This should be only used in claim()
-    function random_amount(bytes32 seed) private returns uint{
-        return 0;
+    function random_amount(bytes32 seed) private returns memory uint{
+        return memory uint(keccak256(claimed_number, msg.sender, seed));
+    }
+
+    // uint2str from https://github.com/provable-things/ethereum-api/blob/master/oraclizeAPI_0.5.sol
+    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint j = _i;
+        uint len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint k = len - 1;
+        while (_i != 0) {
+            bstr[k--] = byte(uint8(48 + _i % 10));
+            _i /= 10;
+        }
+        return string(bstr);
+    }
+
+    // address to string
+    function addr2str(address x) returns (string) {
+        bytes memory b = new bytes(20);
+        for (uint i = 0; i < 20; i++)
+            b[i] = byte(uint8(uint(x) / (2**(8*(19 - i)))));
+        return string(b);
     }
    
     // It takes the unhashed password and a hashed random seed generated from the user
-    function claim(string password, bytes32 seed) returns uint{
+    function claim(string password, bytes32 seed) public returns uint{
         // Unsuccessful
         if (claimed_number > total_number-1){
             return 0;
@@ -52,10 +86,17 @@ contract RedPacket{
             }
         }
         if (keccak256(password) == hashes[claimed_number]){
-            uint claimed_amount = random_amount(seed);
+            memory uint claimed_amount = random_amount(seed) % remaining + 1;  //[1,remaining]
             msg.sender.transfer(claimed_amount);
             claimed_number ++;
             claimers.push(Claimer(amount = claimed_amount, index = claimed_number, addr = msg.sender))
+            claimed_list += addr2str(msg.sender) + ": " + uint2str(claimed_amount) + "\n"
         }
+        return 1;
+    }
+    
+    // Returns 1. remaining number of red packets 2. claimed list
+    function check_availability() public view returns (uint, string){
+        return total_number - claimed_number, claimed_list;
     }
 }
