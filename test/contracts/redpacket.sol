@@ -90,7 +90,7 @@ contract RedPacket{
             msg.sender.transfer(claimed_amount);
             claimed_number ++;
             claimers.push(Claimer(amount = claimed_amount, index = claimed_number, addr = msg.sender))
-            claimed_list += addr2str(msg.sender) + ": " + uint2str(claimed_amount) + "\n"
+            claimed_list_str += addr2str(msg.sender) + ": " + uint2str(claimed_amount) + "\n"
         }
         return 1;
     }
