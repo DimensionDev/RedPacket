@@ -5,28 +5,18 @@ contract RedPacket{
     struct Claimer{
         uint index;
         address addr; 
-        uint claimed_amount;
+        uint claimed_value;
         uint claimed_time;
     }
 
     event CreationSuccess(
-        bool success,
         address creator,
         uint total,
     );
-
-    event CreationFailure(
-        bool success,
-    );
     
     event ClaimSuccess(
-        bool success,
         address claimer,
         uint claimed_value,
-    );
-    
-    event ClaimFailure(
-        bool success,
     );
 
     event StatusCheck(
@@ -64,6 +54,7 @@ contract RedPacket{
         for (uint i = 0; i < total_number; i++){
             hashes.push(_hashes[i]);
         }
+        emit CreationSuccess(creator, remaining);
     }
 
     // Skeleton
@@ -110,19 +101,20 @@ contract RedPacket{
             require (msg.sender != claimers[i].addr, "Already Claimed.");
         }
         if (keccak256(abi.encode(password)) == hashes[claimed_number]){
-            uint claimed_amount = random_amount(seed) % remaining_value + 1;  //[1,remaining_value]
-            msg.sender.transfer(claimed_amount);
+            uint claimed_value = random_amount(seed) % remaining_value + 1;  //[1,remaining_value]
+            msg.sender.transfer(claimed_value);
             claimed_number ++;
-            claimers.push(Claimer({index: claimed_number, addr: msg.sender, claimed_amount: claimed_amount, claimed_time: now}));
+            claimers.push(Claimer({index: claimed_number, addr: msg.sender, claimed_value: claimed_value, claimed_time: now}));
             // Simple string concat is not supported in Solidity
             // Pending feature
-            //claimed_list_str += addr2str(msg.sender) + ": " + uint2str(claimed_amount) + "\n";
+            //claimed_list_str += addr2str(msg.sender) + ": " + uint2str(claimed_value) + "\n";
+            emit ClaimSuccess(msg.sender, claimed_value);
         }
         return 1;
     }
     
     // Returns 1. remaining number of red packets 2. claimed list
-    function check_availability() public view returns (uint){
-        return (total_number - claimed_number);
+    function check_availability() public view{
+        emit StatusCheck(remaining_value, total_number - claimed_number);
     }
 }
