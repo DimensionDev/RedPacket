@@ -35,9 +35,9 @@ contract RedPacket{
 
     // Inits a red packet instance
     constructor (bytes32[] memory _hashes, bool ifrandom, uint expiration_time) public payable {
-        require(msg.value > 0);
-        require(_hashes.length > 0);
-        require(expiration_time > now);
+        require(msg.value > 0, "You need to insert some money to your red packet.");
+        require(_hashes.length > 0, "At least 1 person can claim the red packet.");
+        require(expiration_time > now, "You need to set the expiration time to future.");
         
         expiration = expiration_time;
         claimed_list_str = "";
@@ -55,7 +55,7 @@ contract RedPacket{
     // Skeleton
     // Here I am planning to adopt an interactive way of generating randint
     // This should be only used in claim()
-    function random_amount(bytes32 seed) internal view returns (uint){
+    function random_value(bytes32 seed) internal view returns (uint){
         return uint(keccak256(abi.encodePacked(claimed_number, msg.sender, seed)));
     }
 
@@ -97,7 +97,7 @@ contract RedPacket{
         }
         uint claimed_value;
         if (keccak256(abi.encode(password)) == hashes[claimed_number]){
-            claimed_value = random_amount(seed) % remaining_value + 1;  //[1,remaining_value]
+            claimed_value = random_value(seed) % remaining_value + 1;  //[1,remaining_value]
             msg.sender.transfer(claimed_value);
             claimed_number ++;
             claimers.push(Claimer({index: claimed_number, addr: msg.sender, claimed_value: claimed_value, claimed_time: now}));
