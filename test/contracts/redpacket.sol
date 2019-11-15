@@ -6,31 +6,60 @@ contract RedPacket{
         uint index;
         address addr; 
         uint claimed_amount;
+        uint claimed_time;
     }
+
+    event CreationSuccess(
+        bool success,
+        address creator,
+        uint total,
+    );
+
+    event CreationFailure(
+        bool success,
+    );
     
+    event ClaimSuccess(
+        bool success,
+        address claimer,
+        uint claimed_value,
+    );
+    
+    event ClaimFailure(
+        bool success,
+    );
+
+    event StatusCheck(
+        uint remaining_value,
+        uint remaining_number,
+    );
+
     //1 ETH = 1000000000000000000(10^18) WEI
     uint constant min_amount = 1000 * 1000;
     uint constant max_amount = 1 * 10**18;
 
+    bool random;
+    uint remaining_value;
+    uint expiration;
     address creator;
     uint total_number;
     uint claimed_number; // nonce
-    uint remaining;
     string claimed_list_str;
-    bool random;
     bytes32[] public hashes;
     Claimer[] public claimers;
 
     // Inits a red packet instance
-    constructor (bytes32[] memory _hashes, bool ifrandom) public payable {
+    constructor (bytes32[] memory _hashes, bool ifrandom, uint expiration_time) public payable {
         require(msg.value > 0);
         require(_hashes.length > 0);
-
+        require(expiration_time > now);
+        
+        expiration = expiration_time;
         claimed_list_str = "";
         creator = msg.sender;
         claimed_number = 0;
         total_number = _hashes.length;
-        remaining = msg.value;
+        remaining_value = msg.value;
         random = ifrandom;
         for (uint i = 0; i < total_number; i++){
             hashes.push(_hashes[i]);
@@ -75,20 +104,16 @@ contract RedPacket{
     // It takes the unhashed password and a hashed random seed generated from the user
     function claim(string memory password, bytes32 seed) public returns (uint){
         // Unsuccessful
-        if (claimed_number > total_number-1){
-            return 0;
-        }
+        require (claimed_number > total_number-1, "Out of Stock.");
         for (uint i = 0; i < claimers.length; i++){
             // Bad bad
-            if (msg.sender == claimers[i].addr){
-                return 0;
-            }
+            require (msg.sender != claimers[i].addr, "Already Claimed.");
         }
         if (keccak256(abi.encode(password)) == hashes[claimed_number]){
-            uint claimed_amount = random_amount(seed) % remaining + 1;  //[1,remaining]
+            uint claimed_amount = random_amount(seed) % remaining_value + 1;  //[1,remaining_value]
             msg.sender.transfer(claimed_amount);
             claimed_number ++;
-            claimers.push(Claimer({index: claimed_number, addr: msg.sender, claimed_amount: claimed_amount}));
+            claimers.push(Claimer({index: claimed_number, addr: msg.sender, claimed_amount: claimed_amount, claimed_time: now}));
             // Simple string concat is not supported in Solidity
             // Pending feature
             //claimed_list_str += addr2str(msg.sender) + ": " + uint2str(claimed_amount) + "\n";
