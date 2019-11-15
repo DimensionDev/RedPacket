@@ -95,8 +95,9 @@ contract RedPacket{
             // Bad bad
             require (msg.sender != claimers[i].addr, "Already Claimed.");
         }
+        uint claimed_value;
         if (keccak256(abi.encode(password)) == hashes[claimed_number]){
-            uint claimed_value = random_amount(seed) % remaining_value + 1;  //[1,remaining_value]
+            claimed_value = random_amount(seed) % remaining_value + 1;  //[1,remaining_value]
             msg.sender.transfer(claimed_value);
             claimed_number ++;
             claimers.push(Claimer({index: claimed_number, addr: msg.sender, claimed_value: claimed_value, claimed_time: now}));
@@ -105,7 +106,7 @@ contract RedPacket{
             //claimed_list_str += addr2str(msg.sender) + ": " + uint2str(claimed_value) + "\n";
             emit ClaimSuccess(msg.sender, claimed_value);
         }
-        return 1;
+        return claimed_value;
     }
     
     // Returns 1. remaining number of red packets 2. claimed list
