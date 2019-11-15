@@ -11,17 +11,12 @@ contract RedPacket{
 
     event CreationSuccess(
         address creator,
-        uint total,
+        uint total
     );
     
     event ClaimSuccess(
         address claimer,
-        uint claimed_value,
-    );
-
-    event StatusCheck(
-        uint remaining_value,
-        uint remaining_number,
+        uint claimed_value
     );
 
     //1 ETH = 1000000000000000000(10^18) WEI
@@ -54,7 +49,7 @@ contract RedPacket{
         for (uint i = 0; i < total_number; i++){
             hashes.push(_hashes[i]);
         }
-        emit CreationSuccess(creator, remaining);
+        emit CreationSuccess(creator, remaining_value);
     }
 
     // Skeleton
@@ -114,7 +109,7 @@ contract RedPacket{
     }
     
     // Returns 1. remaining number of red packets 2. claimed list
-    function check_availability() public view{
-        emit StatusCheck(remaining_value, total_number - claimed_number);
+    function check_availability() public view returns (uint, uint){
+        return (remaining_value, total_number - claimed_number);
     }
 }
