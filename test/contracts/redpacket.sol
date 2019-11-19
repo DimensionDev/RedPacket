@@ -90,7 +90,7 @@ contract RedPacket{
     // It takes the unhashed password and a hashed random seed generated from the user
     function claim(string memory password, bytes32 seed) public returns (uint){
         // Unsuccessful
-        require (claimed_number > total_number-1, "Out of Stock.");
+        require (claimed_number < total_number, "Out of Stock.");
         for (uint i = 0; i < claimers.length; i++){
             // Bad bad
             require (msg.sender != claimers[i].addr, "Already Claimed.");
@@ -112,5 +112,8 @@ contract RedPacket{
     // Returns 1. remaining number of red packets 2. claimed list
     function check_availability() public view returns (uint, uint){
         return (remaining_value, total_number - claimed_number);
+    }
+
+    function () external payable {
     }
 }
