@@ -24,7 +24,7 @@ contract RedPacket{
     );
 
     event Bad(
-        bytes32 hash;        
+        bytes32 hash
     );
 
     //1 ETH = 1000000000000000000(10^18) WEI
@@ -106,7 +106,7 @@ contract RedPacket{
         uint claimed_value;
         if (keccak256(abi.encode(password)) == hashes[claimed_number]){
             claimed_value = random_value(seed) % remaining_value + 1;  //[1,remaining_value]
-            emit ReadParameter(claimed_value);
+            emit ReadVariable(claimed_value);
             msg.sender.transfer(claimed_value);
             claimed_number ++;
             claimers.push(Claimer({index: claimed_number, addr: msg.sender, claimed_value: claimed_value, claimed_time: now}));
