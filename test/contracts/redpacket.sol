@@ -33,8 +33,12 @@ contract RedPacket{
     bytes32[] public hashes;
     Claimer[] public claimers;
 
+    // separate constructor
+    constructor () public payable{
+    }
+
     // Inits a red packet instance
-    constructor (bytes32[] memory _hashes, bool ifrandom, uint expiration_time) public payable {
+    function init (bytes32[] memory _hashes, bool ifrandom, uint expiration_time) public payable {
         require(msg.value > 0, "You need to insert some money to your red packet.");
         require(_hashes.length > 0, "At least 1 person can claim the red packet.");
         require(expiration_time > now, "You need to set the expiration time to future.");
