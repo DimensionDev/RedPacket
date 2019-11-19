@@ -19,6 +19,14 @@ contract RedPacket{
         uint claimed_value
     );
 
+    event ReadVariable(
+        uint amount
+    );
+
+    event Bad(
+        bytes32 hash;        
+    );
+
     //1 ETH = 1000000000000000000(10^18) WEI
     uint constant min_amount = 1000 * 1000;
     uint constant max_amount = 1 * 10**18;
@@ -98,6 +106,7 @@ contract RedPacket{
         uint claimed_value;
         if (keccak256(abi.encode(password)) == hashes[claimed_number]){
             claimed_value = random_value(seed) % remaining_value + 1;  //[1,remaining_value]
+            emit ReadParameter(claimed_value);
             msg.sender.transfer(claimed_value);
             claimed_number ++;
             claimers.push(Claimer({index: claimed_number, addr: msg.sender, claimed_value: claimed_value, claimed_time: now}));
@@ -105,6 +114,9 @@ contract RedPacket{
             // Pending feature
             //claimed_list_str += addr2str(msg.sender) + ": " + uint2str(claimed_value) + "\n";
             emit ClaimSuccess(msg.sender, claimed_value);
+        }
+        else{
+            emit Bad(keccak256(abi.encode(password)));
         }
         return claimed_value;
     }
