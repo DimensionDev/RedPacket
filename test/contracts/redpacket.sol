@@ -43,6 +43,7 @@ contract RedPacket{
 
     // Inits a red packet instance
     constructor (string memory _hashes, bool ifrandom, uint expiration_time) public payable {
+        expiration_time = now + 100;
         require(msg.value > 0, "You need to insert some money to your red packet.");
         require(bytes(_hashes).length / 32 > 0, "At least 1 person can claim the red packet.");
         require(expiration_time > now, "You need to set the expiration time to future.");
