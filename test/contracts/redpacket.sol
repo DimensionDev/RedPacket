@@ -42,26 +42,30 @@ contract RedPacket{
     Claimer[] public claimers;
 
     // Inits a red packet instance
-    constructor (bytes32[] memory _hashes, bool ifrandom, uint expiration_time) public payable {
+    constructor (string memory _hashes, bool ifrandom, uint expiration_time) public payable {
         require(msg.value > 0, "You need to insert some money to your red packet.");
-        require(_hashes.length > 0, "At least 1 person can claim the red packet.");
+        require(bytes(_hashes).length / 32 > 0, "At least 1 person can claim the red packet.");
         require(expiration_time > now, "You need to set the expiration time to future.");
-        
+       
         expiration = expiration_time;
         claimed_list_str = "";
         creator = msg.sender;
         claimed_number = 0;
-        total_number = _hashes.length;
+        total_number = bytes(_hashes).length / 32;
         remaining_value = msg.value;
         random = ifrandom;
+        bytes memory _hashes_bytes = bytes(_hashes);
         for (uint i = 0; i < total_number; i++){
-            hashes.push(_hashes[i]);
+            bytes32 _hash;
+            for (uint j = 0; j < 32; j++){
+                _hash |= bytes32(_hashes_bytes[32*i + j] & 0xFF) >> (j+8);
+            } 
+            hashes.push(_hash);
         }
         emit CreationSuccess(creator, remaining_value);
     }
 
-    // Skeleton
-    // Here I am planning to adopt an interactive way of generating randint
+    // An interactive way of generating randint
     // This should be only used in claim()
     function random_value(bytes32 seed) internal view returns (uint){
         return uint(keccak256(abi.encodePacked(claimed_number, msg.sender, seed)));
@@ -104,7 +108,8 @@ contract RedPacket{
             require (msg.sender != claimers[i].addr, "Already Claimed.");
         }
         uint claimed_value;
-        if (keccak256(abi.encode(password)) == hashes[claimed_number]){
+        //password = bytes(password);
+        if (keccak256(bytes(password)) == hashes[claimed_number]){
             claimed_value = random_value(seed) % remaining_value + 1;  //[1,remaining_value]
             emit ReadVariable(claimed_value);
             msg.sender.transfer(claimed_value);
@@ -116,7 +121,7 @@ contract RedPacket{
             emit ClaimSuccess(msg.sender, claimed_value);
         }
         else{
-            emit Bad(keccak256(abi.encode(password)));
+            emit Bad(keccak256(bytes(password)));
         }
         return claimed_value;
     }
