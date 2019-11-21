@@ -43,7 +43,7 @@ contract RedPacket{
         require(msg.value > min_amount, "You need to insert some money to your red packet.");
         require(_hashes.length > 0, "At least 1 person can claim the red packet.");
         if (_expiration_time <= now){
-            _expiration_time = now + 5760;   //default set to (60/15) * 60 * 60 = 5760 blocks, which is approximately 24 hours
+            _expiration_time = now + 5760;   // default set to (60/15) * 60 * 60 = 5760 blocks, which is approximately 24 hours, assuming block time is 15s
         }
        
         creator = msg.sender;
