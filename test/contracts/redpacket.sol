@@ -24,7 +24,8 @@ contract RedPacket{
     );
 
     event Bad(
-        bytes32 hash
+        bytes32 hash1,
+        bytes32 hash2
     );
 
     //1 ETH = 1000000000000000000(10^18) WEI
@@ -42,26 +43,23 @@ contract RedPacket{
     Claimer[] public claimers;
 
     // Inits a red packet instance
-    constructor (string memory _hashes, bool ifrandom, uint expiration_time) public payable {
-        expiration_time = now + 100;
+    constructor (bytes32[] memory _hashes, bool ifrandom, uint expiration_time) public payable {
+        if (expiration_time <= now){
+            expiration_time = now + 5760;   //default set to (60/15) * 60 * 60 = 5760 blocks, which is approximately 24 hours
+        }
         require(msg.value > 0, "You need to insert some money to your red packet.");
-        require(bytes(_hashes).length / 32 > 0, "At least 1 person can claim the red packet.");
+        require(_hashes.length > 0, "At least 1 person can claim the red packet.");
         require(expiration_time > now, "You need to set the expiration time to future.");
        
         expiration = expiration_time;
         claimed_list_str = "";
         creator = msg.sender;
         claimed_number = 0;
-        total_number = bytes(_hashes).length / 32;
+        total_number = _hashes.length;
         remaining_value = msg.value;
         random = ifrandom;
-        bytes memory _hashes_bytes = bytes(_hashes);
         for (uint i = 0; i < total_number; i++){
-            bytes32 _hash;
-            for (uint j = 0; j < 32; j++){
-                _hash |= bytes32(_hashes_bytes[32*i + j] & 0xFF) >> (j+8);
-            } 
-            hashes.push(_hash);
+            hashes.push(_hashes[i]);
         }
         emit CreationSuccess(creator, remaining_value);
     }
@@ -122,7 +120,7 @@ contract RedPacket{
             emit ClaimSuccess(msg.sender, claimed_value);
         }
         else{
-            emit Bad(keccak256(bytes(password)));
+            emit Bad(keccak256(bytes(password)), hashes[claimed_number]);
         }
         return claimed_value;
     }
