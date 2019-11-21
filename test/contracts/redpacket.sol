@@ -28,7 +28,6 @@ contract RedPacket{
     //uint constant max_amount = 1 * 10**18;
 
     bool ifrandom;
-    uint remaining_value;
     uint expiration_time;
     address creator;
     uint total_number;
@@ -51,11 +50,10 @@ contract RedPacket{
         expiration_time = _expiration_time;
         claimed_number = 0;
         total_number = _hashes.length;
-        remaining_value = msg.value;
         ifrandom = _ifrandom;
         hashes = _hashes;
 
-        emit CreationSuccess(creator, remaining_value);
+        emit CreationSuccess(creator, address(this).balance);
     }
 
     // An interactive way of generating randint
@@ -74,9 +72,8 @@ contract RedPacket{
 
         // Random value 
         uint claimed_value;
-        claimed_value = random_value(seed) % remaining_value + 1;  //[1,remaining_value]
+        claimed_value = random_value(seed) % address(this).balance + 1;  //[1,address(this).balance]
         msg.sender.transfer(claimed_value);
-        remaining_value -= claimed_value;
 
         // Store claimer info
         claimer_addrs.push(msg.sender);
@@ -92,7 +89,7 @@ contract RedPacket{
     
     // Returns 1. remaining value 2. remaining number of red packets
     function check_availability() public view returns (uint, uint){
-        return (remaining_value, total_number - claimed_number);
+        return (address(this).balance, total_number - claimed_number);
     }
 
     function check_claimed_list() public view returns (uint[] memory){
@@ -101,6 +98,13 @@ contract RedPacket{
             claimed_values[i] = claimers[claimer_addrs[i]].claimed_value;
         }
         return claimed_values;
+    }
+
+    function refund() public {
+        require(msg.sender == creator, "Only the red packet creator can refund the money");
+        require(expiration_time < now, "Disallowed until the expiration time has passed");
+        
+        msg.sender.transfer(address(this).balance);
     }
 
     function () external payable {
