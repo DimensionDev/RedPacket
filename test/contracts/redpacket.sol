@@ -23,14 +23,14 @@ contract RedPacket{
         uint amount
     );
 
-    event Bad(
+    event Failure(
         bytes32 hash1,
         bytes32 hash2
     );
 
     //1 ETH = 1000000000000000000(10^18) WEI
-    uint constant min_amount = 1000 * 1000;
-    uint constant max_amount = 1 * 10**18;
+    uint constant min_amount = 1 * 10**15;  //0.001 ETH
+    //uint constant max_amount = 1 * 10**18;
 
     bool random;
     uint remaining_value;
@@ -47,9 +47,8 @@ contract RedPacket{
         if (expiration_time <= now){
             expiration_time = now + 5760;   //default set to (60/15) * 60 * 60 = 5760 blocks, which is approximately 24 hours
         }
-        require(msg.value > 0, "You need to insert some money to your red packet.");
+        require(msg.value > min_amount, "You need to insert some money to your red packet.");
         require(_hashes.length > 0, "At least 1 person can claim the red packet.");
-        require(expiration_time > now, "You need to set the expiration time to future.");
        
         expiration = expiration_time;
         claimed_list_str = "";
@@ -67,36 +66,9 @@ contract RedPacket{
     // An interactive way of generating randint
     // This should be only used in claim()
     function random_value(bytes32 seed) internal view returns (uint){
-        return uint(keccak256(abi.encodePacked(claimed_number, msg.sender, seed)));
+        return uint(keccak256(abi.encodePacked(claimed_number, msg.sender, seed, now)));
     }
 
-    // uint2str from https://github.com/provable-things/ethereum-api/blob/master/oraclizeAPI_0.5.sol
-    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
-        if (_i == 0) {
-            return "0";
-        }
-        uint j = _i;
-        uint len;
-        while (j != 0) {
-            len++;
-            j /= 10;
-        }
-        bytes memory bstr = new bytes(len);
-        uint k = len - 1;
-        while (_i != 0) {
-            bstr[k--] = byte(uint8(48 + _i % 10));
-            _i /= 10;
-        }
-        return string(bstr);
-    }
-
-    // address to string
-    function addr2str(address x) internal pure returns (string memory) {
-        bytes memory b = new bytes(20);
-        for (uint i = 0; i < 20; i++)
-            b[i] = byte(uint8(uint(x) / (2**(8*(19 - i)))));
-        return string(b);
-    }
    
     // It takes the unhashed password and a hashed random seed generated from the user
     function claim(string memory password, bytes32 seed) public returns (uint){
@@ -110,22 +82,19 @@ contract RedPacket{
         //password = bytes(password);
         if (keccak256(bytes(password)) == hashes[claimed_number]){
             claimed_value = random_value(seed) % remaining_value + 1;  //[1,remaining_value]
-            emit ReadVariable(claimed_value);
+            //emit ReadVariable(claimed_value); //only for debug
             msg.sender.transfer(claimed_value);
             claimed_number ++;
             claimers.push(Claimer({index: claimed_number, addr: msg.sender, claimed_value: claimed_value, claimed_time: now}));
-            // Simple string concat is not supported in Solidity
-            // Pending feature
-            //claimed_list_str += addr2str(msg.sender) + ": " + uint2str(claimed_value) + "\n";
             emit ClaimSuccess(msg.sender, claimed_value);
         }
         else{
-            emit Bad(keccak256(bytes(password)), hashes[claimed_number]);
+            emit Failure(keccak256(bytes(password)), hashes[claimed_number]);
         }
         return claimed_value;
     }
     
-    // Returns 1. remaining number of red packets 2. claimed list
+    // Returns 1. remaining value 2. remaining number of red packets
     function check_availability() public view returns (uint, uint){
         return (remaining_value, total_number - claimed_number);
     }
