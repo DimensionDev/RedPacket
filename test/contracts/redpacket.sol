@@ -4,7 +4,6 @@ contract RedPacket{
 
     struct Claimer{
         uint index;
-        address addr; 
         uint claimed_value;
         uint claimed_time;
     }
@@ -36,7 +35,9 @@ contract RedPacket{
     uint claimed_number; // nonce
     string claimed_list_str;
     bytes32[] public hashes;
-    Claimer[] public claimers;
+    //Claimer[] public claimers;
+    address[] claimer_addrs;
+    mapping(address => Claimer) claimers;
 
     // Inits a red packet instance
     constructor (bytes32[] memory _hashes, bool ifrandom, uint expiration_time) public payable {
@@ -67,23 +68,28 @@ contract RedPacket{
 
    
     // It takes the unhashed password and a hashed random seed generated from the user
-    function claim(string memory password, bytes32 seed) public returns (uint){
+    function claim(string memory password, bytes32 seed) public{
         // Unsuccessful
         require (claimed_number < total_number, "Out of Stock.");
-        for (uint i = 0; i < claimers.length; i++){
-            require (msg.sender != claimers[i].addr, "Already Claimed.");
-        }
+        require (claimers[msg.sender].claimed_value == 0, "Already Claimed");
+        require (keccak256(bytes(password)) == hashes[claimed_number], "Wrong Password.");
+
+        // Random value 
         uint claimed_value;
-        if (keccak256(bytes(password)) != hashes[claimed_number]){
-            emit Failure(keccak256(bytes(password)), hashes[claimed_number]);      //for debug use
-        }
-        require (keccak256(bytes(password)) == hashes[claimed_number]);
         claimed_value = random_value(seed) % remaining_value + 1;  //[1,remaining_value]
         msg.sender.transfer(claimed_value);
+        remaining_value -= claimed_value;
+
+        // Store claimer info
+        claimer_addrs.push(msg.sender);
+        Claimer memory claimer = claimers[msg.sender];
+        claimer.index = claimed_number;
+        claimer.claimed_value = claimed_value;
+        claimer.claimed_time = now;
         claimed_number ++;
-        claimers.push(Claimer({index: claimed_number, addr: msg.sender, claimed_value: claimed_value, claimed_time: now}));
+        
+        // Claim success event
         emit ClaimSuccess(msg.sender, claimed_value);
-        return claimed_value;
     }
     
     // Returns 1. remaining value 2. remaining number of red packets
@@ -91,8 +97,12 @@ contract RedPacket{
         return (remaining_value, total_number - claimed_number);
     }
 
-    function check_claimed_list() public view returns (Claimer[] memory){
-        return claimers;
+    function check_claimed_list() public view returns (uint[] memory){
+        uint[] memory claimed_values = new uint[](claimed_number);
+        for (uint i = 0; i < claimed_number; i++){
+            claimed_values[i] = claimers[claimer_addrs[i]].claimed_value;
+        }
+        return claimed_values;
     }
 
     function () external payable {
