@@ -77,10 +77,10 @@ contract RedPacket{
 
         // Store claimer info
         claimer_addrs.push(msg.sender);
-        Claimer memory claimer = claimers[msg.sender];
-        claimer.index = claimed_number;
-        claimer.claimed_value = claimed_value;
-        claimer.claimed_time = now;
+        //Claimer memory claimer = claimers[msg.sender];
+        claimers[msg.sender].index = claimed_number;
+        claimers[msg.sender].claimed_value = claimed_value;
+        claimers[msg.sender].claimed_time = now;
         claimed_number ++;
         
         // Claim success event
