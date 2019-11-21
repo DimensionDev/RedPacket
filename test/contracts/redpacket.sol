@@ -27,9 +27,9 @@ contract RedPacket{
     uint constant min_amount = 1 * 10**15;  //0.001 ETH
     //uint constant max_amount = 1 * 10**18;
 
-    bool random;
+    bool ifrandom;
     uint remaining_value;
-    uint expiration;
+    uint expiration_time;
     address creator;
     uint total_number;
     uint claimed_number; // nonce
@@ -40,23 +40,21 @@ contract RedPacket{
     mapping(address => Claimer) claimers;
 
     // Inits a red packet instance
-    constructor (bytes32[] memory _hashes, bool ifrandom, uint expiration_time) public payable {
+    constructor (bytes32[] memory _hashes, bool _ifrandom, uint _expiration_time) public payable {
+        require(msg.value > min_amount, "You need to insert some money to your red packet.");
+        require(_hashes.length > 0, "At least 1 person can claim the red packet.");
         if (expiration_time <= now){
             expiration_time = now + 5760;   //default set to (60/15) * 60 * 60 = 5760 blocks, which is approximately 24 hours
         }
-        require(msg.value > min_amount, "You need to insert some money to your red packet.");
-        require(_hashes.length > 0, "At least 1 person can claim the red packet.");
        
-        expiration = expiration_time;
-        claimed_list_str = "";
         creator = msg.sender;
+        expiration_time = _expiration_time;
         claimed_number = 0;
         total_number = _hashes.length;
         remaining_value = msg.value;
-        random = ifrandom;
-        for (uint i = 0; i < total_number; i++){
-            hashes.push(_hashes[i]);
-        }
+        ifrandom = _ifrandom;
+        hashes = _hashes;
+
         emit CreationSuccess(creator, remaining_value);
     }
 
