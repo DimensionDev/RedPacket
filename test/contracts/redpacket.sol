@@ -107,7 +107,8 @@ contract RedPacket{
         
         msg.sender.transfer(address(this).balance);
     }
-
-    function () external payable {
-    }
+    
+    // One cannot send tokens to this contract after constructor anymore
+    //function () external payable {
+    //}
 }
