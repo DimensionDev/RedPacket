@@ -19,10 +19,6 @@ contract RedPacket{
         uint claimed_value
     );
 
-    event ReadVariable(
-        uint amount
-    );
-
     event Failure(
         bytes32 hash1,
         bytes32 hash2
@@ -75,28 +71,28 @@ contract RedPacket{
         // Unsuccessful
         require (claimed_number < total_number, "Out of Stock.");
         for (uint i = 0; i < claimers.length; i++){
-            // Bad bad
             require (msg.sender != claimers[i].addr, "Already Claimed.");
         }
         uint claimed_value;
-        //password = bytes(password);
-        if (keccak256(bytes(password)) == hashes[claimed_number]){
-            claimed_value = random_value(seed) % remaining_value + 1;  //[1,remaining_value]
-            //emit ReadVariable(claimed_value); //only for debug
-            msg.sender.transfer(claimed_value);
-            claimed_number ++;
-            claimers.push(Claimer({index: claimed_number, addr: msg.sender, claimed_value: claimed_value, claimed_time: now}));
-            emit ClaimSuccess(msg.sender, claimed_value);
+        if (keccak256(bytes(password)) != hashes[claimed_number]){
+            emit Failure(keccak256(bytes(password)), hashes[claimed_number]);      //for debug use
         }
-        else{
-            emit Failure(keccak256(bytes(password)), hashes[claimed_number]);
-        }
+        require (keccak256(bytes(password)) == hashes[claimed_number]);
+        claimed_value = random_value(seed) % remaining_value + 1;  //[1,remaining_value]
+        msg.sender.transfer(claimed_value);
+        claimed_number ++;
+        claimers.push(Claimer({index: claimed_number, addr: msg.sender, claimed_value: claimed_value, claimed_time: now}));
+        emit ClaimSuccess(msg.sender, claimed_value);
         return claimed_value;
     }
     
     // Returns 1. remaining value 2. remaining number of red packets
     function check_availability() public view returns (uint, uint){
         return (remaining_value, total_number - claimed_number);
+    }
+
+    function check_claimed_list() public view returns (Claimer[] memory){
+        return claimers;
     }
 
     function () external payable {
