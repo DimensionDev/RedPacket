@@ -22,6 +22,9 @@ contract RedPacket{
         bytes32 hash1,
         bytes32 hash2
     );
+    event RefundSuccess(
+        uint remaining_balance
+    );
 
     //1 ETH = 1000000000000000000(10^18) WEI
     uint constant min_amount = 1 * 10**15;  //0.001 ETH
@@ -43,7 +46,7 @@ contract RedPacket{
         require(msg.value > min_amount, "You need to insert some money to your red packet.");
         require(_hashes.length > 0, "At least 1 person can claim the red packet.");
         if (_expiration_time <= now){
-            _expiration_time = now + 5760;   // default set to (60/15) * 60 * 60 = 5760 blocks, which is approximately 24 hours, assuming block time is 15s
+            _expiration_time = now + 86400;   // default set to (60/15) * 60 * 60 = 5760 blocks, which is approximately 24 hours, assuming block time is 15s
         }
        
         creator = msg.sender;
@@ -58,6 +61,7 @@ contract RedPacket{
 
     // An interactive way of generating randint
     // This should be only used in claim()
+    // Pending on finding better ways
     function random_value(bytes32 seed) internal view returns (uint){
         return uint(keccak256(abi.encodePacked(claimed_number, msg.sender, seed, now)));
     }
@@ -73,8 +77,7 @@ contract RedPacket{
 
         // Random value 
         uint claimed_value;
-        claimed_value = random_value(seed) % address(this).balance + 1;  //[1,address(this).balance]
-        msg.sender.transfer(claimed_value);
+        claimed_value = random_value(seed) % (address(this).balance - (total_number - claimed_number)) + 1;  //[1,address(this).balance]; make sure the luckiest won't take all the tokens
 
         // Store claimer info
         claimer_addrs.push(msg.sender);
@@ -84,13 +87,18 @@ contract RedPacket{
         claimers[msg.sender].claimed_time = now;
         claimed_number ++;
         
+        // Transfer the red packet after state changing
+        msg.sender.transfer(claimed_value);
+
         // Claim success event
         emit ClaimSuccess(msg.sender, claimed_value);
     }
     
     // Returns 1. remaining value 2. remaining number of red packets
     function check_availability() public view returns (uint, uint){
-        return (address(this).balance, total_number - claimed_number);
+        uint memory balance = address(this).balance;
+        uint memory remaining_number = total_number - claimed_number;
+        return (balance, remaining_number);
     }
 
     function check_claimed_list() public view returns (uint[] memory){
@@ -105,7 +113,9 @@ contract RedPacket{
         require(msg.sender == creator, "Only the red packet creator can refund the money");
         require(expiration_time < now, "Disallowed until the expiration time has passed");
         
-        msg.sender.transfer(address(this).balance);
+        uint memory remaining_balance = address(this).balance;
+        msg.sender.transfer(remaining_balance);
+        emit RefundSuccess(remaining_balance)
     }
     
     // One cannot send tokens to this contract after constructor anymore
