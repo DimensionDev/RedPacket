@@ -31,10 +31,11 @@ contract RedPacket{
     //uint constant max_amount = 1 * 10**18;
 
     bool ifrandom;
-    uint expiration_time;
     address creator;
     uint total_number;
     uint claimed_number; // nonce
+    uint expiration_time;
+    uint[] private values;
     string claimed_list_str;
     bytes32[] public hashes;
     //Claimer[] public claimers;
@@ -42,7 +43,7 @@ contract RedPacket{
     mapping(address => Claimer) claimers;
 
     // Inits a red packet instance
-    constructor (bytes32[] memory _hashes, bool _ifrandom, uint _expiration_time) public payable {
+    constructor (bytes32[] memory _hashes, bool _ifrandom, uint _expiration_time, bytes32 seed) public payable {
         require(msg.value > min_amount, "You need to insert some money to your red packet.");
         require(_hashes.length > 0, "At least 1 person can claim the red packet.");
         if (_expiration_time <= now){
@@ -56,32 +57,38 @@ contract RedPacket{
         ifrandom = _ifrandom;
         hashes = _hashes;
 
+        uint total_value = address(this).balance;
+        uint rand_value;
+        for (uint i = 0; i < total_number; i++){
+            rand_value = random_value(seed, i) % (total_value - total_number + i); 
+            values.push(rand_value);
+            total_value -= rand_value;
+            
+        }
+
         emit CreationSuccess(creator, address(this).balance);
     }
 
     // An interactive way of generating randint
     // This should be only used in claim()
     // Pending on finding better ways
-    function random_value(bytes32 seed) internal view returns (uint rand){
-        return uint(keccak256(abi.encodePacked(claimed_number, msg.sender, seed, now)));
+    function random_value(bytes32 seed, uint nonce) internal view returns (uint rand){
+        return uint(keccak256(abi.encodePacked(nonce, msg.sender, seed, now)));
     }
 
    
     // It takes the unhashed password and a hashed random seed generated from the user
-    function claim(string memory password, bytes32 seed) public returns (uint claimed){
+    function claim(string memory password) public returns (uint claimed){
         // Unsuccessful
         require (expiration_time > now, "Expired.");
         require (claimed_number < total_number, "Out of Stock.");
         require (claimers[msg.sender].claimed_value == 0, "Already Claimed");
         require (keccak256(bytes(password)) == hashes[claimed_number], "Wrong Password.");
 
-        // Random value 
-        uint claimed_value;
-        claimed_value = random_value(seed) % (address(this).balance - (total_number - claimed_number)) + 1;  //[1,address(this).balance]; make sure the luckiest won't take all the tokens
-
         // Store claimer info
         claimer_addrs.push(msg.sender);
         //Claimer memory claimer = claimers[msg.sender];
+        uint claimed_value = values[claimed_number];
         claimers[msg.sender].index = claimed_number;
         claimers[msg.sender].claimed_value = claimed_value;
         claimers[msg.sender].claimed_time = now;
