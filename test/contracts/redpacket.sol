@@ -96,8 +96,8 @@ contract RedPacket{
     }
     
     // Returns 1. remaining value 2. remaining number of red packets
-    function check_availability() public view returns (uint balance, uint remaining_number){
-        return (address(this).balance, total_number - claimed_number);
+    function check_availability() public view returns (uint balance, uint total, uint claimed){
+        return (address(this).balance, total_number, claimed_number);
     }
 
     function check_claimed_list() public view returns (uint[] memory claimed_list){
