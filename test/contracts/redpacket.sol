@@ -2,6 +2,20 @@ pragma solidity >0.4.22;
 
 contract RedPacket{
 
+    struct RedPacket{
+        uint id;
+        bool ifrandom;
+        address creator;
+        uint total_number;
+        uint claimed_number;
+        uint remaining_value;
+        uint expiration_time;
+        string claimed_list_str;
+        address[] claimer_addrs;
+        bytes32[] public hashes;
+        mapping(address => Claimer) claimers;
+    }
+
     struct Claimer{
         uint index;
         uint claimed_value;
@@ -9,20 +23,24 @@ contract RedPacket{
     }
 
     event CreationSuccess(
+        uint id,
         address creator,
         uint total
     );
     
     event ClaimSuccess(
+        uint id,
         address claimer,
         uint claimed_value
     );
 
     event Failure(
+        uint id,
         bytes32 hash1,
         bytes32 hash2
     );
     event RefundSuccess(
+        uint id,
         uint remaining_balance
     );
 
@@ -50,7 +68,8 @@ contract RedPacket{
         if (duration == 0){
             duration = 86400;   // default set to (60/15) * 60 * 60 = 5760 blocks, which is approximately 24 hours, assuming block time is 15s
         }
-       
+        
+        uint memory id = keccak256(abi.encodePacked(msg.sender, now, rpindex));
         creator = msg.sender;
         expiration_time = now + duration;
         claimed_number = 0;
