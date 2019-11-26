@@ -43,15 +43,15 @@ contract RedPacket{
     mapping(address => Claimer) claimers;
 
     // Inits a red packet instance
-    constructor (bytes32[] memory _hashes, bool _ifrandom, uint _expiration_time, bytes32 seed) public payable {
-        require(msg.value > min_amount, "You need to insert some money to your red packet.");
+    constructor (bytes32[] memory _hashes, bool _ifrandom, uint duration, bytes32 seed) public payable {
+        require(msg.value >= min_amount, "You need to insert at least 0.001 ETH to your red packet.");
         require(_hashes.length > 0, "At least 1 person can claim the red packet.");
-        if (_expiration_time <= now){
-            _expiration_time = now + 86400;   // default set to (60/15) * 60 * 60 = 5760 blocks, which is approximately 24 hours, assuming block time is 15s
+        if (duration == 0){
+            duration = 86400;   // default set to (60/15) * 60 * 60 = 5760 blocks, which is approximately 24 hours, assuming block time is 15s
         }
        
         creator = msg.sender;
-        expiration_time = _expiration_time;
+        expiration_time = now + duration;
         claimed_number = 0;
         total_number = _hashes.length;
         ifrandom = _ifrandom;
@@ -60,10 +60,9 @@ contract RedPacket{
         uint total_value = address(this).balance;
         uint rand_value;
         for (uint i = 0; i < total_number; i++){
-            rand_value = random_value(seed, i) % (total_value - total_number + i); 
+            rand_value = random_value(seed, i) % (total_value - (total_number - i + 1) * 10**9); //lowest possbile is 1 GWEI
             values.push(rand_value);
             total_value -= rand_value;
-            
         }
 
         emit CreationSuccess(creator, address(this).balance);
