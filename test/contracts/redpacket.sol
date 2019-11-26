@@ -27,7 +27,7 @@ contract RedPacket{
     );
 
     //1 ETH = 1000000000000000000(10^18) WEI
-    uint constant min_amount = 1 * 10**15;  //0.001 ETH
+    uint constant min_amount = 135000 * 15 * 10**9;  //0.002025 ETH
     //uint constant max_amount = 1 * 10**18;
 
     bool ifrandom;
@@ -44,7 +44,8 @@ contract RedPacket{
 
     // Inits a red packet instance
     constructor (bytes32[] memory _hashes, bool _ifrandom, uint duration, bytes32 seed) public payable {
-        require(msg.value >= min_amount, "You need to insert at least 0.001 ETH to your red packet.");
+        total_number = _hashes.length;
+        require(msg.value >= min_amount * total_number, "You need to insert at least 0.001 ETH to your red packet.");
         require(_hashes.length > 0, "At least 1 person can claim the red packet.");
         if (duration == 0){
             duration = 86400;   // default set to (60/15) * 60 * 60 = 5760 blocks, which is approximately 24 hours, assuming block time is 15s
@@ -53,14 +54,13 @@ contract RedPacket{
         creator = msg.sender;
         expiration_time = now + duration;
         claimed_number = 0;
-        total_number = _hashes.length;
         ifrandom = _ifrandom;
         hashes = _hashes;
 
         uint total_value = address(this).balance;
         uint rand_value;
         for (uint i = 0; i < total_number; i++){
-            rand_value = random_value(seed, i) % (total_value - (total_number - i + 1) * 10**9); //lowest possbile is 1 GWEI
+            rand_value = min_amount + random_value(seed, i) % (total_value - (total_number - i) * min_amount); //make sure everyone can at least get min_amount
             values.push(rand_value);
             total_value -= rand_value;
         }
