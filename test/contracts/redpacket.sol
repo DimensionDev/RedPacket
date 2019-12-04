@@ -60,10 +60,14 @@ contract RedPacket{
         uint total_value = address(this).balance;
         uint rand_value;
         for (uint i = 0; i < total_number; i++){
-            rand_value = min_amount + random_value(seed, i) % (total_value - (total_number - i) * min_amount); //make sure everyone can at least get min_amount
+            if (ifrandom)
+                rand_value = min_amount + random_value(seed, i) % (total_value - (total_number - i) * min_amount); //make sure everyone can at least get min_amount
+            else
+                rand_value = total_value / total_number;
             values.push(rand_value);
             total_value -= rand_value;
         }
+
 
         emit CreationSuccess(creator, address(this).balance);
     }
@@ -101,7 +105,7 @@ contract RedPacket{
         return claimed_value;
     }
     
-    // Returns 1. remaining value 2. remaining number of red packets
+    // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets`
     function check_availability() public view returns (uint balance, uint total, uint claimed){
         return (address(this).balance, total_number, claimed_number);
     }
