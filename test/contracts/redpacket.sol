@@ -3,7 +3,7 @@ pragma solidity >0.4.22;
 contract HappyRedPacket{
 
     struct RedPacket{
-        uint id;
+        bytes32 id;
         bool ifrandom;
         uint[] values;
         address creator;
@@ -24,33 +24,33 @@ contract HappyRedPacket{
     }
 
     event CreationSuccess(
-        uint id,
+        bytes32 id,
         address creator,
         uint total
     );
-    
+
     event ClaimSuccess(
-        uint id,
+        bytes32 id,
         address claimer,
         uint claimed_value
     );
 
     event Failure(
-        uint id,
+        bytes32 id,
         bytes32 hash1,
         bytes32 hash2
     );
     event RefundSuccess(
-        uint id,
+        bytes32 id,
         uint remaining_balance
     );
 
     uint constant min_amount = 135000 * 15 * 10**9;  //0.002025 ETH
-    mapping(uint => RedPacket) redpackets;
+    mapping(bytes32 => RedPacket) redpackets;
     address contract_creator;
     uint nonce;
 
-    constructor() public {
+    constructor() payable public {
         contract_creator = msg.sender;
     }
 
@@ -58,19 +58,21 @@ contract HappyRedPacket{
     function create (bytes32[] memory _hashes, bool _ifrandom, uint duration, bytes32 seed) public payable {
 
         nonce += 1;
-        uint _id = uint(keccak256(abi.encodePacked(msg.sender, now, nonce)));
+        bytes32 _id = keccak256(abi.encodePacked(msg.sender, now, nonce));
+        //emit Failure(_id, keccak256(bytes("1")), keccak256(bytes("2")));
 
         RedPacket storage rp = redpackets[_id];
         rp.id = _id;
 
         rp.total_number = _hashes.length;
-        require(msg.value >= min_amount * rp.total_number, "You need to insert at least 0.001 ETH to your red packet.");
+        rp.remaining_value = address(this).balance;
+        require(msg.value >= min_amount * rp.total_number, "You need to insert enough ETH (0.002025 * [number of red packets]) to your red packet.");
         require(_hashes.length > 0, "At least 1 person can claim the red packet.");
 
         if (duration == 0) {
             duration = 86400;//24hours
         }
-        
+
         rp.creator = msg.sender;
         rp.expiration_time = now + duration;
         rp.claimed_number = 0;
@@ -99,9 +101,9 @@ contract HappyRedPacket{
         return uint(keccak256(abi.encodePacked(nonce_rand, msg.sender, seed, now)));
     }
 
-   
+
     // It takes the unhashed password and a hashed random seed generated from the user
-    function claim(uint id, string memory password) public returns (uint claimed){
+    function claim(bytes32 id, string memory password) public returns (uint claimed){
         RedPacket storage rp = redpackets[id];
 
         // Unsuccessful
@@ -118,7 +120,7 @@ contract HappyRedPacket{
         rp.claimers[msg.sender].claimed_value = claimed_value;
         rp.claimers[msg.sender].claimed_time = now;
         rp.claimed_number ++;
-        
+
         // Transfer the red packet after state changing
         msg.sender.transfer(claimed_value);
 
@@ -126,31 +128,31 @@ contract HappyRedPacket{
         emit ClaimSuccess(rp.id, msg.sender, claimed_value);
         return claimed_value;
     }
-    
+
     // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets`
-    function check_availability() public view returns (uint id, uint balance, uint total, uint claimed){
+    function check_availability(bytes32 id) public view returns (uint balance, uint total, uint claimed){
         RedPacket storage rp = redpackets[id];
-        return (rp.id, rp.remaining_value, rp.total_number, rp.claimed_number);
+        return (rp.remaining_value, rp.total_number, rp.claimed_number);
     }
 
-    function check_claimed_list() public view returns (uint id, uint[] memory claimed_list){
+    function check_claimed_list(bytes32 id) public view returns (uint[] memory claimed_list){
         RedPacket storage rp = redpackets[id];
         uint[] memory claimed_values = new uint[](rp.claimed_number);
         for (uint i = 0; i < rp.claimed_number; i++){
             claimed_values[i] = rp.claimers[rp.claimer_addrs[i]].claimed_value;
         }
-        return (rp.id, claimed_values);
+        return (claimed_values);
     }
 
-    function refund(uint id) public {
+    function refund(bytes32 id) public {
         RedPacket storage rp = redpackets[id];
         require(msg.sender == rp.creator, "Only the red packet creator can refund the money");
         require(rp.expiration_time < now, "Disallowed until the expiration time has passed");
-        
+
         emit RefundSuccess(rp.id, rp.remaining_value);
         msg.sender.transfer(rp.remaining_value);
     }
-    
+
     // One cannot send tokens to this contract after constructor anymore
     //function () external payable {
     //}
