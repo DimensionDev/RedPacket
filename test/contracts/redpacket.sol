@@ -116,6 +116,7 @@ contract HappyRedPacket{
         rp.claimer_addrs.push(msg.sender);
         //Claimer memory claimer = claimers[msg.sender];
         uint claimed_value = rp.values[rp.claimed_number];
+        rp.remaining_value -= claimed_value;
         rp.claimers[msg.sender].index = rp.claimed_number;
         rp.claimers[msg.sender].claimed_value = claimed_value;
         rp.claimers[msg.sender].claimed_time = now;
