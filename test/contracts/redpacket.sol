@@ -50,7 +50,7 @@ contract HappyRedPacket{
     address contract_creator;
     uint nonce;
 
-    constructor() payable public {
+    constructor() public {
         contract_creator = msg.sender;
     }
 
@@ -65,7 +65,7 @@ contract HappyRedPacket{
         rp.id = _id;
 
         rp.total_number = _hashes.length;
-        rp.remaining_value = address(this).balance;
+        rp.remaining_value = msg.value;
         require(msg.value >= min_amount * rp.total_number, "You need to insert enough ETH (0.002025 * [number of red packets]) to your red packet.");
         require(_hashes.length > 0, "At least 1 person can claim the red packet.");
 
