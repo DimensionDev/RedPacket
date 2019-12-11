@@ -66,8 +66,8 @@ contract HappyRedPacket{
 
         rp.total_number = _hashes.length;
         rp.remaining_value = msg.value;
-        require(msg.value >= min_amount * rp.total_number, "You need to insert enough ETH (0.002025 * [number of red packets]) to your red packet.");
-        require(_hashes.length > 0, "At least 1 person can claim the red packet.");
+        require(msg.value >= min_amount * rp.total_number, "001 You need to insert enough ETH (0.002025 * [number of red packets]) to your red packet.");
+        require(_hashes.length > 0, "002 At least 1 person can claim the red packet.");
 
         if (duration == 0) {
             duration = 86400;//24hours
@@ -107,10 +107,10 @@ contract HappyRedPacket{
         RedPacket storage rp = redpackets[id];
 
         // Unsuccessful
-        require (rp.expiration_time > now, "Expired.");
-        require (rp.claimed_number < rp.total_number, "Out of Stock.");
-        require (rp.claimers[msg.sender].claimed_value == 0, "Already Claimed");
-        require (keccak256(bytes(password)) == rp.hashes[rp.claimed_number], "Wrong Password.");
+        require (rp.expiration_time > now, "003 Expired.");
+        require (rp.claimed_number < rp.total_number, "004 Out of Stock.");
+        require (rp.claimers[msg.sender].claimed_value == 0, "005 Already Claimed");
+        require (keccak256(bytes(password)) == rp.hashes[rp.claimed_number], "006 Wrong Password.");
 
         // Store claimer info
         rp.claimer_addrs.push(msg.sender);
@@ -147,8 +147,8 @@ contract HappyRedPacket{
 
     function refund(bytes32 id) public {
         RedPacket storage rp = redpackets[id];
-        require(msg.sender == rp.creator, "Only the red packet creator can refund the money");
-        require(rp.expiration_time < now, "Disallowed until the expiration time has passed");
+        require(msg.sender == rp.creator, "007 Only the red packet creator can refund the money");
+        require(rp.expiration_time < now, "008 Disallowed until the expiration time has passed");
 
         emit RefundSuccess(rp.id, rp.remaining_value);
         msg.sender.transfer(rp.remaining_value);
