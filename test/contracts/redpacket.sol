@@ -56,10 +56,8 @@ contract HappyRedPacket{
 
     // Inits a red packet instance
     function create (bytes32[] memory _hashes, bool _ifrandom, uint duration, bytes32 seed) public payable {
-
         nonce += 1;
         bytes32 _id = keccak256(abi.encodePacked(msg.sender, now, nonce));
-        //emit Failure(_id, keccak256(bytes("1")), keccak256(bytes("2")));
 
         RedPacket storage rp = redpackets[_id];
         rp.id = _id;
@@ -100,33 +98,45 @@ contract HappyRedPacket{
     function random_value(bytes32 seed, uint nonce_rand) internal view returns (uint rand){
         return uint(keccak256(abi.encodePacked(nonce_rand, msg.sender, seed, now)));
     }
-
+    
+    //https://ethereum.stackexchange.com/questions/884/how-to-convert-an-address-to-bytes-in-solidity
+    //695 gas consumed
+    function toBytes(address a) public pure returns (bytes memory b){
+        assembly {
+            let m := mload(0x40)
+            a := and(a, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+            mstore(add(m, 20), xor(0x140000000000000000000000000000000000000000, a))
+            mstore(0x40, add(m, 52))
+            b := m
+        }
+    }
 
     // It takes the unhashed password and a hashed random seed generated from the user
-    function claim(bytes32 id, string memory password) public returns (uint claimed){
+    function claim(bytes32 id, string memory password, address payable recipient, bytes32 validation) public returns (uint claimed){
         RedPacket storage rp = redpackets[id];
 
         // Unsuccessful
         require (rp.expiration_time > now, "003 Expired.");
         require (rp.claimed_number < rp.total_number, "004 Out of Stock.");
-        require (rp.claimers[msg.sender].claimed_value == 0, "005 Already Claimed");
+        require (validation == keccak256(toBytes(msg.sender)));
+        require (rp.claimers[recipient].claimed_value == 0, "005 Already Claimed");
         require (keccak256(bytes(password)) == rp.hashes[rp.claimed_number], "006 Wrong Password.");
 
         // Store claimer info
-        rp.claimer_addrs.push(msg.sender);
+        rp.claimer_addrs.push(recipient);
         //Claimer memory claimer = claimers[msg.sender];
         uint claimed_value = rp.values[rp.claimed_number];
         rp.remaining_value -= claimed_value;
-        rp.claimers[msg.sender].index = rp.claimed_number;
-        rp.claimers[msg.sender].claimed_value = claimed_value;
-        rp.claimers[msg.sender].claimed_time = now;
+        rp.claimers[recipient].index = rp.claimed_number;
+        rp.claimers[recipient].claimed_value = claimed_value;
+        rp.claimers[recipient].claimed_time = now;
         rp.claimed_number ++;
 
         // Transfer the red packet after state changing
-        msg.sender.transfer(claimed_value);
+        recipient.transfer(claimed_value);
 
         // Claim success event
-        emit ClaimSuccess(rp.id, msg.sender, claimed_value);
+        emit ClaimSuccess(rp.id, recipient, claimed_value);
         return claimed_value;
     }
 
