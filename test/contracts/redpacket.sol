@@ -112,8 +112,9 @@ contract HappyRedPacket{
     }
 
     // It takes the unhashed password and a hashed random seed generated from the user
-    function claim(bytes32 id, string memory password, address payable recipient, bytes32 validation) public returns (uint claimed){
+    function claim(bytes32 id, string memory password, address _recipient, bytes32 validation) public returns (uint claimed){
         RedPacket storage rp = redpackets[id];
+        address payable recipient = address(uint160(_recipient));
 
         // Unsuccessful
         require (rp.expiration_time > now, "003 Expired.");
