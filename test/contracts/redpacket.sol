@@ -26,7 +26,8 @@ contract HappyRedPacket{
     event CreationSuccess(
         bytes32 id,
         address creator,
-        uint total
+        uint total,
+        uint creation_time
     );
 
     event ClaimSuccess(
