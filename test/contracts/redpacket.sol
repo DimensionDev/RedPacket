@@ -6,14 +6,15 @@ contract HappyRedPacket{
         bytes32 id;
         bool ifrandom;
         uint[] values;
+        string message;
         address creator;
+        bytes32[] hashes;
         uint total_number;
         uint claimed_number;
         uint remaining_value;
         uint expiration_time;
         string claimed_list_str;
         address[] claimer_addrs;
-        bytes32[] hashes;
         mapping(address => Claimer) claimers;
     }
 
@@ -56,9 +57,9 @@ contract HappyRedPacket{
     }
 
     // Inits a red packet instance
-    function create (bytes32[] memory _hashes, bool _ifrandom, uint duration, bytes32 seed) public payable {
+    function create_red_packet (bytes32[] memory _hashes, bool _ifrandom, uint _duration, bytes32 _seed, string memory message) public payable {
         nonce += 1;
-        bytes32 _id = keccak256(abi.encodePacked(msg.sender, now, nonce));
+        bytes32 _id = keccak256(abi.encodePacked(msg.sender, now, nonce));  //this can be done locally
 
         RedPacket storage rp = redpackets[_id];
         rp.id = _id;
@@ -68,21 +69,22 @@ contract HappyRedPacket{
         require(msg.value >= min_amount * rp.total_number, "001 You need to insert enough ETH (0.002025 * [number of red packets]) to your red packet.");
         require(_hashes.length > 0, "002 At least 1 person can claim the red packet.");
 
-        if (duration == 0) {
-            duration = 86400;//24hours
+        if (_duration == 0) {
+            _duration = 86400;//24hours
         }
 
         rp.creator = msg.sender;
-        rp.expiration_time = now + duration;
+        rp.expiration_time = now + _duration;
         rp.claimed_number = 0;
         rp.ifrandom = _ifrandom;
         rp.hashes = _hashes;
+        rp.message = message;
 
         uint total_value = msg.value;
         uint rand_value;
         for (uint i = 0; i < rp.total_number; i++){
             if (rp.ifrandom)
-                rand_value = min_amount + random_value(seed, i) % (total_value - (rp.total_number - i) * min_amount); //make sure everyone can at least get min_amount
+                rand_value = min_amount + random_value(_seed, i) % (total_value - (rp.total_number - i) * min_amount); //make sure everyone can at least get min_amount
             else
                 rand_value = total_value / rp.total_number;
             rp.values.push(rand_value);
