@@ -57,7 +57,7 @@ contract HappyRedPacket{
     }
 
     // Inits a red packet instance
-    function create_red_packet (bytes32[] memory _hashes, bool _ifrandom, uint _duration, bytes32 _seed, string memory message) public payable {
+    function create_red_packet (bytes32[] memory _hashes, bool _ifrandom, uint _duration, bytes32 _seed, string memory _message) public payable {
         nonce += 1;
         bytes32 _id = keccak256(abi.encodePacked(msg.sender, now, nonce));  //this can be done locally
 
@@ -78,7 +78,7 @@ contract HappyRedPacket{
         rp.claimed_number = 0;
         rp.ifrandom = _ifrandom;
         rp.hashes = _hashes;
-        rp.message = message;
+        rp.message = _message;
 
         uint total_value = msg.value;
         uint rand_value;
