@@ -148,13 +148,13 @@ contract HappyRedPacket{
         return (rp.remaining_value, rp.total_number, rp.claimed_number);
     }
 
-    function check_claimed_list(bytes32 id) public view returns (uint[] memory claimed_list){
+    function check_claimed_list(bytes32 id) public view returns (uint[] memory claimed_list, address[] memory claimer_addrs){
         RedPacket storage rp = redpackets[id];
         uint[] memory claimed_values = new uint[](rp.claimed_number);
         for (uint i = 0; i < rp.claimed_number; i++){
             claimed_values[i] = rp.claimers[rp.claimer_addrs[i]].claimed_value;
         }
-        return (claimed_values);
+        return (claimed_values, rp.claimer_addrs);
     }
 
     function refund(bytes32 id) public {
