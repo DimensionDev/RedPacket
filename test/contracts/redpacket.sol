@@ -90,7 +90,7 @@ contract HappyRedPacket{
         }
 
 
-        emit CreationSuccess(rp.id, rp.creator, rp.remaining_value);
+        emit CreationSuccess(rp.id, rp.creator, rp.remaining_value, now);
     }
 
     // An interactive way of generating randint
