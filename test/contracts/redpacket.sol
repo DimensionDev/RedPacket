@@ -121,7 +121,7 @@ contract HappyRedPacket{
     }
 
     // It takes the unhashed password and a hashed random seed generated from the user
-    function claim(bytes32 id, string memory password, address _recipient, bytes32 validation) public returns (uint claimed){
+    function claim(bytes32 id, string memory password, address _recipient, bytes32 validation, string memory _name) public returns (uint claimed){
         RedPacket storage rp = redpackets[id];
         address payable recipient = address(uint160(_recipient));
 
@@ -140,6 +140,7 @@ contract HappyRedPacket{
         rp.claimers[recipient].index = rp.claimed_number;
         rp.claimers[recipient].claimed_value = claimed_value;
         rp.claimers[recipient].claimed_time = now;
+        rp.claimers[recipient].name = _name;
         rp.claimed_number ++;
 
         // Transfer the red packet after state changing
@@ -157,13 +158,26 @@ contract HappyRedPacket{
     }
 
     // Returns 1. a list of claimed values 2. a list of claimed addresses accordingly
-    function check_claimed_list(bytes32 id) public view returns (uint[] memory claimed_list, address[] memory claimer_addrs){
+    function check_claimed_list(bytes32 id) public view returns (uint[] memory claimed_list, address[] memory claimer_addrs, string memory names){
         RedPacket storage rp = redpackets[id];
         uint[] memory claimed_values = new uint[](rp.claimed_number);
+        string memory claimer_names = "";
         for (uint i = 0; i < rp.claimed_number; i++){
             claimed_values[i] = rp.claimers[rp.claimer_addrs[i]].claimed_value;
+            // add claimer names
+            bytes memory _claimer_names = bytes(claimer_names);
+            bytes memory _name = bytes(rp.claimers[rp.claimer_addrs[i]].name);
+            string memory _temp = new string(_claimer_names.length + _name.length);
+            bytes memory temp = bytes(_temp);
+            for (uint i = 0; i < _claimer_names.length; i++){
+                temp[i] = _claimer_names[i];
+            }
+            for (uint i = _claimer_names.length; i < _claimer_names.length + _name.length; i++){
+                temp[i] = _name[i];
+            }
+            claimer_names = string(temp);
         }
-        return (claimed_values, rp.claimer_addrs);
+        return (claimed_values, rp.claimer_addrs, claimer_names);
     }
 
     function refund(bytes32 id) public {
