@@ -1,5 +1,5 @@
 RedPacket.json
 HappyRedPacket.json
 Migration.json
-node-modules/*
+node-modules/
 build/
