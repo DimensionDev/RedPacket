@@ -1,5 +1,5 @@
 pragma solidity >0.4.22;
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 contract HappyRedPacket {
 
@@ -72,7 +72,7 @@ contract HappyRedPacket {
     // _token_type: 0 - ETH 1 - ERC20 2 - ERC721
     function create_red_packet (bytes32[] memory _hashes, bool _ifrandom, uint _duration, 
                                 bytes32 _seed, string memory _message, string memory _name,
-                                uint _token_type, address _erc20_addr, uint _total_tokens) 
+                                uint _token_type, address _token_addr, uint _total_tokens) 
     public payable {
         nonce += 1;
         require(nonce > redpackets.length, "000 try again later");
@@ -81,9 +81,15 @@ contract HappyRedPacket {
                 "001 At least [number of red packets] tokens to your red packet.");
         require(_hashes.length > 0, "002 At least 1 person can claim the red packet.");
 
-        // although this can be done locally
-        bytes32 _id = keccak256(abi.encodePacked(msg.sender, now, nonce, uuid));
+        if (_token_type == 0)
+            require(msg.value >= _total_tokens, "008 You have to send enough tokens.");
+        else if (_token_type == 1) {
+            require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens,
+                    "009 You have to set enough allowance.");
+            transfer_token(_token_type, _token_addr, msg.sender, address(this), _total_tokens);
+        }
 
+        bytes32 _id = keccak256(abi.encodePacked(msg.sender, now, nonce, uuid, _seed));
         RedPacket storage rp = redpacket_by_id[_id];
         rp.id = _id;
         redpackets.push(rp.id);
@@ -124,7 +130,7 @@ contract HappyRedPacket {
 
     // Check the balance of the given token
     function transfer_token(uint token_type, address token_address, address sender_address,
-                            address recipient_address, uint amount) internal view {
+                            address recipient_address, uint amount) public payable{
         // ERC20
         if (token_type == 1) {
             require(IERC20(token_address).balanceOf(sender_address) >= amount, "Not enough");
@@ -185,18 +191,18 @@ contract HappyRedPacket {
     // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets
     function check_availability(bytes32 id) public view returns (uint balance, uint total, uint claimed) {
         RedPacket storage rp = redpacket_by_id[id];
-        return (rp.remaining_value, rp.total_number, rp.claimed_number);
+        return (rp.remaining_tokens, rp.total_number, rp.claimed_number);
     }
 
     // Returns 1. a list of claimed values 2. a list of claimed addresses accordingly
     function check_claimed_list(bytes32 id) 
     public view returns (uint[] memory claimed_list, address[] memory claimer_addrs) {
         RedPacket storage rp = redpacket_by_id[id];
-        uint[] memory claimed_values = new uint[](rp.claimed_number);
+        uint[] memory claimed_tokens = new uint[](rp.claimed_number);
         for (uint i = 0; i < rp.claimed_number; i++){
-            claimed_values[i] = rp.claimers[rp.claimer_addrs[i]].claimed_value;
+            claimed_tokens[i] = rp.claimers[rp.claimer_addrs[i]].claimed_tokens;
         }
-        return (claimed_values, rp.claimer_addrs);
+        return (claimed_tokens, rp.claimer_addrs);
     }
 
     function refund(bytes32 id) public {
@@ -204,8 +210,8 @@ contract HappyRedPacket {
         require(msg.sender == rp.creator.addr, "008 Only the red packet creator can refund the money");
         require(rp.expiration_time < now, "009 Disallowed until the expiration time has passed");
 
-        emit RefundSuccess(rp.id, rp.remaining_value);
-        msg.sender.transfer(rp.remaining_value);
+        emit RefundSuccess(rp.id, rp.remaining_tokens);
+        msg.sender.transfer(rp.remaining_tokens);
     }
 
     // One cannot send tokens to this contract after constructor anymore
