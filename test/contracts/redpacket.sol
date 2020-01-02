@@ -1,4 +1,5 @@
 pragma solidity >0.4.22;
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 contract HappyRedPacket {
 
@@ -119,6 +120,16 @@ contract HappyRedPacket {
         // Last gets left
         rp.tokens[rp.tokens.length-1] += total_tokens;
         emit CreationSuccess(rp.remaining_tokens, rp.id, rp.creator.addr, now);
+    }
+
+    // Check the balance of the given token
+    function transfer_token(uint token_type, address token_address, address sender_address,
+                            address recipient_address, uint amount) internal view {
+        // ERC20
+        if (token_type == 1) {
+            require(IERC20(token_address).balanceOf(sender_address) >= amount, "Not enough");
+            IERC20(token_address).transferFrom(sender_address, recipient_address, amount);
+        }
     }
 
     // An interactive way of generating randint
