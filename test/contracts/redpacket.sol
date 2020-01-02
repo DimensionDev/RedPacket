@@ -7,13 +7,15 @@ contract HappyRedPacket {
         bytes32 id;
         bool ifrandom;
         uint[] tokens;
+        uint token_type;
         Creator creator;
         bytes32[] hashes;
         uint total_number;
         string creator_name;
         uint claimed_number;
-        uint remaining_tokens;
         uint expiration_time;
+        uint remaining_tokens;
+        address token_address;
         string claimed_list_str;
         address[] claimer_addrs;
         mapping(address => Claimer) claimers;
@@ -36,13 +38,15 @@ contract HappyRedPacket {
         uint total,
         bytes32 id,
         address creator,
-        uint creation_time
+        uint creation_time,
+        address token_address
     );
 
     event ClaimSuccess(
         bytes32 id,
         address claimer,
-        uint claimed_value
+        uint claimed_value,
+        address token_address
     );
 
     event Failure(
@@ -94,6 +98,9 @@ contract HappyRedPacket {
         rp.id = _id;
         redpackets.push(rp.id);
 
+        rp.token_type = _token_type;
+        rp.token_address = _token_addr;
+
         rp.total_number = _hashes.length;
         rp.remaining_tokens = _total_tokens;
 
@@ -112,20 +119,26 @@ contract HappyRedPacket {
         uint rand_tokens;
         uint total_tokens = rp.remaining_tokens;
         uint MIN_AMOUNT = 1;
-        uint MAX_AMOUNT = total_tokens / rp.total_number;
+        uint MAX_AMOUNT = total_tokens / rp.total_number * 2;
         for (uint i = 0; i < rp.total_number; i++){
-            if (rp.ifrandom)
+            if (rp.ifrandom){
                 rand_tokens = random(rp.id, nonce+i) % total_tokens;
-            if (rand_tokens < MIN_AMOUNT)
-                rand_tokens = 1;
-            else if (rand_tokens > MAX_AMOUNT)
-                rand_tokens = MAX_AMOUNT;
-            rp.tokens.push(rand_tokens);
-            total_tokens -= rand_tokens;
+                if (rand_tokens < MIN_AMOUNT) {
+                    rand_tokens = 1;
+                }
+                else if (rand_tokens > MAX_AMOUNT) {
+                    rand_tokens = MAX_AMOUNT;
+                }
+                rp.tokens.push(rand_tokens);
+                total_tokens -= rand_tokens;
+            }
+            else {
+                rp.tokens.push(MAX_AMOUNT / 2);
+            }
         }
         // Last gets left
         rp.tokens[rp.tokens.length-1] += total_tokens;
-        emit CreationSuccess(rp.remaining_tokens, rp.id, rp.creator.addr, now);
+        emit CreationSuccess(rp.remaining_tokens, rp.id, rp.creator.addr, now, rp.token_address);
     }
 
     // Check the balance of the given token
@@ -134,6 +147,7 @@ contract HappyRedPacket {
         // ERC20
         if (token_type == 1) {
             require(IERC20(token_address).balanceOf(sender_address) >= amount, "Not enough");
+            IERC20(token_address).approve(recipient_address, amount);
             IERC20(token_address).transferFrom(sender_address, recipient_address, amount);
         }
     }
@@ -173,7 +187,13 @@ contract HappyRedPacket {
         // Store claimer info
         rp.claimer_addrs.push(recipient);
         // Claimer memory claimer = claimers[msg.sender];
-        uint claimed_tokens = rp.tokens[rp.claimed_number];
+        uint claimed_tokens;
+        if (rp.ifrandom == true) {
+            claimed_tokens = rp.tokens[rp.claimed_number];
+        }
+        else {
+            claimed_tokens = rp.tokens[0];
+        }
         rp.remaining_tokens -= claimed_tokens;
         rp.claimers[recipient].index = rp.claimed_number;
         rp.claimers[recipient].claimed_tokens = claimed_tokens;
@@ -181,17 +201,24 @@ contract HappyRedPacket {
         rp.claimed_number ++;
 
         // Transfer the red packet after state changing
-        recipient.transfer(claimed_tokens);
+        if (rp.token_type == 0) {
+            recipient.transfer(claimed_tokens);
+        }
+        else if (rp.token_type == 1) {
+            transfer_token(rp.token_type, rp.token_address, address(this),
+                            recipient, claimed_tokens);
+        }
 
         // Claim success event
-        emit ClaimSuccess(rp.id, recipient, claimed_tokens);
+        emit ClaimSuccess(rp.id, recipient, claimed_tokens, rp.token_address);
         return claimed_tokens;
     }
 
     // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets
-    function check_availability(bytes32 id) public view returns (uint balance, uint total, uint claimed) {
+    function check_availability(bytes32 id) public view returns (address token_address, uint balance, 
+                                                                    uint total, uint claimed) {
         RedPacket storage rp = redpacket_by_id[id];
-        return (rp.remaining_tokens, rp.total_number, rp.claimed_number);
+        return (rp.token_address, rp.remaining_tokens, rp.total_number, rp.claimed_number);
     }
 
     // Returns 1. a list of claimed values 2. a list of claimed addresses accordingly
