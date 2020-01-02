@@ -56,6 +56,7 @@ contract HappyRedPacket {
     );
     event RefundSuccess(
         bytes32 id,
+        address token_address,
         uint remaining_balance
     );
 
@@ -237,8 +238,14 @@ contract HappyRedPacket {
         require(msg.sender == rp.creator.addr, "008 Only the red packet creator can refund the money");
         require(rp.expiration_time < now, "009 Disallowed until the expiration time has passed");
 
-        emit RefundSuccess(rp.id, rp.remaining_tokens);
-        msg.sender.transfer(rp.remaining_tokens);
+        emit RefundSuccess(rp.id, rp.token_address, rp.remaining_tokens);
+        if (rp.token_type == 0) {
+            msg.sender.transfer(rp.remaining_tokens);
+        }
+        else if (rp.token_type == 1) {
+            transfer_token(rp.token_type, rp.token_address, address(this),
+                            msg.sender, rp.remaining_tokens);
+        }
     }
 
     // One cannot send tokens to this contract after constructor anymore
