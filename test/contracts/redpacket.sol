@@ -29,7 +29,7 @@ contract HappyRedPacket {
         uint index;
         string name;
         uint claimed_time;
-        uint claimed_value;
+        uint claimed_tokens;
     }
 
     event CreationSuccess(
@@ -160,26 +160,26 @@ contract HappyRedPacket {
         // Unsuccessful
         require (rp.expiration_time > now, "003 Expired.");
         require (rp.claimed_number < rp.total_number, "004 Out of Stock.");
-        require (rp.claimers[recipient].claimed_value == 0, "005 Already Claimed");
+        require (rp.claimers[recipient].claimed_tokens == 0, "005 Already Claimed");
         require (keccak256(bytes(password)) == rp.hashes[rp.claimed_number], "006 Wrong Password.");
         require (validation == keccak256(toBytes(msg.sender)), "007 Validation Failed");
 
         // Store claimer info
         rp.claimer_addrs.push(recipient);
         // Claimer memory claimer = claimers[msg.sender];
-        uint claimed_value = rp.values[rp.claimed_number];
-        rp.remaining_value -= claimed_value;
+        uint claimed_tokens = rp.tokens[rp.claimed_number];
+        rp.remaining_tokens -= claimed_tokens;
         rp.claimers[recipient].index = rp.claimed_number;
-        rp.claimers[recipient].claimed_value = claimed_value;
+        rp.claimers[recipient].claimed_tokens = claimed_tokens;
         rp.claimers[recipient].claimed_time = now;
         rp.claimed_number ++;
 
         // Transfer the red packet after state changing
-        recipient.transfer(claimed_value);
+        recipient.transfer(claimed_tokens);
 
         // Claim success event
-        emit ClaimSuccess(rp.id, recipient, claimed_value);
-        return claimed_value;
+        emit ClaimSuccess(rp.id, recipient, claimed_tokens);
+        return claimed_tokens;
     }
 
     // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets
