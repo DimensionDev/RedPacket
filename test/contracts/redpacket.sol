@@ -130,12 +130,12 @@ contract HappyRedPacket {
                 else if (rand_tokens > MAX_AMOUNT) {
                     rand_tokens = MAX_AMOUNT;
                 }
-                rp.tokens.push(rand_tokens);
-                total_tokens -= rand_tokens;
             }
             else {
-                rp.tokens.push(MAX_AMOUNT / 2);
+                rand_tokens =  MAX_AMOUNT / 2;
             }
+            rp.tokens.push(rand_tokens);
+            total_tokens -= rand_tokens;
         }
         // Last gets left
         rp.tokens[rp.tokens.length-1] += total_tokens;
@@ -147,7 +147,7 @@ contract HappyRedPacket {
                             address recipient_address, uint amount) public payable{
         // ERC20
         if (token_type == 1) {
-            require(IERC20(token_address).balanceOf(sender_address) >= amount, "Not enough");
+            require(IERC20(token_address).balanceOf(sender_address) >= amount, "010 Not enough.");
             IERC20(token_address).approve(recipient_address, amount);
             IERC20(token_address).transferFrom(sender_address, recipient_address, amount);
         }
@@ -217,9 +217,9 @@ contract HappyRedPacket {
 
     // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets
     function check_availability(bytes32 id) public view returns (address token_address, uint balance, 
-                                                                    uint total, uint claimed) {
+                                                                uint total, uint claimed, bool expired) {
         RedPacket storage rp = redpacket_by_id[id];
-        return (rp.token_address, rp.remaining_tokens, rp.total_number, rp.claimed_number);
+        return (rp.token_address, rp.remaining_tokens, rp.total_number, rp.claimed_number, now > rp.expiration_time);
     }
 
     // Returns 1. a list of claimed values 2. a list of claimed addresses accordingly
