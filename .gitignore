@@ -1,4 +1,5 @@
 RedPacket.json
 HappyRedPacket.json
 Migrations.json
-test/build/
+node_modules/*
+build/contracts/*
