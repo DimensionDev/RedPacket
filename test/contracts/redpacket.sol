@@ -5,20 +5,22 @@ contract HappyRedPacket {
 
     struct RedPacket {
         bytes32 id;
+        bytes32 hash;
         bool ifrandom;
-        uint[] tokens;
+        //uint[] tokens;
         uint token_type;
+        uint MAX_AMOUNT;
         Creator creator;
-        bytes32[] hashes;
-        uint total_number;
-        string creator_name;
-        uint claimed_number;
+        uint8 total_number;
+        //string creator_name;
+        uint8 claimed_number;
         uint expiration_time;
         uint remaining_tokens;
         address token_address;
-        string claimed_list_str;
+        //string claimed_list_str;
         address[] claimer_addrs;
-        mapping(address => Claimer) claimers;
+        //mapping(address => Claimer) claimers;
+        mapping(address => uint) claimed_amount;
     }
 
     struct Creator {
@@ -27,12 +29,14 @@ contract HappyRedPacket {
         string message;
     }
 
+    /*
     struct Claimer {
-        uint index;
-        string name;
-        uint claimed_time;
+        //uint8 index;
+        //string name;
+        //uint8 claimed_time;
         uint claimed_tokens;
     }
+    */
 
     event CreationSuccess(
         uint total,
@@ -64,7 +68,7 @@ contract HappyRedPacket {
     address contract_creator;
     mapping(bytes32 => RedPacket) redpacket_by_id;
     bytes32 [] redpackets;
-    string constant magic = "Former National Basketball Association (NBA) Commissioner David Stern has died.";
+    string constant private magic = "Former NBA Commissioner David St"; // 32 bytes
     bytes32 private uuid;
     // uint constant min_amount = 135000 * 15 * 10**9; // 0.002025 ETH
 
@@ -75,22 +79,22 @@ contract HappyRedPacket {
 
     // Inits a red packet instance
     // _token_type: 0 - ETH 1 - ERC20 2 - ERC721
-    function create_red_packet (bytes32[] memory _hashes, bool _ifrandom, uint _duration, 
+    function create_red_packet (bytes32 _hash, uint8 _number, bool _ifrandom, uint _duration, 
                                 bytes32 _seed, string memory _message, string memory _name,
                                 uint _token_type, address _token_addr, uint _total_tokens) 
     public payable {
         nonce += 1;
-        require(nonce > redpackets.length, "000 try again later");
+        require(nonce > redpackets.length, "000");
 
-        require(_total_tokens >= _hashes.length,
-                "001 At least [number of red packets] tokens to your red packet.");
-        require(_hashes.length > 0, "002 At least 1 person can claim the red packet.");
+        require(_total_tokens >= _number,
+                "001");
+        require(_number > 0, "002");
 
         if (_token_type == 0)
-            require(msg.value >= _total_tokens, "008 You have to send enough tokens.");
+            require(msg.value >= _total_tokens, "008");
         else if (_token_type == 1) {
             require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens,
-                    "009 You have to set enough allowance.");
+                    "009");
             transfer_token(_token_type, _token_addr, msg.sender, address(this), _total_tokens);
         }
 
@@ -102,7 +106,7 @@ contract HappyRedPacket {
         rp.token_type = _token_type;
         rp.token_address = _token_addr;
 
-        rp.total_number = _hashes.length;
+        rp.total_number = _number;
         rp.remaining_tokens = _total_tokens;
 
         rp.creator.addr = msg.sender;
@@ -115,30 +119,9 @@ contract HappyRedPacket {
 
         rp.claimed_number = 0;
         rp.ifrandom = _ifrandom;
-        rp.hashes = _hashes;
+        rp.hash = _hash;
+        rp.MAX_AMOUNT = _total_tokens / rp.total_number * 2;
 
-        uint rand_tokens;
-        uint total_tokens = rp.remaining_tokens;
-        uint MIN_AMOUNT = 1;
-        uint MAX_AMOUNT = total_tokens / rp.total_number * 2;
-        for (uint i = 0; i < rp.total_number; i++){
-            if (rp.ifrandom){
-                rand_tokens = random(rp.id, nonce+i) % total_tokens;
-                if (rand_tokens < MIN_AMOUNT) {
-                    rand_tokens = 1;
-                }
-                else if (rand_tokens > MAX_AMOUNT) {
-                    rand_tokens = MAX_AMOUNT;
-                }
-            }
-            else {
-                rand_tokens =  MAX_AMOUNT / 2;
-            }
-            rp.tokens.push(rand_tokens);
-            total_tokens -= rand_tokens;
-        }
-        // Last gets left
-        rp.tokens[rp.tokens.length-1] += total_tokens;
         emit CreationSuccess(rp.remaining_tokens, rp.id, rp.creator.addr, now, rp.token_address);
     }
 
@@ -147,7 +130,7 @@ contract HappyRedPacket {
                             address recipient_address, uint amount) public payable{
         // ERC20
         if (token_type == 1) {
-            require(IERC20(token_address).balanceOf(sender_address) >= amount, "010 Not enough.");
+            require(IERC20(token_address).balanceOf(sender_address) >= amount, "010");
             IERC20(token_address).approve(recipient_address, amount);
             IERC20(token_address).transferFrom(sender_address, recipient_address, amount);
         }
@@ -179,26 +162,41 @@ contract HappyRedPacket {
         address payable recipient = address(uint160(_recipient));
 
         // Unsuccessful
-        require (rp.expiration_time > now, "003 Expired.");
-        require (rp.claimed_number < rp.total_number, "004 Out of Stock.");
-        require (rp.claimers[recipient].claimed_tokens == 0, "005 Already Claimed");
-        require (keccak256(bytes(password)) == rp.hashes[rp.claimed_number], "006 Wrong Password.");
-        require (validation == keccak256(toBytes(msg.sender)), "007 Validation Failed");
+        require (rp.expiration_time > now, "003");
+        require (rp.claimed_number < rp.total_number, "004");
+        require (rp.claimed_amount[recipient] == 0, "005");
+        require (keccak256(bytes(password)) == rp.hash, "006");
+        require (validation == keccak256(toBytes(msg.sender)), "007");
 
         // Store claimer info
         rp.claimer_addrs.push(recipient);
         // Claimer memory claimer = claimers[msg.sender];
         uint claimed_tokens;
         if (rp.ifrandom == true) {
-            claimed_tokens = rp.tokens[rp.claimed_number];
+            if (rp.total_number - rp.claimed_number == 1){
+                claimed_tokens = rp.remaining_tokens;
+            }
+            else{
+                claimed_tokens = random(uuid, nonce) % rp.MAX_AMOUNT;
+                if (claimed_tokens == 0){
+                    claimed_tokens = 1;
+                }
+            }
         }
         else {
-            claimed_tokens = rp.tokens[0];
+            if (rp.total_number - rp.claimed_number == 1){
+                claimed_tokens = rp.remaining_tokens;
+            }
+            else{
+                claimed_tokens = rp.remaining_tokens / (rp.total_number - rp.claimed_number);
+            }
         }
         rp.remaining_tokens -= claimed_tokens;
-        rp.claimers[recipient].index = rp.claimed_number;
-        rp.claimers[recipient].claimed_tokens = claimed_tokens;
-        rp.claimers[recipient].claimed_time = now;
+        rp.claimed_amount[recipient] = claimed_tokens;
+
+        //rp.claimers[recipient].index = rp.claimed_number;
+        //rp.claimers[recipient].claimed_tokens = claimed_tokens;
+        //rp.claimers[recipient].claimed_time = now;
         rp.claimed_number ++;
 
         // Transfer the red packet after state changing
@@ -222,23 +220,24 @@ contract HappyRedPacket {
         return (rp.token_address, rp.remaining_tokens, rp.total_number, rp.claimed_number, now > rp.expiration_time);
     }
 
+    /*
     // Returns 1. a list of claimed values 2. a list of claimed addresses accordingly
     function check_claimed_list(bytes32 id) 
     public view returns (uint[] memory claimed_list, address[] memory claimer_addrs) {
         RedPacket storage rp = redpacket_by_id[id];
         uint[] memory claimed_tokens = new uint[](rp.claimed_number);
-        for (uint i = 0; i < rp.claimed_number; i++){
+        for (uint8 i = 0; i < rp.claimed_number; i++){
             claimed_tokens[i] = rp.claimers[rp.claimer_addrs[i]].claimed_tokens;
         }
         return (claimed_tokens, rp.claimer_addrs);
     }
+    */
 
     function refund(bytes32 id) public {
         RedPacket storage rp = redpacket_by_id[id];
-        require(msg.sender == rp.creator.addr, "008 Only the red packet creator can refund the money");
-        require(rp.expiration_time < now, "009 Disallowed until the expiration time has passed");
+        require(msg.sender == rp.creator.addr, "011");
+        require(rp.expiration_time < now, "012");
 
-        emit RefundSuccess(rp.id, rp.token_address, rp.remaining_tokens);
         if (rp.token_type == 0) {
             msg.sender.transfer(rp.remaining_tokens);
         }
@@ -246,6 +245,7 @@ contract HappyRedPacket {
             transfer_token(rp.token_type, rp.token_address, address(this),
                             msg.sender, rp.remaining_tokens);
         }
+        emit RefundSuccess(rp.id, rp.token_address, rp.remaining_tokens);
     }
 
     // One cannot send tokens to this contract after constructor anymore
