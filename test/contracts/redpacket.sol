@@ -131,7 +131,7 @@ contract HappyRedPacket {
         // ERC20
         if (token_type == 1) {
             require(IERC20(token_address).balanceOf(sender_address) >= amount, "010");
-            IERC20(token_address).approve(recipient_address, amount);
+            //IERC20(token_address).approve(recipient_address, amount);
             IERC20(token_address).transferFrom(sender_address, recipient_address, amount);
         }
     }
@@ -242,6 +242,7 @@ contract HappyRedPacket {
             msg.sender.transfer(rp.remaining_tokens);
         }
         else if (rp.token_type == 1) {
+            IERC20(rp.token_address).approve(msg.sender, rp.remaining_tokens);
             transfer_token(rp.token_type, rp.token_address, address(this),
                             msg.sender, rp.remaining_tokens);
         }
