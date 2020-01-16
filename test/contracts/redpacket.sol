@@ -20,7 +20,7 @@ contract HappyRedPacket {
         //string claimed_list_str;
         address[] claimer_addrs;
         //mapping(address => Claimer) claimers;
-        mapping(address => uint) claimed_amount;
+        mapping(address => bool) claimed;
     }
 
     struct Creator {
@@ -164,7 +164,7 @@ contract HappyRedPacket {
         // Unsuccessful
         require (rp.expiration_time > now, "003");
         require (rp.claimed_number < rp.total_number, "004");
-        require (rp.claimed_amount[recipient] == 0, "005");
+        require (rp.claimed[recipient] == false, "005");
         require (keccak256(bytes(password)) == rp.hash, "006");
         require (validation == keccak256(toBytes(msg.sender)), "007");
 
@@ -192,7 +192,7 @@ contract HappyRedPacket {
             }
         }
         rp.remaining_tokens -= claimed_tokens;
-        rp.claimed_amount[recipient] = claimed_tokens;
+        rp.claimed[recipient] = true;
 
         //rp.claimers[recipient].index = rp.claimed_number;
         //rp.claimers[recipient].claimed_tokens = claimed_tokens;
