@@ -1,6 +1,8 @@
 {
     "dependencies": {},
     "devDependencies": {
+        "@truffle/hdwallet-provider": "^1.0.29",
+        "dotenv": "^8.2.0",
         "openzeppelin-solidity": "^2.4.0",
         "solhint": "^2.3.0"
     }
