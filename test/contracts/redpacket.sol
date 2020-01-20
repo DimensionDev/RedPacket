@@ -1,5 +1,6 @@
 pragma solidity >0.4.22;
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract HappyRedPacket {
 
@@ -65,7 +66,7 @@ contract HappyRedPacket {
     );
 
     uint nonce;
-    address contract_creator;
+    address public contract_creator;
     mapping(bytes32 => RedPacket) redpacket_by_id;
     bytes32 [] redpackets;
     string constant private magic = "Former NBA Commissioner David St"; // 32 bytes
@@ -83,7 +84,7 @@ contract HappyRedPacket {
                                 bytes32 _seed, string memory _message, string memory _name,
                                 uint _token_type, address _token_addr, uint _total_tokens) 
     public payable {
-        nonce += 1;
+        nonce ++;
         require(nonce > redpackets.length, "000");
 
         require(_total_tokens >= _number,
@@ -115,12 +116,12 @@ contract HappyRedPacket {
 
         if (_duration == 0)
             _duration = 86400; // 24hours
-        rp.expiration_time = now + _duration;
+        rp.expiration_time = SafeMath.add(now, _duration);
 
         rp.claimed_number = 0;
         rp.ifrandom = _ifrandom;
         rp.hash = _hash;
-        rp.MAX_AMOUNT = _total_tokens / rp.total_number * 2;
+        rp.MAX_AMOUNT = SafeMath.mul(SafeMath.div(_total_tokens, rp.total_number), 2);
 
         emit CreationSuccess(rp.remaining_tokens, rp.id, rp.creator.addr, now, rp.token_address);
     }
@@ -131,7 +132,7 @@ contract HappyRedPacket {
         // ERC20
         if (token_type == 1) {
             require(IERC20(token_address).balanceOf(sender_address) >= amount, "010");
-            //IERC20(token_address).approve(recipient_address, amount);
+            IERC20(token_address).approve(recipient_address, amount);
             IERC20(token_address).transferFrom(sender_address, recipient_address, amount);
         }
     }
@@ -188,7 +189,7 @@ contract HappyRedPacket {
                 claimed_tokens = rp.remaining_tokens;
             }
             else{
-                claimed_tokens = rp.remaining_tokens / (rp.total_number - rp.claimed_number);
+                claimed_tokens = SafeMath.div(rp.remaining_tokens, (rp.total_number - rp.claimed_number));
             }
         }
         rp.remaining_tokens -= claimed_tokens;
