@@ -215,8 +215,8 @@ contract HappyRedPacket {
                             msg.sender, rp.remaining_tokens);
         }
 
-        rp.remaining_tokens = 0;
         emit RefundSuccess(rp.id, rp.token_address, rp.remaining_tokens);
+        rp.remaining_tokens = 0;
     }
 
     // One cannot send tokens to this contract after constructor anymore
