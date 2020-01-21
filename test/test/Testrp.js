@@ -51,6 +51,10 @@ contract("TestToken", accounts => {
         const claim_success_encode = "ClaimSuccess(%s,%s,%s,%s)";
         const claim_success_types = ['bytes32', 'address', 'uint256', 'address'];
 
+        // Check Availability
+        var returned = await redpacket.check_availability.call(rp_id);
+        assert.equal(returned.ifclaimed, false);
+
         // 1st
         const recipient1 = accounts[0];
         const validation1 = web3.utils.sha3(accounts[0]);
@@ -59,6 +63,10 @@ contract("TestToken", accounts => {
         const logs = await web3.eth.getPastLogs({address: redpacket.address, topic: [web3.utils.sha3(claim_success_encode)]});
         console.log(web3.eth.abi.decodeParameters(claim_success_types, logs[0].data));
 
+        // Check Availability
+        returned = await redpacket.check_availability.call(rp_id);
+        assert.equal(returned.ifclaimed, true);
+
         // 2nd
         const recipient2 = accounts[1];
         const validation2 = web3.utils.sha3(accounts[1]);
@@ -66,6 +74,10 @@ contract("TestToken", accounts => {
         const claim_receipt2 = await redpacket.claim.sendTransaction(rp_id, password, recipient2, validation2, {'from':recipient2});
         const logs2 = await web3.eth.getPastLogs({address: redpacket.address, topic: [web3.utils.sha3(claim_success_encode)]});
         console.log(web3.eth.abi.decodeParameters(claim_success_types, logs2[0].data));
+
+        // Check Availability
+        returned = await redpacket.check_availability.call(rp_id, {'from':accounts[1]});
+        assert.equal(returned.ifclaimed, true);
 
         // Check balance
         const balance1 = await testtoken.balanceOf.call(accounts[0], {'from':accounts[0]});
@@ -76,6 +88,7 @@ contract("TestToken", accounts => {
         assert.isAbove(Number(balance1), 0);
         assert.isAbove(Number(balance2), 0);
         assert.equal(Number(balance3), 0);
+
     });
 
 });

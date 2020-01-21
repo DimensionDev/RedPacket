@@ -8,19 +8,15 @@ contract HappyRedPacket {
         bytes32 id;
         bytes32 hash;
         bool ifrandom;
-        //uint[] tokens;
         uint token_type;
         uint MAX_AMOUNT;
         Creator creator;
         uint8 total_number;
-        //string creator_name;
         uint8 claimed_number;
         uint expiration_time;
         uint remaining_tokens;
         address token_address;
-        //string claimed_list_str;
         address[] claimer_addrs;
-        //mapping(address => Claimer) claimers;
         mapping(address => bool) claimed;
     }
 
@@ -29,15 +25,6 @@ contract HappyRedPacket {
         address addr;
         string message;
     }
-
-    /*
-    struct Claimer {
-        //uint8 index;
-        //string name;
-        //uint8 claimed_time;
-        uint claimed_tokens;
-    }
-    */
 
     event CreationSuccess(
         uint total,
@@ -54,11 +41,6 @@ contract HappyRedPacket {
         address token_address
     );
 
-    event Failure(
-        bytes32 id,
-        bytes32 hash1,
-        bytes32 hash2
-    );
     event RefundSuccess(
         bytes32 id,
         address token_address,
@@ -71,7 +53,6 @@ contract HappyRedPacket {
     bytes32 [] redpackets;
     string constant private magic = "Former NBA Commissioner David St"; // 32 bytes
     bytes32 private uuid;
-    // uint constant min_amount = 135000 * 15 * 10**9; // 0.002025 ETH
 
     constructor() public {
         contract_creator = msg.sender;
@@ -86,16 +67,14 @@ contract HappyRedPacket {
     public payable {
         nonce ++;
         require(nonce > redpackets.length, "000");
-
-        require(_total_tokens >= _number,
-                "001");
+        require(_total_tokens >= _number, "001");
         require(_number > 0, "002");
 
-        if (_token_type == 0)
+        if (_token_type == 0) {
             require(msg.value >= _total_tokens, "008");
+        }        
         else if (_token_type == 1) {
-            require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens,
-                    "009");
+            require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "009");
             transfer_token(_token_type, _token_addr, msg.sender, address(this), _total_tokens);
         }
 
@@ -136,10 +115,8 @@ contract HappyRedPacket {
             IERC20(token_address).transferFrom(sender_address, recipient_address, amount);
         }
     }
-
-    // An interactive way of generating randint
-    // This should be only used in claim()
-    // Pending on finding better ways
+    
+    // A boring wrapper
     function random(bytes32 seed, uint nonce_rand) internal view returns (uint rand) {
         return uint(keccak256(abi.encodePacked(nonce_rand, msg.sender, seed, now)));
     }
@@ -171,7 +148,6 @@ contract HappyRedPacket {
 
         // Store claimer info
         rp.claimer_addrs.push(recipient);
-        // Claimer memory claimer = claimers[msg.sender];
         uint claimed_tokens;
         if (rp.ifrandom == true) {
             if (rp.total_number - rp.claimed_number == 1){
@@ -195,9 +171,6 @@ contract HappyRedPacket {
         rp.remaining_tokens -= claimed_tokens;
         rp.claimed[recipient] = true;
 
-        //rp.claimers[recipient].index = rp.claimed_number;
-        //rp.claimers[recipient].claimed_tokens = claimed_tokens;
-        //rp.claimers[recipient].claimed_time = now;
         rp.claimed_number ++;
 
         // Transfer the red packet after state changing
@@ -215,24 +188,18 @@ contract HappyRedPacket {
     }
 
     // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets
-    function check_availability(bytes32 id) public view returns (address token_address, uint balance, 
-                                                                uint total, uint claimed, bool expired) {
+    function check_availability(bytes32 id) public view returns (address token_address, uint balance, uint total, 
+                                                                    uint claimed, bool expired, bool ifclaimed) {
         RedPacket storage rp = redpacket_by_id[id];
-        return (rp.token_address, rp.remaining_tokens, rp.total_number, rp.claimed_number, now > rp.expiration_time);
+        return (rp.token_address, rp.remaining_tokens, rp.total_number, 
+                rp.claimed_number, now > rp.expiration_time, rp.claimed[msg.sender]);
     }
 
-    /*
-    // Returns 1. a list of claimed values 2. a list of claimed addresses accordingly
-    function check_claimed_list(bytes32 id) 
-    public view returns (uint[] memory claimed_list, address[] memory claimer_addrs) {
+    // Returns a list of claimed addresses accordingly
+    function check_claimed_list(bytes32 id) public view returns (address[] memory claimer_addrs) {
         RedPacket storage rp = redpacket_by_id[id];
-        uint[] memory claimed_tokens = new uint[](rp.claimed_number);
-        for (uint8 i = 0; i < rp.claimed_number; i++){
-            claimed_tokens[i] = rp.claimers[rp.claimer_addrs[i]].claimed_tokens;
-        }
-        return (claimed_tokens, rp.claimer_addrs);
+        return (rp.claimer_addrs);
     }
-    */
 
     function refund(bytes32 id) public {
         RedPacket storage rp = redpacket_by_id[id];
@@ -247,6 +214,8 @@ contract HappyRedPacket {
             transfer_token(rp.token_type, rp.token_address, address(this),
                             msg.sender, rp.remaining_tokens);
         }
+
+        rp.remaining_tokens = 0;
         emit RefundSuccess(rp.id, rp.token_address, rp.remaining_tokens);
     }
 
