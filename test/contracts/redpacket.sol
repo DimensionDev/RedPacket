@@ -155,8 +155,11 @@ contract HappyRedPacket {
             }
             else{
                 claimed_tokens = random(uuid, nonce) % rp.MAX_AMOUNT;
-                if (claimed_tokens == 0){
+                if (claimed_tokens == 0) {
                     claimed_tokens = 1;
+                }
+                else if (claimed_tokens == rp.remaining_tokens) {
+                    claimed_tokens -= (rp.total_number - rp.claimed_number - 1);
                 }
             }
         }
@@ -172,6 +175,7 @@ contract HappyRedPacket {
         rp.claimed[recipient] = true;
 
         rp.claimed_number ++;
+        rp.MAX_AMOUNT = SafeMath.mul(SafeMath.div(rp.remaining_tokens, rp.claimed_number), 2);
 
         // Transfer the red packet after state changing
         if (rp.token_type == 0) {

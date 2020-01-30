@@ -29,7 +29,7 @@ contract("TestToken", accounts => {
         const seed = web3.utils.sha3("lajsdklfjaskldfhaikl");
         const token_type = 1;
         const token_address = testtoken.address;
-        const total_tokens = 101;
+        const total_tokens = 3;
 
         const creation_success_encode = 'CreationSuccess(uint256,bytes32,address,uint256,address)';
         const creation_success_types = ['uint256', 'bytes32', 'address', 'uint256', 'address'];
