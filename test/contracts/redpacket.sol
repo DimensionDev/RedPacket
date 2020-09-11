@@ -180,6 +180,7 @@ contract HappyRedPacket {
         for (uint i = index; i < array.length - 1; i++){
             array[i] = array[i + 1];
         }
+        array[array.length - 1] = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
         return array;
     }
 
@@ -315,9 +316,15 @@ contract HappyRedPacket {
         }
         else if (rp.token_type == 2) {
             // Todo 取回
-            IERC721(rp.token_address).approve(msg.sender, rp.remaining_tokens);
+            uint256[] _token_ids;
+            for (uint i = 0; i < rp.erc721_token_ids.length - 1; i++){
+                if (rp.erc721_token_ids[i] != 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF) {
+                    _token_ids.push();
+                }
+            }
+            // IERC721(rp.token_address).approve(msg.sender, rp.remaining_tokens);
             transfer_token(rp.token_type, rp.token_address, address(this),
-                            msg.sender, rp.remaining_tokens); 
+                            msg.sender, rp.remaining_tokens, _token_ids); 
         }
 
         emit RefundSuccess(rp.id, rp.token_address, rp.remaining_tokens);
