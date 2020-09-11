@@ -144,11 +144,6 @@ contract("Test721Token", accounts => {
         }
         const total_tokens = token_ids.length;
 
-        // console.log('---------')
-        // console.log('1234----')
-        // console.log(token_ids);
-        // console.log('---------')
-
         const creation_success_encode = 'CreationSuccess(uint256,bytes32,address,uint256,address,uint256[])';
         const creation_success_types = ['uint256', 'bytes32', 'address', 'uint256', 'address', 'uint256[]'];
 
@@ -156,7 +151,6 @@ contract("Test721Token", accounts => {
         const creation_receipt = await redpacket.create_red_packet
                                 .sendTransaction(hashes[0], number, true, duration, seed, msg,
                                                     name, token_type, token_address, total_tokens, token_ids);
-        // console.log(creation_receipt);
         const logs = await web3.eth.getPastLogs({address: redpacket.address, topics: [web3.utils.sha3(creation_success_encode)]});
         log = web3.eth.abi.decodeParameters(creation_success_types, logs[0].data);
         redpacket_id = log['1']
@@ -183,7 +177,6 @@ contract("Test721Token", accounts => {
 
         const claim_receipt = await redpacket.claim.sendTransaction(rp_id, password, recipient1, validation1, {'from': recipient1});
         const logs = await web3.eth.getPastLogs({address: redpacket.address, topic: [web3.utils.sha3(claim_success_encode)]});
-        console.log(await redpacket.check_erc721_token_ids.call(rp_id));
 
 
         // Check Availability
@@ -196,7 +189,6 @@ contract("Test721Token", accounts => {
 
         const claim_receipt2 = await redpacket.claim.sendTransaction(rp_id, password, recipient2, validation2, {'from':recipient2});
         const logs2 = await web3.eth.getPastLogs({address: redpacket.address, topic: [web3.utils.sha3(claim_success_encode)]});
-        console.log(await redpacket.check_erc721_token_ids.call(rp_id));
 
         // Check Availability
         returned = await redpacket.check_availability.call(rp_id, {'from': recipient2});
@@ -208,7 +200,6 @@ contract("Test721Token", accounts => {
 
         const claim_receipt3 = await redpacket.claim.sendTransaction(rp_id, password, recipient3, validation3, {'from':recipient3});
         const logs3 = await web3.eth.getPastLogs({address: redpacket.address, topic: [web3.utils.sha3(claim_success_encode)]});
-        console.log(await redpacket.check_erc721_token_ids.call(rp_id));
         // Check Availability
         returned = await redpacket.check_availability.call(rp_id, {'from': recipient3});
         assert.equal(returned.ifclaimed, true);

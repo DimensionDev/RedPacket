@@ -315,7 +315,6 @@ contract HappyRedPacket {
                             msg.sender, rp.remaining_tokens);
         }
         else if (rp.token_type == 2) {
-            // Todo 取回
             uint256[] _token_ids;
             for (uint i = 0; i < rp.erc721_token_ids.length - 1; i++){
                 if (rp.erc721_token_ids[i] != 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF) {
