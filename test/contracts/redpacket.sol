@@ -315,10 +315,10 @@ contract HappyRedPacket {
                             msg.sender, rp.remaining_tokens);
         }
         else if (rp.token_type == 2) {
-            uint256[] _token_ids;
+            uint256[] memory _token_ids;
             for (uint i = 0; i < rp.erc721_token_ids.length - 1; i++){
                 if (rp.erc721_token_ids[i] != 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF) {
-                    _token_ids.push();
+                    _token_ids[_token_ids.length] = rp.erc721_token_ids[i];
                 }
             }
             // IERC721(rp.token_address).approve(msg.sender, rp.remaining_tokens);
