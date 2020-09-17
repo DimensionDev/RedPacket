@@ -42,7 +42,7 @@ contract HappyRedPacket {
         address claimer,
         uint claimed_value,
         address token_address,
-        uint256 token_id
+        uint256[] token_id
     );
 
     event RefundSuccess(
@@ -90,7 +90,8 @@ contract HappyRedPacket {
         }        
         else if (_token_type == 1) {
             require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "009");
-            transfer_token(_token_type, _token_addr, msg.sender, address(this), _total_tokens);
+            uint256 [] memory token_ids_holder = new uint256[](0); 
+            transfer_token(_token_type, _token_addr, msg.sender, address(this), _total_tokens, token_ids_holder);
         }
         else if (_token_type == 2) {
             require(IERC721(_token_addr).isApprovedForAll(msg.sender, address(this)), "011");
@@ -127,7 +128,7 @@ contract HappyRedPacket {
 
     // Check the balance of the given token
     function transfer_token(uint token_type, address token_address, address sender_address,
-                            address recipient_address, uint amount) public payable{
+                            address recipient_address, uint amount, uint256 [] memory erc721_token_ids) public payable{
         // ERC20
         if (token_type == 1) {
             require(IERC20(token_address).balanceOf(sender_address) >= amount, "010");
@@ -135,19 +136,7 @@ contract HappyRedPacket {
             IERC20(token_address).transferFrom(sender_address, recipient_address, amount);
         }
 
-    }
-
-    function transfer_token(uint token_type, address token_address, address sender_address,
-                            address recipient_address, uint amount, uint256 erc721_token_ids) public payable{
-        if (token_type == 2) {
-            require(IERC721(token_address).balanceOf(sender_address) >= amount, "012");
-            IERC721(token_address).transferFrom(sender_address, recipient_address, erc721_token_ids);
-        }
-    }
-
-    function transfer_token(uint token_type, address token_address, address sender_address,
-                            address recipient_address, uint amount, uint256[] memory erc721_token_ids) public payable{
-        if (token_type == 2) {
+        else if (token_type == 2) {
             require(IERC721(token_address).balanceOf(sender_address) >= amount, "012");
             for (uint i=0; i < amount; i++) {
                 if (recipient_address == address(this)){
@@ -156,6 +145,7 @@ contract HappyRedPacket {
                 IERC721(token_address).transferFrom(sender_address, recipient_address, erc721_token_ids[i]);
             }
         }
+
     }
     
     // A boring wrapper
@@ -201,13 +191,13 @@ contract HappyRedPacket {
         // Store claimer info
         rp.claimer_addrs.push(recipient);
         uint claimed_tokens;
-        uint256 token_ids;
+        uint256 [] memory token_ids = new uint256[](1); //TODO: Optimize this behavior.
         // Todo get erc721 token id;
         if (rp.ifrandom == true) {
             if (rp.token_type == 2) {
                 uint token_id_index = random(uuid, nonce) % rp.remaining_tokens;
                 uint256[] memory _array = rp.erc721_token_ids;
-                token_ids = _array[token_id_index];
+                token_ids[0] = _array[token_id_index];
                 rp.erc721_token_ids = getTokenIdWithIndex(_array, token_id_index);
                 claimed_tokens = 1;
                 rp.remaining_tokens -= 1;
@@ -233,7 +223,7 @@ contract HappyRedPacket {
             if (rp.token_type == 2) {
                 // token_id_index = random(uuid, nonce) % rp.remaining_tokens;
                 uint256[] memory _array = rp.erc721_token_ids;
-                token_ids = rp.erc721_token_ids[0];
+                token_ids[0] = rp.erc721_token_ids[0];
                 rp.erc721_token_ids = getTokenIdWithIndex(_array, 0);
                 claimed_tokens = 1;
                 rp.remaining_tokens -= 1;
@@ -268,8 +258,9 @@ contract HappyRedPacket {
             recipient.transfer(claimed_tokens);
         }
         else if (rp.token_type == 1) {
+            uint256 [] memory token_ids_holder = new uint256[](0); 
             transfer_token(rp.token_type, rp.token_address, address(this),
-                            recipient, claimed_tokens);                            
+                            recipient, claimed_tokens, token_ids_holder);
         }
         else if (rp.token_type == 2) {
             transfer_token(rp.token_type, rp.token_address, address(this),
@@ -310,20 +301,21 @@ contract HappyRedPacket {
             msg.sender.transfer(rp.remaining_tokens);
         }
         else if (rp.token_type == 1) {
+            uint256[] memory token_ids_holder = new uint256[](0); 
             IERC20(rp.token_address).approve(msg.sender, rp.remaining_tokens);
             transfer_token(rp.token_type, rp.token_address, address(this),
-                            msg.sender, rp.remaining_tokens);
+                            msg.sender, rp.remaining_tokens, token_ids_holder);
         }
         else if (rp.token_type == 2) {
-            uint256[] memory _token_ids;
+            uint256[] memory token_ids;
             for (uint i = 0; i < rp.erc721_token_ids.length - 1; i++){
                 if (rp.erc721_token_ids[i] != 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF) {
-                    _token_ids[_token_ids.length] = rp.erc721_token_ids[i];
+                    token_ids[token_ids.length] = rp.erc721_token_ids[i];
                 }
             }
             // IERC721(rp.token_address).approve(msg.sender, rp.remaining_tokens);
             transfer_token(rp.token_type, rp.token_address, address(this),
-                            msg.sender, rp.remaining_tokens, _token_ids); 
+                            msg.sender, rp.remaining_tokens, token_ids); 
         }
 
         emit RefundSuccess(rp.id, rp.token_address, rp.remaining_tokens);
