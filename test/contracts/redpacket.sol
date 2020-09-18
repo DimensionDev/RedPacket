@@ -54,6 +54,7 @@ contract HappyRedPacket {
     uint nonce;
     address public contract_creator;
     mapping(bytes32 => RedPacket) redpacket_by_id;
+    mapping(address => bytes32[]) rpid_by_address;
     bytes32 [] redpackets;
     string constant private magic = "Former NBA Commissioner David St"; // 32 bytes
     bytes32 private uuid;
@@ -89,6 +90,7 @@ contract HappyRedPacket {
         }
 
         bytes32 _id = keccak256(abi.encodePacked(msg.sender, now, nonce, uuid, _seed));
+        rpid_by_address[msg.sender].push(_id);
         RedPacket storage rp = redpacket_by_id[_id];
         rp.id = _id;
         redpackets.push(rp.id);
@@ -268,6 +270,11 @@ contract HappyRedPacket {
         RedPacket storage rp = redpacket_by_id[id];
         return (rp.token_address, rp.remaining_tokens, rp.total_number, 
                 rp.claimed_number, now > rp.expiration_time, rp.claimed[msg.sender]);
+    }
+
+    // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets
+    function check_redpacket_history(address addr) public view returns (bytes32[] memory rpids) {
+        return rpid_by_address[addr];
     }
 
     // Returns a list of claimed addresses accordingly

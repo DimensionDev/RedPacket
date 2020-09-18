@@ -111,7 +111,44 @@ contract("TestToken", accounts => {
 
     });
 
+    it("Should return the redpacket id list of the given address", async () => {
+        var rp_list = await redpacket.check_redpacket_history.call(accounts[0]);
+        console.log(rp_list);
+    });
+    it("Should return another redpacket id", async () => {
+
+        const passwords = ["1", "2"];
+        const hashes = passwords.map(function (pass) {
+            return web3.utils.sha3(pass);
+        });
+        const name = "cache";
+        const msg = "hi";
+        const number = 3;
+        const duration = 1200;
+        const seed = web3.utils.sha3("lajsdklfjaskldfhaikl");
+        const token_type = 1;
+        const token_address = testtoken.address;
+        const token_ids = [];
+        const total_tokens = _total_tokens;
+
+        const creation_success_encode = 'CreationSuccess(uint256,bytes32,address,uint256,address,uint256[])';
+        const creation_success_types = ['uint256', 'bytes32', 'address', 'uint256', 'address', 'uint256[]'];
+
+        await testtoken.approve.sendTransaction(redpacket.address, total_tokens);
+        const creation_receipt = await redpacket.create_red_packet
+                                .sendTransaction(hashes[1], number, true, duration, seed, msg,
+                                                    name, token_type, token_address, total_tokens, token_ids);
+        const logs = await web3.eth.getPastLogs({address: redpacket.address, topics: [web3.utils.sha3(creation_success_encode)]});
+        redpacket_id = web3.eth.abi.decodeParameters(creation_success_types, logs[0].data)['1'];
+        assert.notEqual(redpacket_id, null);
+    });
+    it("Should return the redpacket id list of the given address", async () => {
+        var rp_list = await redpacket.check_redpacket_history.call(accounts[0]);
+        console.log(rp_list);
+    });
+
 });
+
 contract("Test721Token", accounts => {
     beforeEach(async () =>{
         console.log("Before ALL\n");
@@ -219,4 +256,9 @@ contract("Test721Token", accounts => {
         // assert.equal(Number(balance1) + Number(balance2) + Number(balance3), _total_tokens)
 
     });
+    it("Should return the redpacket id list of the given address", async () => {
+        var rp_list = await redpacket.check_redpacket_history.call(accounts[0]);
+        console.log(rp_list);
+    });
 });
+
