@@ -33,6 +33,7 @@ contract("TestToken", accounts => {
         const seed = web3.utils.sha3("lajsdklfjaskldfhaikl");
         const token_type = 1;
         const token_address = testtoken.address;
+        const token_ids = [];
         const total_tokens = _total_tokens;
 
         const creation_success_encode = 'CreationSuccess(uint256,bytes32,address,uint256,address,uint256[])';
@@ -41,7 +42,7 @@ contract("TestToken", accounts => {
         await testtoken.approve.sendTransaction(redpacket.address, total_tokens);
         const creation_receipt = await redpacket.create_red_packet
                                 .sendTransaction(hashes[0], number, true, duration, seed, msg,
-                                                    name, token_type, token_address, total_tokens);
+                                                    name, token_type, token_address, total_tokens, token_ids);
         const logs = await web3.eth.getPastLogs({address: redpacket.address, topics: [web3.utils.sha3(creation_success_encode)]});
         redpacket_id = web3.eth.abi.decodeParameters(creation_success_types, logs[0].data)['1'];
         assert.notEqual(redpacket_id, null);

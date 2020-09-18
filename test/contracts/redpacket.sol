@@ -67,16 +67,6 @@ contract HappyRedPacket {
     // _token_type: 0 - ETH 1 - ERC20 2 - ERC721
     function create_red_packet (bytes32 _hash, uint8 _number, bool _ifrandom, uint _duration, 
                                 bytes32 _seed, string memory _message, string memory _name,
-                                uint _token_type, address _token_addr, uint _total_tokens)
-    public payable {
-        create_red_packet(_hash, _number, _ifrandom, _duration, _seed, _message, _name,
-                          _token_type, _token_addr, _total_tokens, new uint256[](1));
-    }
-
-    // Inits a red packet instance
-    // _token_type: 0 - ETH 1 - ERC20 2 - ERC721
-    function create_red_packet (bytes32 _hash, uint8 _number, bool _ifrandom, uint _duration, 
-                                bytes32 _seed, string memory _message, string memory _name,
                                 uint _token_type, address _token_addr, uint _total_tokens,
                                 uint256[] memory _erc721_token_ids) 
     public payable {
@@ -90,8 +80,7 @@ contract HappyRedPacket {
         }        
         else if (_token_type == 1) {
             require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "009");
-            uint256 [] memory token_ids_holder = new uint256[](0); 
-            transfer_token(_token_type, _token_addr, msg.sender, address(this), _total_tokens, token_ids_holder);
+            transfer_token(_token_type, _token_addr, msg.sender, address(this), _total_tokens, new uint256[](0));
         }
         else if (_token_type == 2) {
             require(IERC721(_token_addr).isApprovedForAll(msg.sender, address(this)), "011");
@@ -136,6 +125,7 @@ contract HappyRedPacket {
             IERC20(token_address).transferFrom(sender_address, recipient_address, amount);
         }
 
+        // ERC721
         else if (token_type == 2) {
             require(IERC721(token_address).balanceOf(sender_address) >= amount, "012");
             for (uint i=0; i < amount; i++) {
