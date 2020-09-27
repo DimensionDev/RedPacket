@@ -36,8 +36,8 @@ contract("TestToken", accounts => {
         const token_ids = [];
         const total_tokens = _total_tokens;
 
-        const creation_success_encode = 'CreationSuccess(uint256,bytes32,address,uint256,address,uint256[])';
-        const creation_success_types = ['uint256', 'bytes32', 'address', 'uint256', 'address', 'uint256[]'];
+        const creation_success_encode = 'CreationSuccess(uint256,bytes32,string,string,address,uint256,address,uint256[])';
+        const creation_success_types = ['uint256', 'bytes32', 'string', 'string','address', 'uint256', 'address', 'uint256[]'];
 
         await testtoken.approve.sendTransaction(redpacket.address, total_tokens);
         const creation_receipt = await redpacket.create_red_packet
@@ -145,8 +145,8 @@ contract("Test721Token", accounts => {
         }
         const total_tokens = token_ids.length;
 
-        const creation_success_encode = 'CreationSuccess(uint256,bytes32,address,uint256,address,uint256[])';
-        const creation_success_types = ['uint256', 'bytes32', 'address', 'uint256', 'address', 'uint256[]'];
+        const creation_success_encode = 'CreationSuccess(uint256,bytes32,string,string,address,uint256,address,uint256[])';
+        const creation_success_types = ['uint256', 'bytes32', 'string', 'string','address', 'uint256', 'address', 'uint256[]'];
 
         await test721token.setApprovalForAll.sendTransaction(redpacket.address, true);
         const creation_receipt = await redpacket.create_red_packet

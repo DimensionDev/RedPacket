@@ -1,7 +1,9 @@
 {
-    "dependencies": {},
+    "dependencies": {
+        "zeppelin-solidity": "^1.12.0"
+    },
     "devDependencies": {
-        "openzeppelin-solidity": "^2.4.0",
+        "openzeppelin-solidity": "^3.2.0",
         "solhint": "^2.3.0"
     }
 }

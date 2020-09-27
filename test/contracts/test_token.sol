@@ -1,10 +1,9 @@
 pragma solidity >0.4.22;
 
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 
-contract TestToken is ERC20, ERC20Detailed{
-    constructor(uint initialSupply) ERC20Detailed("TestToken", "TEST", 18) public{
+contract TestToken is ERC20 {
+    constructor(uint initialSupply) ERC20("TestToken", "TEST") public{
         _mint(msg.sender, initialSupply);
     }
 }
