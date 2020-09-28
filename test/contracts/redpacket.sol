@@ -6,17 +6,8 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract HappyRedPacket {
 
     struct RedPacket {
-        bytes32 id;
-        bytes32 hash;
-        bool ifrandom;
-        uint8 token_type;
-        uint MAX_AMOUNT;
-        address creator;
-        uint8 total_number;
-        uint8 claimed_number;
-        uint32 expiration_time;
-        uint remaining_tokens;
-        address token_address;
+        uint256 packed1;            // exp(48) total_tokens(80) hash(64) id(64) BIG ENDIAN
+        uint256 packed2;            // ifrandom(1) token_type(8) total_number(8) claimed(8) creator(64) token_addr(160)
         uint256[] erc721_token_ids;
         mapping(address => bool) claimed;
     }
@@ -59,7 +50,7 @@ contract HappyRedPacket {
 
     // Inits a red packet instance
     // _token_type: 0 - ETH 1 - ERC20 2 - ERC721
-    function create_red_packet (bytes32 _hash, uint8 _number, bool _ifrandom, uint _duration, 
+    function create_red_packet (bytes32 _hash, uint _number, bool _ifrandom, uint _duration, 
                                 bytes32 _seed, string memory _message, string memory _name,
                                 uint8 _token_type, address _token_addr, uint _total_tokens,
                                 uint256[] memory _erc721_token_ids) 
@@ -83,26 +74,21 @@ contract HappyRedPacket {
 
         bytes32 _id = keccak256(abi.encodePacked(msg.sender, now, nonce, seed, _seed));
         RedPacket storage rp = redpacket_by_id[_id];
-        rp.id = _id;
+        rp.packed2 = 0;
+        rp.packed2 |= uint160(_token_addr);   // token_address = 160 bits
+        rp.packed2 |= (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192) << 64;     // hash = sha3-256(addr)[:64] = 64 bits
+        //rp.packed2 |= 0 << 224;                         // claimed_number = 8 bits
+        rp.packed2 |= _number << 232;                   // total_ number = 8 bits
+        rp.packed2 |= _token_type << 240;               // token_type = 8 bits
+        rp.packed2 |= _ifrandom ? 1 : 0 << 248;         // ifrandom = 1 bit
 
-        rp.token_type = _token_type;
-        rp.token_address = _token_addr;
+        rp.packed1 = uint(_id) >> 192;                  // id = 64 bits
+        rp.packed1 |= (uint(_hash) >> 192) << 64;       // hash = 64 bits (NEED TO CONFIRM THIS)
+        rp.packed1 |= uint80(_total_tokens) << 128;     // total tokens = 80 bits = ~10^24.1 = ~10^6 18 decimals
+        rp.packed1 |= ((now+ _duration) & 0xffffffffffff) << 208; // expiration_time = 48 bits (to the end of the world)
 
-        rp.total_number = _number;
-        rp.remaining_tokens = _total_tokens;
-
-        rp.creator = msg.sender;
-
-        if (_duration == 0)
-            _duration = 86400; // 24hours
-        rp.expiration_time = uint32(SafeMath.add(now, _duration));
-
-        rp.claimed_number = 0;
-        rp.ifrandom = _ifrandom;
-        rp.hash = _hash;
-        rp.MAX_AMOUNT = SafeMath.mul(SafeMath.div(_total_tokens, rp.total_number), 2);
         rp.erc721_token_ids = _erc721_token_ids;
-        emit CreationSuccess(rp.remaining_tokens, rp.id, _name, _message, rp.creator, now, rp.token_address, rp.erc721_token_ids);
+        emit CreationSuccess(_total_tokens, _id, _name, _message, msg.sender, now, _token_addr, _erc721_token_ids);
     }
 
     // Check the balance of the given token
@@ -130,7 +116,7 @@ contract HappyRedPacket {
     
     // A boring wrapper
     function random(bytes32 _seed, uint32 nonce_rand) internal view returns (uint rand) {
-        return uint(keccak256(abi.encodePacked(nonce_rand, msg.sender, _seed, now)));
+        return uint(keccak256(abi.encodePacked(nonce_rand, msg.sender, _seed, now))) + 1 ;
     }
     
     // https://ethereum.stackexchange.com/questions/884/how-to-convert-an-address-to-bytes-in-solidity
@@ -158,95 +144,87 @@ contract HappyRedPacket {
     function claim(bytes32 id, string memory password, address _recipient, bytes32 validation) 
     public returns (uint claimed) {
 
+
         RedPacket storage rp = redpacket_by_id[id];
         address payable recipient = address(uint160(_recipient));
         // uint256 token_id;
         // Unsuccessful
-        require (rp.expiration_time > now, "003");
-        require (rp.claimed_number < rp.total_number, "004");
+        //require (rp.packed1 >> 208 & 0xffffffffffff > now, "003");
+        require (uint8(rp.packed2 >> 224) < uint8(rp.packed2 >> 232), "004");
+        // Penalize greedy attackers by placing duplication check at the very last
         require (rp.claimed[recipient] == false, "005");
-        require (keccak256(bytes(password)) == rp.hash, "006");
+        require (uint256(keccak256(bytes(password))) >> 192 == (rp.packed1 >> 64 & 0xffffffffffffffff), "006");
         require (validation == keccak256(toBytes(msg.sender)), "007");
 
         uint claimed_tokens;
         uint256 [] memory token_ids = new uint256[](1); //TODO: Optimize this behavior.
         // Todo get erc721 token id;
-        if (rp.ifrandom == true) {
-            if (rp.token_type == 2) {
-                uint token_id_index = random(seed, nonce) % rp.remaining_tokens;
+        uint256 token_type = rp.packed2 >> 240 & 0xff;
+        if (rp.packed2 >> 248 & 0xff == 1) {
+            if (token_type == 2) {
+                uint token_id_index = random(seed, nonce) % (rp.packed1 >> 128 & 0xffffffffffffffffffff);
                 uint256[] memory _array = rp.erc721_token_ids;
                 token_ids[0] = _array[token_id_index];
                 rp.erc721_token_ids = getTokenIdWithIndex(_array, token_id_index);
                 claimed_tokens = 1;
-                rp.remaining_tokens -= 1;
+                rp.packed1 |= (rp.packed1 >> 128 & 0xffffffffffffffffffff - 1) << 128;
             }
             else
             {
-                if (rp.total_number - rp.claimed_number == 1){
-                    claimed_tokens = rp.remaining_tokens;
+                if ((rp.packed2 >> 232 & 0xff) - (rp.packed2 >> 224 & 0xff) == 1){
+                    claimed_tokens = rp.packed1 >> 128 & 0xffffffffffffffffffff;
                 }
                 else{
-                    claimed_tokens = random(seed, nonce) % rp.MAX_AMOUNT;
-                    if (claimed_tokens == 0) {
-                        claimed_tokens = 1;
-                    }
-                    else if (claimed_tokens >= rp.remaining_tokens) {
-                        claimed_tokens = rp.remaining_tokens - (rp.total_number - rp.claimed_number - 1);
-                    }
-                rp.remaining_tokens -= claimed_tokens;
+                    //claimed_tokens = random(seed, nonce) % SafeMath.mul(SafeMath.div(rp.packed1 >> 128 & 0xffffffffffffffffffff, (rp.packed2 >> 232 & 0xff) - (rp.packed2 >> 224 & 0xff)), 2);     //Max amount of tokens that can be claimed once is average * 2
+                    claimed_tokens = random(seed, nonce) % SafeMath.mul(SafeMath.div(rp.packed1 >> 128, (rp.packed2 >> 232) - (rp.packed2 >> 224)), 2);
                 }
+                rp.packed1 |= ((rp.packed1 >> 128 & 0xffff) - claimed_tokens) << 128;
             }
         }
         else {
-            if (rp.token_type == 2) {
+            if (rp.packed2 >> 248 == 2) {
                 // token_id_index = random(seed, nonce) % rp.remaining_tokens;
                 uint256[] memory _array = rp.erc721_token_ids;
                 token_ids[0] = rp.erc721_token_ids[0];
                 rp.erc721_token_ids = getTokenIdWithIndex(_array, 0);
                 claimed_tokens = 1;
-                rp.remaining_tokens -= 1;
+                rp.packed1 |= ((rp.packed1 >> 128 & 0xffff) - 1) << 128;
             }
             else
             {
-                if (rp.total_number - rp.claimed_number == 1){
-                    claimed_tokens = rp.remaining_tokens;
+                if ((rp.packed2 >> 232 & 0xff) - (rp.packed2 >> 224 & 0xff) == 1){
+                    claimed_tokens = rp.packed1 >> 128 & 0xffffffffffffffffffff;
                 }
                 else{
-                    claimed_tokens = SafeMath.div(rp.remaining_tokens, (rp.total_number - rp.claimed_number));
+                    claimed_tokens = random(seed, nonce) % SafeMath.mul(SafeMath.div(rp.packed1 >> 128, (rp.packed2 >> 232) - (rp.packed2 >> 224)), 2);
                 }
-                rp.remaining_tokens -= claimed_tokens;
+                rp.packed1 |= ((rp.packed1 >> 128) & 0xffff - claimed_tokens) << 128;
             }
         }
 
+//        require(1 > 2);
+
+        // Change the state
         rp.claimed[recipient] = true;
+        rp.packed2 |= ((rp.packed2 >> 224 & 0xff) + 1) << 224;
 
-        rp.claimed_number ++;
-        if (rp.token_type == 2) {
-            rp.MAX_AMOUNT = rp.remaining_tokens;
-        }
-        else {
-            if (rp.total_number != rp.claimed_number){
-                rp.MAX_AMOUNT = SafeMath.mul(SafeMath.div(rp.remaining_tokens, rp.total_number - rp.claimed_number), 2);
-            }
-
-        }
 
         // Transfer the red packet after state changing
-        if (rp.token_type == 0) {
+        if (rp.packed2 >> 248 == 0) {
             recipient.transfer(claimed_tokens);
         }
-        else if (rp.token_type == 1) {
+        else if (rp.packed2 >> 248 == 1) {
             uint256 [] memory token_ids_holder = new uint256[](0); 
-            transfer_token(rp.token_type, rp.token_address, address(this),
+            transfer_token(rp.packed2 >> 240 & 0xff, address(uint160(rp.packed2 & 0xffffffffffffffffffff)), address(this),
                             recipient, claimed_tokens, token_ids_holder);
         }
-        else if (rp.token_type == 2) {
-            transfer_token(rp.token_type, rp.token_address, address(this),
+        else if (rp.packed2 >> 248 == 2) {
+            transfer_token(rp.packed2 >> 240 & 0xff, address(uint160(rp.packed2 & 0xffffffffffffffffffff)), address(this),
                             recipient, claimed_tokens, token_ids);
         }
 
         // Claim success event
-        emit ClaimSuccess(rp.id, recipient, claimed_tokens, rp.token_address, token_ids);
+        emit ClaimSuccess(bytes32(rp.packed1 & 0xffffffffffffffff), recipient, claimed_tokens, address(uint160(rp.packed2 & 0xffffffffffffffffffff)), token_ids);
         return claimed_tokens;
     }
 
@@ -254,8 +232,7 @@ contract HappyRedPacket {
     function check_availability(bytes32 id) public view returns (address token_address, uint balance, uint total, 
                                                                     uint claimed, bool expired, bool ifclaimed) {
         RedPacket storage rp = redpacket_by_id[id];
-        return (rp.token_address, rp.remaining_tokens, rp.total_number, 
-                rp.claimed_number, now > rp.expiration_time, rp.claimed[msg.sender]);
+        return (address(uint160(rp.packed2 & 0xffffffffffffffffffff)), rp.packed1 >> 128 & 0xffffffffffffffffffff, rp.packed2 >> 232 & 0xff, rp.packed2 >> 240 & 0xff, now > rp.packed1 >> 208 & 0xffffffffffff, rp.claimed[msg.sender]);
     }
 
     // Returns a list of claiming token id
@@ -263,16 +240,17 @@ contract HappyRedPacket {
         RedPacket storage rp = redpacket_by_id[id];
         return (rp.erc721_token_ids);
     }
-
+/*
     function refund(bytes32 id) public {
         RedPacket storage rp = redpacket_by_id[id];
-        require(msg.sender == rp.creator, "011");
-        require(rp.expiration_time < now, "012");
+        require(uint256(keccak256(abi.encodePacked(msg.sender)) >> 192) == rp.packed2 >> 64 & 0xffffffffffffffff, "011");
+        require(rp.packed >> 208 & 0xffffffffffff < now, "012");
 
-        if (rp.token_type == 0) {
-            msg.sender.transfer(rp.remaining_tokens);
+        uint256 remainin_tokens = rp.packed1 >> 128 & 0xffffffffffffffffffff;
+        if (rp.packed2 >> 248 == 0) {
+            msg.sender.transfer(remaining_tokens);
         }
-        else if (rp.token_type == 1) {
+        else if (rp.packed2 >> 248 == 1) {
             uint256[] memory token_ids_holder = new uint256[](0); 
             IERC20(rp.token_address).approve(msg.sender, rp.remaining_tokens);
             transfer_token(rp.token_type, rp.token_address, address(this),
@@ -293,6 +271,7 @@ contract HappyRedPacket {
         emit RefundSuccess(rp.id, rp.token_address, rp.remaining_tokens);
         rp.remaining_tokens = 0;
     }
+*/
 
     // One cannot send tokens to this contract after constructor anymore
     // function () external payable {
