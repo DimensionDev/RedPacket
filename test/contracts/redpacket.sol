@@ -52,7 +52,7 @@ contract HappyRedPacket {
     // _token_type: 0 - ETH 1 - ERC20 2 - ERC721
     function create_red_packet (bytes32 _hash, uint _number, bool _ifrandom, uint _duration, 
                                 bytes32 _seed, string memory _message, string memory _name,
-                                uint8 _token_type, address _token_addr, uint _total_tokens,
+                                uint _token_type, address _token_addr, uint _total_tokens,
                                 uint256[] memory _erc721_token_ids) 
     public payable {
         nonce ++;
@@ -73,22 +73,36 @@ contract HappyRedPacket {
         }
 
         bytes32 _id = keccak256(abi.encodePacked(msg.sender, now, nonce, seed, _seed));
-        RedPacket storage rp = redpacket_by_id[_id];
-        rp.packed2 = 0;
-        rp.packed2 |= uint160(_token_addr);   // token_address = 160 bits
-        rp.packed2 |= (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192) << 64;     // hash = sha3-256(addr)[:64] = 64 bits
-        //rp.packed2 |= 0 << 224;                         // claimed_number = 8 bits
-        rp.packed2 |= _number << 232;                   // total_ number = 8 bits
-        rp.packed2 |= _token_type << 240;               // token_type = 8 bits
-        rp.packed2 |= _ifrandom ? 1 : 0 << 248;         // ifrandom = 1 bit
-
-        rp.packed1 = uint(_id) >> 192;                  // id = 64 bits
-        rp.packed1 |= (uint(_hash) >> 192) << 64;       // hash = 64 bits (NEED TO CONFIRM THIS)
-        rp.packed1 |= uint80(_total_tokens) << 128;     // total tokens = 80 bits = ~10^24.1 = ~10^6 18 decimals
-        rp.packed1 |= ((now+ _duration) & 0xffffffffffff) << 208; // expiration_time = 48 bits (to the end of the world)
-
-        rp.erc721_token_ids = _erc721_token_ids;
+        RedPacket storage redp = redpacket_by_id[_id];
+        wrap1(redp, _hash, _total_tokens, _duration);
+        wrap2(redp, _token_addr, msg.sender, _number, _token_type);
+        redp.erc721_token_ids = _erc721_token_ids;
         emit CreationSuccess(_total_tokens, _id, _name, _message, msg.sender, now, _token_addr, _erc721_token_ids);
+    }
+
+    function wrap1 (RedPacket storage rp, bytes32 _hash, uint _total_tokens, uint _duration) internal {
+        rp.packed1 = 0;
+        box(rp.packed1, 0, 128, uint256(_hash) >> 128);    // hash = 128 bits (NEED TO CONFIRM THIS)
+        box(rp.packed1, 128, 80, _total_tokens);        // total tokens = 80 bits = ~10^24.1 = ~10^6 18 decimals
+        box(rp.packed1, 208, 48, (now + _duration));    // expiration_time = 48 bits (to the end of the world)
+    }
+
+    function wrap2 (RedPacket storage rp, address _token_addr, address _creator, uint _number, uint _token_type) internal {
+        rp.packed2 = 0;
+        box(rp.packed2, 0, 160, uint256(_token_addr));   // token_address = 160 bits
+        box(rp.packed2, 160, 64, (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192));  // creator.hash = 64 bit
+        box(rp.packed2, 224, 8, 0);                     // claimed_number = 8 bits
+        box(rp.packed2, 232, 8, _number);               // total_ number = 8 bits
+        box(rp.packed2, 240, 8, _token_type);           // token_type = 8 bits
+        box(rp.packed2, 248, 8, 1);     // ifrandom = 1 bit 
+    }
+
+    function box (uint256 base, uint8 position, uint8 size, uint256 data) internal pure {
+        base |= (data & (uint256(-1) >> (256 - size))) << position;
+    }
+
+    function unbox (uint256 base, uint8 position, uint8 size) internal pure returns (uint256 unboxed) {
+        return (base >> position) & (uint256(-1) >> (256 - size));
     }
 
     // Check the balance of the given token
@@ -150,7 +164,7 @@ contract HappyRedPacket {
         // uint256 token_id;
         // Unsuccessful
         //require (rp.packed1 >> 208 & 0xffffffffffff > now, "003");
-        require (uint8(rp.packed2 >> 224) < uint8(rp.packed2 >> 232), "004");
+        //require (uint8(rp.packed2 >> 224) < uint8(rp.packed2 >> 232), "004");
         // Penalize greedy attackers by placing duplication check at the very last
         require (rp.claimed[recipient] == false, "005");
         require (uint256(keccak256(bytes(password))) >> 192 == (rp.packed1 >> 64 & 0xffffffffffffffff), "006");
