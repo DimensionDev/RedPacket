@@ -165,8 +165,8 @@ contract("Test721Token", accounts => {
         const password = "1";
         const rp_id = redpacket_id;
 
-        const claim_success_encode = "ClaimSuccess(%s,%s,%s,%s,%s)";
-        const claim_success_types = ['bytes32', 'address', 'uint256', 'address', 'uint256'];
+        const claim_success_encode = "ClaimSuccess(%s,%s,%s,%s)";
+        const claim_success_types = ['bytes32', 'address', 'uint256', 'address'];
 
         // Check Availability
         var returned = await redpacket.check_availability.call(rp_id);
