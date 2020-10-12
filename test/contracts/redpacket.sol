@@ -270,38 +270,40 @@ contract HappyRedPacket {
         RedPacket storage rp = redpacket_by_id[id];
         return (rp.erc721_token_ids);
     }
-/*
     function refund(bytes32 id) public {
         RedPacket storage rp = redpacket_by_id[id];
-        require(uint256(keccak256(abi.encodePacked(msg.sender)) >> 192) == rp.packed2 >> 64 & 0xffffffffffffffff, "011");
-        require(rp.packed >> 208 & 0xffffffffffff < now, "012");
+        require(uint256(keccak256(abi.encodePacked(msg.sender)) >> 192) == unbox(rp.packed2, 160, 64), "011");
+        require(unpack(rp.packed1, 208, 48) < now, "012");
 
-        uint256 remainin_tokens = rp.packed1 >> 128 & 0xffffffffffffffffffff;
-        if (rp.packed2 >> 248 == 0) {
+        uint256 remaining_tokens = unpack(rp.redpack1, 128, 80);
+        uint256 token_type = unbox(rp.packed2, 240, 8);
+
+        if (token_type == 0) {
             msg.sender.transfer(remaining_tokens);
         }
-        else if (rp.packed2 >> 248 == 1) {
-            uint256[] memory token_ids_holder = new uint256[](0); 
-            IERC20(rp.token_address).approve(msg.sender, rp.remaining_tokens);
-            transfer_token(rp.token_type, rp.token_address, address(this),
-                            msg.sender, rp.remaining_tokens, token_ids_holder);
+        else if (token_type == 1) {
+            uint256[] memory token_ids_holder = new uint256[](0);
+            address token_address = unbox(rp.packed2, 0, 160)
+            IERC20(token_address).approve(msg.sender, remaining_tokens);
+            transfer_token(token_type, token_address, address(this),
+                            msg.sender, remaining_tokens, token_ids_holder);
         }
-        else if (rp.token_type == 2) {
+        else if (token_type == 2) {
             uint256[] memory token_ids;
             for (uint i = 0; i < rp.erc721_token_ids.length - 1; i++){
                 if (rp.erc721_token_ids[i] != 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF) {
                     token_ids[token_ids.length] = rp.erc721_token_ids[i];
+                    rp.erc721_token_ids[i] = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
                 }
             }
-            // IERC721(rp.token_address).approve(msg.sender, rp.remaining_tokens);
-            transfer_token(rp.token_type, rp.token_address, address(this),
-                            msg.sender, rp.remaining_tokens, token_ids); 
+            // IERC721(token_address).approve(msg.sender, rp.remaining_tokens);
+            transfer_token(token_type, token_address, address(this),
+                            msg.sender, remaining_tokens, token_ids); 
         }
 
-        emit RefundSuccess(rp.id, rp.token_address, rp.remaining_tokens);
-        rp.remaining_tokens = 0;
+        emit RefundSuccess(id, token_address, remaining_tokens);
+        rp.packed1 = rewriteBox(rp.packed1, 128, 80, 0);
     }
-*/
 
     // One cannot send tokens to this contract after constructor anymore
     // function () external payable {
