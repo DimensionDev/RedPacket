@@ -272,5 +272,4 @@ contract("Test721Token", accounts => {
         // assert.equal(Number(balance1) + Number(balance2) + Number(balance3), _total_tokens)
 
     });
-
 });

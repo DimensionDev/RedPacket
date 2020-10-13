@@ -9,7 +9,6 @@ contract HappyRedPacket {
         uint256 packed1;            // exp(48) total_tokens(80) hash(64) id(64) BIG ENDIAN
         uint256 packed2;            // ifrandom(1) token_type(8) total_number(8) claimed(8) creator(64) token_addr(160)
         uint256[] erc721_token_ids;
-        mapping(address => bool) claimed;
         uint256[] claimed_list;
     }
 
@@ -85,7 +84,7 @@ contract HappyRedPacket {
 
     function wrap1 (bytes32 _hash, uint _total_tokens, uint _duration) internal view returns (uint256 packed1) {
         uint256 _packed1 = 0;
-        _packed1 |= box(0, 128, uint256(_hash) >> 128);    // hash = 128 bits (NEED TO CONFIRM THIS)
+        _packed1 |= box(0, 128, uint256(_hash) >> 128); // hash = 128 bits (NEED TO CONFIRM THIS)
         _packed1 |= box(128, 80, _total_tokens);        // total tokens = 80 bits = ~10^24.1 = ~10^6 18 decimals
         _packed1 |= box(208, 48, (now + _duration));    // expiration_time = 48 bits (to the end of the world)
         return _packed1;
@@ -93,7 +92,7 @@ contract HappyRedPacket {
 
     function wrap2 (address _token_addr, uint _number, uint _token_type, uint _ifrandom) internal view returns (uint256 packed2) {
         uint256 _packed2 = 0;
-        _packed2 |= box(0, 160, uint256(_token_addr));   // token_address = 160 bits
+        _packed2 |= box(0, 160, uint256(_token_addr));  // token_address = 160 bits
         _packed2 |= box(160, 64, (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192));  // creator.hash = 64 bit
         _packed2 |= box(224, 8, 0);                     // claimed_number = 8 bits
         _packed2 |= box(232, 8, _number);               // total_ number = 8 bits
@@ -323,6 +322,12 @@ contract HappyRedPacket {
 
         emit RefundSuccess(id, token_address, remaining_tokens);
         rp.packed1 = rewriteBox(rp.packed1, 128, 80, 0);
+        // Gas Refund
+        rp.packed1 = 0;
+        rp.packed2 = 0;
+        for (uint i = 0; i < rp.erc721_token_ids.length; i++){
+            rp.claimed_list[i] = 0;
+        }
         for (uint i = 0; i < rp.claimed_list.length; i++){
             rp.claimed_list[i] = 0;
         }
