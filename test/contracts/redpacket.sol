@@ -10,6 +10,7 @@ contract HappyRedPacket {
         uint256 packed2;            // ifrandom(1) token_type(8) total_number(8) claimed(8) creator(64) token_addr(160)
         uint256[] erc721_token_ids;
         mapping(address => bool) claimed;
+        uint256[] claimed_list;
     }
 
     event CreationSuccess(
@@ -78,6 +79,7 @@ contract HappyRedPacket {
         redp.packed1 = wrap1(_hash, _total_tokens, _duration);
         redp.packed2 = wrap2(_token_addr, _number, _token_type, _random_type);
         redp.erc721_token_ids = _erc721_token_ids;
+        redp.claimed_list = new uint256[]((_number-1)/4 + 1);
         emit CreationSuccess(_total_tokens, _id, _name, _message, msg.sender, now, _token_addr, _erc721_token_ids);
     }
 
@@ -179,8 +181,6 @@ contract HappyRedPacket {
         uint total_number = unbox(rp.packed2, 232, 8);
         uint claimed_number = unbox(rp.packed2, 224, 8);
         require (claimed_number < total_number, "004");
-        // Penalize greedy attackers by placing duplication check at the very last
-        require (rp.claimed[recipient] == false, "005");
         // require (1 > 2, 'test');
         require (uint256(keccak256(bytes(password))) >> 128 == unbox(rp.packed1, 0, 128), "006");
         require (validation == keccak256(toBytes(msg.sender)), "007");
@@ -235,7 +235,17 @@ contract HappyRedPacket {
             }
         }
 
-        rp.claimed[recipient] = true;
+        // Penalize greedy attackers by placing duplication check at the very last
+        bool available = false;
+        for (uint i = 0; i < unbox(rp.packed2, 224, 8); i ++) {
+            if (unbox(rp.claimed_list[i / 4], uint16(64*(i%4)), 64) == (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192)) {
+                available = true;
+                break;
+            }
+        }
+        require (available == false, "005");
+
+        rp.claimed_list[claimed_number / 4] = rewriteBox(rp.claimed_list[claimed_number / 4], 64 * uint16(claimed_number % 4), 64, (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192));
         rp.packed2 = rewriteBox(rp.packed2, 224, 8, claimed_number + 1);
 
 
@@ -262,7 +272,16 @@ contract HappyRedPacket {
     function check_availability(bytes32 id) public view returns (address token_address, uint balance, uint total, 
                                                                     uint claimed, bool expired, bool ifclaimed) {
         RedPacket storage rp = redpacket_by_id[id];
-        return (address(unbox(rp.packed2, 0, 160)), unbox(rp.packed1, 128, 80), unbox(rp.packed2, 232, 8), unbox(rp.packed2, 240, 8), now > unbox(rp.packed1, 208, 48), rp.claimed[msg.sender]);
+        ifclaimed = false;
+        uint256 sender_hash = (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192);
+        uint256 number = unbox(rp.packed2, 224, 8);
+        for (uint i = 0; i < number; i ++) {
+            if (unbox(rp.claimed_list[i / 4], uint16(64*(i%4)), 64) == sender_hash) {
+                ifclaimed = true;
+                break;
+            }
+        }
+        return (address(unbox(rp.packed2, 0, 160)), unbox(rp.packed1, 128, 80), unbox(rp.packed2, 232, 8), unbox(rp.packed2, 240, 8), now > unbox(rp.packed1, 208, 48), ifclaimed);
     }
 
     // Returns a list of claiming token id
@@ -270,20 +289,21 @@ contract HappyRedPacket {
         RedPacket storage rp = redpacket_by_id[id];
         return (rp.erc721_token_ids);
     }
+
     function refund(bytes32 id) public {
         RedPacket storage rp = redpacket_by_id[id];
         require(uint256(keccak256(abi.encodePacked(msg.sender)) >> 192) == unbox(rp.packed2, 160, 64), "011");
-        require(unpack(rp.packed1, 208, 48) < now, "012");
+        require(unbox(rp.packed1, 208, 48) <= now, "012");
 
-        uint256 remaining_tokens = unpack(rp.redpack1, 128, 80);
+        uint256 remaining_tokens = unbox(rp.packed1, 128, 80);
         uint256 token_type = unbox(rp.packed2, 240, 8);
+        address token_address = address(unbox(rp.packed2, 0, 160));
 
         if (token_type == 0) {
             msg.sender.transfer(remaining_tokens);
         }
         else if (token_type == 1) {
             uint256[] memory token_ids_holder = new uint256[](0);
-            address token_address = unbox(rp.packed2, 0, 160)
             IERC20(token_address).approve(msg.sender, remaining_tokens);
             transfer_token(token_type, token_address, address(this),
                             msg.sender, remaining_tokens, token_ids_holder);
@@ -293,7 +313,7 @@ contract HappyRedPacket {
             for (uint i = 0; i < rp.erc721_token_ids.length - 1; i++){
                 if (rp.erc721_token_ids[i] != 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF) {
                     token_ids[token_ids.length] = rp.erc721_token_ids[i];
-                    rp.erc721_token_ids[i] = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                    rp.erc721_token_ids[i] = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
                 }
             }
             // IERC721(token_address).approve(msg.sender, rp.remaining_tokens);
@@ -303,9 +323,12 @@ contract HappyRedPacket {
 
         emit RefundSuccess(id, token_address, remaining_tokens);
         rp.packed1 = rewriteBox(rp.packed1, 128, 80, 0);
+        for (uint i = 0; i < rp.claimed_list.length; i++){
+            rp.claimed_list[i] = 0;
+        }
     }
 
-    // One cannot send tokens to this contract after constructor anymore
-    // function () external payable {
-    // }
+     // One cannot send tokens to this contract after constructor anymore
+     //function () external payable {
+     //}
 }
