@@ -66,7 +66,7 @@ contract("TestToken", accounts => {
 
         const claim_receipt = await redpacket.claim.sendTransaction(rp_id, password, recipient1, validation1, {'from': recipient1});
         const logs = await web3.eth.getPastLogs({address: redpacket.address, topic: [web3.utils.sha3(claim_success_encode)]});
-        console.log(web3.eth.abi.decodeParameters(claim_success_types, logs[0].data));
+        //console.log(web3.eth.abi.decodeParameters(claim_success_types, logs[0].data));
 
         // Check Availability
         returned = await redpacket.check_availability.call(rp_id, {'from': recipient1});
@@ -78,7 +78,7 @@ contract("TestToken", accounts => {
 
         const claim_receipt2 = await redpacket.claim.sendTransaction(rp_id, password, recipient2, validation2, {'from':recipient2});
         const logs2 = await web3.eth.getPastLogs({address: redpacket.address, topic: [web3.utils.sha3(claim_success_encode)]});
-        console.log(web3.eth.abi.decodeParameters(claim_success_types, logs2[0].data));
+        //console.log(web3.eth.abi.decodeParameters(claim_success_types, logs2[0].data));
 
         // Check Availability
         returned = await redpacket.check_availability.call(rp_id, {'from': recipient2});
@@ -90,7 +90,7 @@ contract("TestToken", accounts => {
 
         const claim_receipt3 = await redpacket.claim.sendTransaction(rp_id, password, recipient3, validation3, {'from':recipient3});
         const logs3 = await web3.eth.getPastLogs({address: redpacket.address, topic: [web3.utils.sha3(claim_success_encode)]});
-        console.log(web3.eth.abi.decodeParameters(claim_success_types, logs3[0].data));
+        //console.log(web3.eth.abi.decodeParameters(claim_success_types, logs3[0].data));
 
         // Check Availability
         returned = await redpacket.check_availability.call(rp_id, {'from': recipient3});
@@ -162,7 +162,7 @@ contract("TestToken", accounts => {
 
         const refund_receipt = await redpacket.refund.sendTransaction(rp_id, {'from': accounts[0]});
         const logs = await web3.eth.getPastLogs({address: redpacket.address, topic: [web3.utils.sha3(refund_success_encode)]});
-        console.log(web3.eth.abi.decodeParameters(refund_success_types, logs[0].data));
+        //console.log(web3.eth.abi.decodeParameters(refund_success_types, logs[0].data));
     });
 });
 contract("Test721Token", accounts => {

@@ -1,4 +1,4 @@
-pragma solidity ^0.6;
+pragma solidity 0.6.2;
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC721/IERC721.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -42,6 +42,7 @@ contract HappyRedPacket {
     mapping(bytes32 => RedPacket) redpacket_by_id;
     string constant private magic = "Former NBA Commissioner David St"; // 32 bytes
     bytes32 private seed;
+    uint256 constant MASK = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
     constructor() public {
         contract_creator = msg.sender;
@@ -58,6 +59,7 @@ contract HappyRedPacket {
         nonce ++;
         require(_total_tokens >= _number, "001");
         require(_number > 0, "002");
+        require(_number < 256, "002");
 
         if (_token_type == 0) {
             require(msg.value >= _total_tokens, "008");
@@ -102,25 +104,34 @@ contract HappyRedPacket {
     }
 
     function box (uint16 position, uint16 size, uint256 data) internal pure returns (uint256 boxed) {
+        require(validRange(size, data), "Value out of range BOX");
         return data << (256 - size - position);
     }
 
     function unbox (uint256 base, uint16 position, uint16 size) internal pure returns (uint256 unboxed) {
+        require(validRange(256, base), "Value out of range UNBOX");
         return (base << position) >> (256 - size);
+    }
+
+    function validRange(uint16 size, uint256 data) public pure returns(bool) { 
+        if (data > 2 ** uint256(size) - 1) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     function rewriteBox(uint256 _box, uint16 position, uint16 size, uint256 data) internal pure returns (uint256 boxed) {
 
         uint256 _boxData = box(position, size, data);
-        uint256 _mask = box(position, size, uint256(-1) >> (SafeMath.add(size, position)));
-        _box |= _boxData;
-        _box &= ~(~_boxData & _mask);
+        uint256 _mask = box(position, size, uint256(-1) >> (256 - size));
+        _box = (_box & ~_mask) | _boxData;
         return _box;
     }
 
     // Check the balance of the given token
     function transfer_token(uint token_type, address token_address, address sender_address,
-                            address recipient_address, uint amount, uint256 [] memory erc721_token_ids) public payable{
+                            address recipient_address, uint amount, uint256 [] memory erc721_token_ids) internal{
         // ERC20
         if (token_type == 1) {
             require(IERC20(token_address).balanceOf(sender_address) >= amount, "010");
@@ -163,7 +174,7 @@ contract HappyRedPacket {
         for (uint i = index; i < array.length - 1; i++){
             array[i] = array[i + 1];
         }
-        array[array.length - 1] = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+        array[array.length - 1] = MASK;
         return array;
     }
 
@@ -206,7 +217,10 @@ contract HappyRedPacket {
                 }
                 else{
                     //claimed_tokens = random(seed, nonce) % SafeMath.mul(SafeMath.div(rp.packed1 >> 128 & 0xffffffffffffffffffff, (rp.packed2 >> 232 & 0xff) - (rp.packed2 >> 224 & 0xff)), 2);     //Max amount of tokens that can be claimed once is average * 2
-                    claimed_tokens = random(seed, nonce) % SafeMath.mul(SafeMath.div(total_tokens, total_number - claimed_number), 2);
+                    claimed_tokens = random(seed, nonce) % SafeMath.div(SafeMath.mul(total_tokens, 2), total_number - claimed_number);
+                }
+                if (claimed_tokens == 0) {
+                    claimed_tokens = 1;
                 }
                 rp.packed1 = rewriteBox(rp.packed1, 128, 80, total_tokens - claimed_tokens);
             }
@@ -268,7 +282,7 @@ contract HappyRedPacket {
     }
 
     // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets
-    function check_availability(bytes32 id) public view returns (address token_address, uint balance, uint total, 
+    function check_availability(bytes32 id) external view returns (address token_address, uint balance, uint total, 
                                                                     uint claimed, bool expired, bool ifclaimed) {
         RedPacket storage rp = redpacket_by_id[id];
         ifclaimed = false;
@@ -280,11 +294,11 @@ contract HappyRedPacket {
                 break;
             }
         }
-        return (address(unbox(rp.packed2, 0, 160)), unbox(rp.packed1, 128, 80), unbox(rp.packed2, 232, 8), unbox(rp.packed2, 240, 8), now > unbox(rp.packed1, 208, 48), ifclaimed);
+        return (address(unbox(rp.packed2, 0, 160)), unbox(rp.packed1, 128, 80), unbox(rp.packed2, 232, 8), unbox(rp.packed2, 224, 8), now > unbox(rp.packed1, 208, 48), ifclaimed);
     }
 
     // Returns a list of claiming token id
-    function check_erc721_token_ids(bytes32 id) public view returns (uint256[] memory erc721_token_ids) {
+    function check_erc721_token_ids(bytes32 id) external view returns (uint256[] memory erc721_token_ids) {
         RedPacket storage rp = redpacket_by_id[id];
         return (rp.erc721_token_ids);
     }
@@ -310,12 +324,12 @@ contract HappyRedPacket {
         else if (token_type == 2) {
             uint256[] memory token_ids;
             for (uint i = 0; i < rp.erc721_token_ids.length - 1; i++){
-                if (rp.erc721_token_ids[i] != 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF) {
+                if (rp.erc721_token_ids[i] != MASK) {
                     token_ids[token_ids.length] = rp.erc721_token_ids[i];
-                    rp.erc721_token_ids[i] = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+                    rp.erc721_token_ids[i] = MASK;
                 }
             }
-            // IERC721(token_address).approve(msg.sender, rp.remaining_tokens);
+            IERC721(token_address).approve(msg.sender, remaining_tokens);
             transfer_token(token_type, token_address, address(this),
                             msg.sender, remaining_tokens, token_ids); 
         }
