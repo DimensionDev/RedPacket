@@ -340,7 +340,7 @@ contract HappyRedPacket {
         rp.packed1 = 0;
         rp.packed2 = 0;
         for (uint i = 0; i < rp.erc721_token_ids.length; i++){
-            rp.claimed_list[i] = 0;
+            rp.erc721_token_ids[i] = 0;
         }
         for (uint i = 0; i < rp.claimed_list.length; i++){
             rp.claimed_list[i] = 0;
