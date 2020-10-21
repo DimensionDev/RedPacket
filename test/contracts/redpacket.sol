@@ -322,10 +322,11 @@ contract HappyRedPacket {
                             msg.sender, remaining_tokens, token_ids_holder);
         }
         else if (token_type == 2) {
-            uint256[] memory token_ids;
+            uint256[] memory token_ids = new uint256[](remaining_tokens);
+            uint j = 0;
             for (uint i = 0; i < rp.erc721_token_ids.length - 1; i++){
                 if (rp.erc721_token_ids[i] != MASK) {
-                    token_ids[token_ids.length] = rp.erc721_token_ids[i];
+                    token_ids[j++] = rp.erc721_token_ids[i];
                     rp.erc721_token_ids[i] = MASK;
                 }
             }
