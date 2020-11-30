@@ -66,12 +66,11 @@ contract HappyRedPacket {
         }
         else if (_token_type == 1) {
             require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "009");
-            transfer_token(_token_type, _token_addr, msg.sender, address(this), _total_tokens, new uint256[](0));
+            IERC20(_token_addr).transferFrom(msg.sender, address(this), _total_tokens);
         }
         else if (_token_type == 2) {
             require(IERC721(_token_addr).isApprovedForAll(msg.sender, address(this)), "011");
             transfer_token(_token_type, _token_addr, msg.sender, address(this), _total_tokens, _erc721_token_ids);
-            // IERC721(_token_addr).setApprovalForAll(address(this), false);
         }
 
         bytes32 _id = keccak256(abi.encodePacked(msg.sender, now, nonce, seed, _seed));
@@ -216,7 +215,6 @@ contract HappyRedPacket {
                     claimed_tokens = total_tokens;
                 }
                 else{
-                    //claimed_tokens = random(seed, nonce) % SafeMath.mul(SafeMath.div(rp.packed1 >> 128 & 0xffffffffffffffffffff, (rp.packed2 >> 232 & 0xff) - (rp.packed2 >> 224 & 0xff)), 2);     //Max amount of tokens that can be claimed once is average * 2
                     claimed_tokens = random(seed, nonce) % SafeMath.div(SafeMath.mul(total_tokens, 2), total_number - claimed_number);
                 }
                 if (claimed_tokens == 0) {
@@ -349,6 +347,6 @@ contract HappyRedPacket {
     }
 
      // One cannot send tokens to this contract after constructor anymore
-     //function () external payable {
-     //}
+     function () external payable {
+     }
 }
