@@ -345,8 +345,4 @@ contract HappyRedPacket {
             rp.claimed_list[i] = 0;
         }
     }
-
-     // One cannot send tokens to this contract after constructor anymore
-     function () external payable {
-     }
 }
