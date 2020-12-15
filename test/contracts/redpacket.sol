@@ -307,7 +307,7 @@ contract HappyRedPacket {
         require(unbox(rp.packed1, 208, 48) <= now, "012");
 
         uint256 remaining_tokens = unbox(rp.packed1, 128, 80);
-        require(remaining_tokens != 0, "None left in the red packet.")
+        require(remaining_tokens != 0, "None left in the red packet.");
 
         uint256 token_type = unbox(rp.packed2, 240, 8);
         address token_address = address(unbox(rp.packed2, 0, 160));
