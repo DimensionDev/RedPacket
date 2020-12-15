@@ -57,19 +57,19 @@ contract HappyRedPacket {
                                 uint256[] memory _erc721_token_ids) 
     public payable {
         nonce ++;
-        require(_total_tokens >= _number, "001");
-        require(_number > 0, "002");
-        require(_number < 256, "002");
+        require(_total_tokens >= _number, "#tokens > #packets");
+        require(_number > 0, "At least 1 recipient");
+        require(_number < 256, "At most 255 recipients");
 
         if (_token_type == 0) {
-            require(msg.value >= _total_tokens, "008");
+            require(msg.value >= _total_tokens, "No enough tokens");
         }
         else if (_token_type == 1) {
-            require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "009");
+            require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "No enough allowance");
             IERC20(_token_addr).transferFrom(msg.sender, address(this), _total_tokens);
         }
         else if (_token_type == 2) {
-            require(IERC721(_token_addr).isApprovedForAll(msg.sender, address(this)), "011");
+            require(IERC721(_token_addr).isApprovedForAll(msg.sender, address(this)), "Not approved yet");
             transfer_token(_token_type, _token_addr, msg.sender, address(this), _total_tokens, _erc721_token_ids);
         }
 
@@ -133,14 +133,14 @@ contract HappyRedPacket {
                             address recipient_address, uint amount, uint256 [] memory erc721_token_ids) internal{
         // ERC20
         if (token_type == 1) {
-            require(IERC20(token_address).balanceOf(sender_address) >= amount, "010");
+            require(IERC20(token_address).balanceOf(sender_address) >= amount, "Balance too low");
             IERC20(token_address).approve(sender_address, amount);
             IERC20(token_address).transferFrom(sender_address, recipient_address, amount);
         }
 
         // ERC721
         else if (token_type == 2) {
-            require(IERC721(token_address).balanceOf(sender_address) >= amount, "012");
+            require(IERC721(token_address).balanceOf(sender_address) >= amount, "721 balance too low");
             for (uint i=0; i < amount; i++) {
                 if (recipient_address == address(this)){
                     IERC721(token_address).approve(recipient_address, erc721_token_ids[i]);
@@ -186,13 +186,13 @@ contract HappyRedPacket {
         address payable recipient = address(uint160(_recipient));
         // uint256 token_id;
         // Unsuccessful
-        require (unbox(rp.packed1, 208, 48) > now, "003");
+        require (unbox(rp.packed1, 208, 48) > now, "Expired");
         uint total_number = unbox(rp.packed2, 232, 8);
         uint claimed_number = unbox(rp.packed2, 224, 8);
-        require (claimed_number < total_number, "004");
+        require (claimed_number < total_number, "Out of stock");
         // require (1 > 2, 'test');
-        require (uint256(keccak256(bytes(password))) >> 128 == unbox(rp.packed1, 0, 128), "006");
-        require (validation == keccak256(toBytes(msg.sender)), "007");
+        require (uint256(keccak256(bytes(password))) >> 128 == unbox(rp.packed1, 0, 128), "Wrong password");
+        require (validation == keccak256(toBytes(msg.sender)), "Validation failed");
 
         uint claimed_tokens;
         uint256 [] memory token_ids = new uint256[](1); //TODO: Optimize this behavior.
@@ -254,7 +254,7 @@ contract HappyRedPacket {
                 break;
             }
         }
-        require (available == false, "005");
+        require (available == false, "Already claimed");
 
         rp.claimed_list[claimed_number / 4] = rewriteBox(rp.claimed_list[claimed_number / 4], 64 * uint16(claimed_number % 4), 64, (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192));
         rp.packed2 = rewriteBox(rp.packed2, 224, 8, claimed_number + 1);
@@ -303,8 +303,8 @@ contract HappyRedPacket {
 
     function refund(bytes32 id) public {
         RedPacket storage rp = redpacket_by_id[id];
-        require(uint256(keccak256(abi.encodePacked(msg.sender)) >> 192) == unbox(rp.packed2, 160, 64), "011");
-        require(unbox(rp.packed1, 208, 48) <= now, "012");
+        require(uint256(keccak256(abi.encodePacked(msg.sender)) >> 192) == unbox(rp.packed2, 160, 64), "Creator Only");
+        require(unbox(rp.packed1, 208, 48) <= now, "Not expired yet");
 
         uint256 remaining_tokens = unbox(rp.packed1, 128, 80);
         require(remaining_tokens != 0, "None left in the red packet.");
