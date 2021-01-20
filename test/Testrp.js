@@ -1,3 +1,7 @@
+const chai = require('chai')
+const expect = chai.expect
+chai.use(require('chai-as-promised'))
+
 const TestToken = artifacts.require('TestToken')
 const Test721Token = artifacts.require('Test721Token')
 const HappyRedPacket = artifacts.require('HappyRedPacket')
@@ -17,7 +21,7 @@ contract('TestToken', accounts => {
 
   it('Should return the HappyRedPacket contract creator', async () => {
     const contract_creator = await redpacket.contract_creator.call()
-    assert.equal(contract_creator, accounts[0])
+    expect(contract_creator).to.be.eql(accounts[0])
   })
 
   it('Should return a redpacket id', async () => {
@@ -66,7 +70,7 @@ contract('TestToken', accounts => {
       topics: [web3.utils.sha3(creation_success_encode)],
     })
     redpacket_id = web3.eth.abi.decodeParameters(creation_success_types, logs[0].data)['1']
-    assert.notEqual(redpacket_id, null)
+    expect(redpacket_id).to.be.not.null
   })
 
   it('Should allow two users to claim red packets.', async () => {
@@ -98,7 +102,7 @@ contract('TestToken', accounts => {
     returned = await redpacket.check_availability.call(rp_id, {
       from: recipient1,
     })
-    assert.equal(returned.ifclaimed, true)
+    expect(returned).to.have.property('ifclaimed').that.to.be.true
 
     // 2nd
     const recipient2 = accounts[2]
@@ -117,7 +121,7 @@ contract('TestToken', accounts => {
     returned = await redpacket.check_availability.call(rp_id, {
       from: recipient2,
     })
-    assert.equal(returned.ifclaimed, true)
+    expect(returned).to.have.property('ifclaimed').that.to.be.true
 
     // 3rd
     const recipient3 = accounts[3]
@@ -136,7 +140,7 @@ contract('TestToken', accounts => {
     returned = await redpacket.check_availability.call(rp_id, {
       from: recipient3,
     })
-    assert.equal(returned.ifclaimed, true)
+    expect(returned).to.have.property('ifclaimed').that.to.be.true
 
     // Check balance
     const balance1 = await testtoken.balanceOf.call(recipient1, {
@@ -152,12 +156,11 @@ contract('TestToken', accounts => {
       from: accounts[4],
     })
 
-    // Assert
-    assert.isAbove(Number(balance1), 0)
-    assert.isAbove(Number(balance2), 0)
-    assert.isAbove(Number(balance3), 0)
-    assert.equal(Number(balance4), 0)
-    assert.equal(Number(balance1) + Number(balance2) + Number(balance3), _total_tokens)
+    expect(Number(balance1)).to.be.greaterThan(0)
+    expect(Number(balance2)).to.be.greaterThan(0)
+    expect(Number(balance3)).to.be.greaterThan(0)
+    expect(Number(balance4)).to.be.eql(0)
+    expect(Number(balance1) + Number(balance2) + Number(balance3)).to.be.eq(_total_tokens)
   })
 })
 contract('TestToken', accounts => {
@@ -170,7 +173,7 @@ contract('TestToken', accounts => {
 
   it('Should return the HappyRedPacket contract creator', async () => {
     const contract_creator = await redpacket.contract_creator.call()
-    assert.equal(contract_creator, accounts[0])
+    expect(contract_creator).to.be.eql(accounts[0])
   })
 
   it('Should return a redpacket id', async () => {
@@ -219,7 +222,7 @@ contract('TestToken', accounts => {
       topics: [web3.utils.sha3(creation_success_encode)],
     })
     redpacket_id = web3.eth.abi.decodeParameters(creation_success_types, logs[0].data)['1']
-    assert.notEqual(redpacket_id, null)
+    expect(redpacket_id).to.be.not.null
   })
 
   it('Should refund the red packets.', async () => {
@@ -248,7 +251,7 @@ contract('Test721Token', accounts => {
   })
   it('Should return the HappyRedPacket contract creator', async () => {
     const contract_creator = await redpacket.contract_creator.call()
-    assert.equal(contract_creator, accounts[0])
+    expect(contract_creator).to.be.eql(accounts[0])
   })
   it('Should return a redpacket id', async () => {
     const passwords = ['1', '2']
@@ -297,6 +300,7 @@ contract('Test721Token', accounts => {
       total_tokens,
       token_ids,
     )
+    const balance = await test721token.balanceOf(redpacket.address)
     const logs = await web3.eth.getPastLogs({
       address: redpacket.address,
       topics: [web3.utils.sha3(creation_success_encode)],
@@ -304,12 +308,11 @@ contract('Test721Token', accounts => {
     log = web3.eth.abi.decodeParameters(creation_success_types, logs[0].data)
     redpacket_id = log['1']
     redpacket_token_ids = log['5']
-    assert.notEqual(redpacket_id, null)
-    assert.notEqual(token_ids, null)
-    assert.equal(await test721token.balanceOf(redpacket.address), 5)
+    expect(redpacket_id).to.be.not.null
+    expect(token_ids).to.be.not.null
+    expect(Number(balance)).to.be.eq(5)
   })
   it('Should allow two users to claim red packets.', async () => {
-    // const redpacket = await HappyRedPacket.deployed();
     const password = '1'
     const rp_id = redpacket_id
 
@@ -318,7 +321,7 @@ contract('Test721Token', accounts => {
 
     // Check Availability
     let returned = await redpacket.check_availability.call(rp_id)
-    assert.equal(returned.ifclaimed, false)
+    expect(returned).to.have.property('ifclaimed').that.to.be.false
 
     // 1st
     const recipient1 = accounts[1]
@@ -336,7 +339,7 @@ contract('Test721Token', accounts => {
     returned = await redpacket.check_availability.call(rp_id, {
       from: recipient1,
     })
-    assert.equal(returned.ifclaimed, true)
+    expect(returned).to.have.property('ifclaimed').that.to.be.true
 
     // 2nd
     const recipient2 = accounts[2]
@@ -354,7 +357,7 @@ contract('Test721Token', accounts => {
     returned = await redpacket.check_availability.call(rp_id, {
       from: recipient2,
     })
-    assert.equal(returned.ifclaimed, true)
+    expect(returned).to.have.property('ifclaimed').that.to.be.true
 
     // 3rd
     const recipient3 = accounts[3]
@@ -371,7 +374,7 @@ contract('Test721Token', accounts => {
     returned = await redpacket.check_availability.call(rp_id, {
       from: recipient3,
     })
-    assert.equal(returned.ifclaimed, true)
+    expect(returned).to.have.property('ifclaimed').that.to.be.true
 
     // Check balance
     const balance1 = await test721token.balanceOf.call(recipient1, {
@@ -387,11 +390,10 @@ contract('Test721Token', accounts => {
       from: accounts[4],
     })
 
-    // Assert
-    assert.isAbove(Number(balance1), 0)
-    assert.isAbove(Number(balance2), 0)
-    assert.isAbove(Number(balance3), 0)
-    assert.equal(Number(balance4), 0)
-    // assert.equal(Number(balance1) + Number(balance2) + Number(balance3), _total_tokens)
+    expect(Number(balance1)).to.be.greaterThan(0)
+    expect(Number(balance2)).to.be.greaterThan(0)
+    expect(Number(balance3)).to.be.greaterThan(0)
+    expect(Number(balance4)).to.be.eql(0)
+    expect(Number(balance1) + Number(balance2) + Number(balance3)).to.be.eq(_total_tokens)
   })
 })
