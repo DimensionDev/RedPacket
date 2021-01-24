@@ -7,7 +7,6 @@ const creation_success_types = [
   { type: 'address', name: 'creator' },
   { type: 'uint', name: 'creation_time' },
   { type: 'address', name: 'token_address' },
-  { type: 'uint256[]', name: 'erc721_token_ids' },
 ]
 const claim_success_encode = 'ClaimSuccess(bytes32,address,uint,address,uint256[])'
 const claim_success_types = [
@@ -15,13 +14,12 @@ const claim_success_types = [
   { type: 'address', name: 'claimer' },
   { type: 'uint', name: 'claimed_value' },
   { type: 'address', name: 'token_address' },
-  { type: 'uint256[]', name: 'token_id' },
 ]
 const refund_success_encode = 'RefundSuccess(bytes32,address,uint)'
 const refund_success_types = [
   { type: 'bytes32', name: 'id' },
   { type: 'address', name: 'token_address' },
-  { type: 'uint', name: 'remaining_balance' },  
+  { type: 'uint', name: 'remaining_balance' },
 ]
 const PASSWORD = 'password'
 const eth_address = "0x0000000000000000000000000000000000000000"

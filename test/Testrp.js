@@ -8,20 +8,18 @@ const {
   claim_success_encode,
   claim_success_types,
   refund_success_encode,
-  refund_success_types,  
+  refund_success_types,
   PASSWORD,
   eth_address,
 } = require('./constants')
 
 const TestToken = artifacts.require('TestToken')
-const Test721Token = artifacts.require('Test721Token')
 const HappyRedPacket = artifacts.require('HappyRedPacket')
 
 contract('HappyRedPacket', accounts => {
   let snapShot
   let snapshotId
   let testtoken
-  let test721token
   let redpacket
   let creationParams
 
@@ -29,7 +27,6 @@ contract('HappyRedPacket', accounts => {
     snapShot = await helper.takeSnapshot()
     snapshotId = snapShot['result']
     testtoken = await TestToken.deployed()
-    test721token = await Test721Token.deployed()
     redpacket = await HappyRedPacket.deployed()
     creationParams = {
       hash: web3.utils.sha3(PASSWORD),
@@ -42,7 +39,6 @@ contract('HappyRedPacket', accounts => {
       token_type: 0,
       token_addr: eth_address,
       total_tokens: 10,
-      erc721_token_ids: [],
     }
   })
 
@@ -106,18 +102,7 @@ contract('HappyRedPacket', accounts => {
       ).to.be.rejectedWith(Error)
     })
 
-    it('should throw error when erc721 token is not approved yet', async () => {
-      creationParams.token_type = 2
-      creationParams.token_addr = test721token.address
-      await expect(
-        redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
-          from: accounts[0],
-        }),
-      ).to.be.rejectedWith(Error)
-    })
-
     it('should emit CreationSuccess when everything is ok', async () => {
-      await prepareERC721Token()
       await redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
         from: accounts[0],
         value: creationParams.total_tokens,
@@ -140,12 +125,6 @@ contract('HappyRedPacket', accounts => {
       expect(result)
         .to.have.property('creation_time')
         .that.to.length(10)
-      expect(result)
-        .to.have.property('token_address')
-        .that.to.be.eq(test721token.address)
-      expect(result)
-        .to.have.property('erc721_token_ids')
-        .that.to.be.eql(creationParams.erc721_token_ids.map(v => v.toString()))
     })
   })
 
@@ -292,41 +271,7 @@ contract('HappyRedPacket', accounts => {
       expect(v1 + v2 + v3 + v4).to.be.eq(1e5)
     })
 
-    it('should claim the first erc721 token if not set random', async () => {
-      creationParams.ifrandom = false
-      await prepareERC721Token()
-      await test721token.setApprovalForAll.sendTransaction(redpacket.address, true)
-      const { claimParams, redPacketInfo } = await createThenGetClaimParams(accounts[1])
-      const claimParams2 = createClaimParams(redPacketInfo.id, accounts[2])
 
-      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
-        from: accounts[1],
-      })
-      await redpacket.claim.sendTransaction(...Object.values(claimParams2), {
-        from: accounts[2],
-      })
-
-      const results = await getClaimRedPacketInfo(1)
-
-      expect(results[0].token_id).to.be.eql([creationParams.erc721_token_ids[0].toString()])
-      expect(results[1].token_id).to.be.eql([creationParams.erc721_token_ids[1].toString()])
-    })
-
-    it('should claim the first erc721 token if set random', async () => {
-      creationParams.total_tokens = 80
-      await prepareERC721Token()
-      await test721token.setApprovalForAll.sendTransaction(redpacket.address, true)
-      const { claimParams } = await createThenGetClaimParams(accounts[1])
-      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
-        from: accounts[1],
-      })
-      const results = await getClaimRedPacketInfo(0)
-
-      // Note: this test has 1/80 possibility to fail: 
-      // AssertionError: expected [ '0' ] to not deeply equal [ '0' ]
-      // see https://softwareengineering.stackexchange.com/a/147142
-      expect(results[0].token_id).to.be.not.eql([creationParams.erc721_token_ids[0].toString()])
-    })
   })
 
   describe('refund()', async () => {
@@ -392,9 +337,9 @@ contract('HappyRedPacket', accounts => {
       const result = await getRefundRedPacketInfo()
       expect(result).to.have.property('id').that.to.be.eq(redPacketInfo.id)
       expect(result).to.have.property('token_address').that.to.be.eq(eth_address)
-      expect(Number(result.remaining_balance)).to.be.eq(7)         
+      expect(Number(result.remaining_balance)).to.be.eq(7)
     })
-    
+
     it('should refund erc20 successfully', async () => {
       creationParams.ifrandom = false
       creationParams.token_type = 1
@@ -414,40 +359,10 @@ contract('HappyRedPacket', accounts => {
       const result = await getRefundRedPacketInfo()
       expect(result).to.have.property('id').that.to.be.eq(redPacketInfo.id)
       expect(result).to.have.property('token_address').that.to.be.eq(testtoken.address)
-      expect(Number(result.remaining_balance)).to.be.eq(7)      
-    })    
+      expect(Number(result.remaining_balance)).to.be.eq(7)
+    })
 
-    it('should refund erc721 successfully', async () => {      
-      creationParams.ifrandom = false
-      await prepareERC721Token()
-
-      const { claimParams, redPacketInfo } = await createThenGetClaimParams(accounts[1])
-      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
-        from: accounts[1],
-      })
-
-      await helper.advanceTimeAndBlock(2000)
-
-      await redpacket.refund.sendTransaction(redPacketInfo.id, {
-        from: accounts[0],
-      })
-
-      const result = await getRefundRedPacketInfo()
-      expect(result).to.have.property('id').that.to.be.eq(redPacketInfo.id)
-      expect(result).to.have.property('token_address').that.to.be.eq(test721token.address)
-      expect(Number(result.remaining_balance)).to.be.eq(9)    
-    })    
   })
-
-  async function prepareERC721Token() {
-    creationParams.token_type = 2
-    creationParams.token_addr = test721token.address
-    for (i = 0; i < creationParams.total_tokens; i++) {
-      const token_id = await test721token.tokenOfOwnerByIndex.call(accounts[0], i)
-      creationParams.erc721_token_ids.push(token_id)
-    }
-    await test721token.setApprovalForAll.sendTransaction(redpacket.address, true)    
-  }
 
   async function createThenGetClaimParams(account) {
     await createRedPacket()
