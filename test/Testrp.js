@@ -1,275 +1,500 @@
-const TestToken = artifacts.require("TestToken");
-const Test721Token = artifacts.require("Test721Token");
-const HappyRedPacket = artifacts.require("HappyRedPacket");
-var testtoken;
-var test721token;
-var redpacket;
-var redpacket_id;
-var _total_tokens
+const chai = require('chai')
+const expect = chai.expect
+chai.use(require('chai-as-promised'))
+const helper = require('./helper')
+const {
+  creation_success_encode,
+  creation_success_types,
+  claim_success_encode,
+  claim_success_types,
+  refund_success_encode,
+  refund_success_types,  
+  PASSWORD,
+  eth_address,
+} = require('./constants')
 
-contract("TestToken", accounts => {
-    beforeEach(async () =>{
-        console.log("Before ALL\n");
-        testtoken = await TestToken.deployed();
-        redpacket = await HappyRedPacket.deployed();
-        _total_tokens = 101;
-    });
+const TestToken = artifacts.require('TestToken')
+const Test721Token = artifacts.require('Test721Token')
+const HappyRedPacket = artifacts.require('HappyRedPacket')
 
-    it("Should return the HappyRedPacket contract creator", async () => {
-        const contract_creator = await redpacket.contract_creator.call();
-        assert.equal(contract_creator, accounts[0]);
-    });
+contract('HappyRedPacket', accounts => {
+  let snapShot
+  let snapshotId
+  let testtoken
+  let test721token
+  let redpacket
+  let creationParams
 
-    it("Should return a redpacket id", async () => {
+  beforeEach(async () => {
+    snapShot = await helper.takeSnapshot()
+    snapshotId = snapShot['result']
+    testtoken = await TestToken.deployed()
+    test721token = await Test721Token.deployed()
+    redpacket = await HappyRedPacket.deployed()
+    creationParams = {
+      hash: web3.utils.sha3(PASSWORD),
+      number: 3,
+      ifrandom: true,
+      duration: 1000,
+      seed: web3.utils.sha3('lajsdklfjaskldfhaikl'),
+      message: 'Hi',
+      name: 'cache',
+      token_type: 0,
+      token_addr: eth_address,
+      total_tokens: 10,
+      erc721_token_ids: [],
+    }
+  })
 
-        const passwords = ["1", "2"];
-        const hashes = passwords.map(function (pass) {
-            return web3.utils.sha3(pass);
-        });
-        const name = "cache";
-        const msg = "hi";
-        const number = 3;
-        const duration = 1200;
-        const seed = web3.utils.sha3("lajsdklfjaskldfhaikl");
-        const token_type = 1;
-        const token_address = testtoken.address;
-        const token_ids = [];
-        const total_tokens = _total_tokens;
+  afterEach(async () => {
+    await helper.revertToSnapShot(snapshotId)
+  })
 
-        const creation_success_encode = 'CreationSuccess(uint256,bytes32,string,string,address,uint256,address,uint256[])';
-        const creation_success_types = ['uint256', 'bytes32', 'string', 'string','address', 'uint256', 'address', 'uint256[]'];
+  it('Should return the HappyRedPacket contract creator', async () => {
+    const contract_creator = await redpacket.contract_creator.call()
+    expect(contract_creator).to.be.eq(accounts[0])
+  })
 
-        await testtoken.approve.sendTransaction(redpacket.address, total_tokens);
-        const creation_receipt = await redpacket.create_red_packet
-                                .sendTransaction(hashes[0], number, true, duration, seed, msg,
-                                                    name, token_type, token_address, total_tokens, token_ids);
-        const logs = await web3.eth.getPastLogs({address: redpacket.address, topics: [web3.utils.sha3(creation_success_encode)]});
-        redpacket_id = web3.eth.abi.decodeParameters(creation_success_types, logs[0].data)['1'];
-        assert.notEqual(redpacket_id, null);
-    });
+  describe('create_red_packet()', async () => {
+    it('should throw error when total_tokens is less than number', async () => {
+      creationParams.number = 11
+      await expect(
+        redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
+          from: accounts[0],
+          value: creationParams.total_tokens,
+        }),
+      ).to.be.rejectedWith(Error)
+    })
 
-    it("Should allow two users to claim red packets.", async () => {
-        const redpacket = await HappyRedPacket.deployed();
-        const password = "1";
-        const rp_id = redpacket_id;
+    it('should throw error when number is less than 1', async () => {
+      creationParams.number = 0
+      await expect(
+        redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
+          from: accounts[0],
+          value: creationParams.total_tokens,
+        }),
+      ).to.be.rejectedWith(Error)
+    })
 
-        const claim_success_encode = "ClaimSuccess(%s,%s,%s,%s)";
-        const claim_success_types = ['bytes32', 'address', 'uint256', 'address'];
+    it('should throw error when number is greater than 255', async () => {
+      creationParams.number = 256
+      await expect(
+        redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
+          from: accounts[0],
+          value: creationParams.total_tokens,
+        }),
+      ).to.be.rejectedWith(Error)
+    })
 
-        // Check Availability
-        var returned = await redpacket.check_availability.call(rp_id);
-        assert.equal(returned.ifclaimed, false);
+    it('should throw error when eth is not enough', async () => {
+      await expect(
+        redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
+          from: accounts[0],
+          value: creationParams.total_tokens - 1,
+        }),
+      ).to.be.rejectedWith(Error)
+    })
 
-        // 1st
-        const recipient1 = accounts[1];
-        const validation1 = web3.utils.sha3(recipient1);
+    it('should throw error when erc20 token is not enough allowance', async () => {
+      creationParams.token_type = 1
+      creationParams.token_addr = testtoken.address
+      await testtoken.approve.sendTransaction(redpacket.address, creationParams.total_tokens - 1)
+      await expect(
+        redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
+          from: accounts[0],
+        }),
+      ).to.be.rejectedWith(Error)
+    })
 
-        const claim_receipt = await redpacket.claim.sendTransaction(rp_id, password, recipient1, validation1, {'from': recipient1});
-        const logs = await web3.eth.getPastLogs({address: redpacket.address, topic: [web3.utils.sha3(claim_success_encode)]});
-        //console.log(web3.eth.abi.decodeParameters(claim_success_types, logs[0].data));
+    it('should throw error when erc721 token is not approved yet', async () => {
+      creationParams.token_type = 2
+      creationParams.token_addr = test721token.address
+      await expect(
+        redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
+          from: accounts[0],
+        }),
+      ).to.be.rejectedWith(Error)
+    })
 
-        // Check Availability
-        returned = await redpacket.check_availability.call(rp_id, {'from': recipient1});
-        assert.equal(returned.ifclaimed, true);
+    it('should emit CreationSuccess when everything is ok', async () => {
+      await prepareERC721Token()
+      await redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
+        from: accounts[0],
+        value: creationParams.total_tokens,
+      })
 
-        // 2nd
-        const recipient2 = accounts[2];
-        const validation2 = web3.utils.sha3(recipient2);
+      const result = await getRedPacketInfo()
+      expect(result)
+        .to.have.property('total')
+        .that.to.be.eq(creationParams.total_tokens.toString())
+      expect(result).to.have.property('id').that.to.be.not.null
+      expect(result)
+        .to.have.property('name')
+        .that.to.be.eq(creationParams.name)
+      expect(result)
+        .to.have.property('message')
+        .that.to.be.eq(creationParams.message)
+      expect(result)
+        .to.have.property('creator')
+        .that.to.be.eq(accounts[0])
+      expect(result)
+        .to.have.property('creation_time')
+        .that.to.length(10)
+      expect(result)
+        .to.have.property('token_address')
+        .that.to.be.eq(test721token.address)
+      expect(result)
+        .to.have.property('erc721_token_ids')
+        .that.to.be.eql(creationParams.erc721_token_ids.map(v => v.toString()))
+    })
+  })
 
-        const claim_receipt2 = await redpacket.claim.sendTransaction(rp_id, password, recipient2, validation2, {'from':recipient2});
-        const logs2 = await web3.eth.getPastLogs({address: redpacket.address, topic: [web3.utils.sha3(claim_success_encode)]});
-        //console.log(web3.eth.abi.decodeParameters(claim_success_types, logs2[0].data));
+  describe('check_availability()', async () => {
+    it('should throw error when red packet does not exist', async () => {
+      await expect(redpacket.check_availability.call('id not exist', { from: accounts[1] })).to.be.rejectedWith(Error)
+    })
 
-        // Check Availability
-        returned = await redpacket.check_availability.call(rp_id, {'from': recipient2});
-        assert.equal(returned.ifclaimed, true);
+    it('should return availability status when everything is ok', async () => {
+      await createRedPacket()
+      const redPacketInfo = await getRedPacketInfo()
+      const result = await redpacket.check_availability.call(redPacketInfo.id, { from: accounts[1] })
+      expect(result).to.be.an('object')
+    })
+  })
 
-        // 3rd
-        const recipient3 = accounts[3];
-        const validation3 = web3.utils.sha3(recipient3);
+  describe('claim()', async () => {
+    it('should throw error when redpacket id does not exist', async () => {
+      const claimParams = createClaimParams('not exist', accounts[1])
+      await expect(
+        redpacket.claim.sendTransaction(...Object.values(claimParams), {
+          from: accounts[1],
+        }),
+      ).to.be.rejectedWith(Error)
+    })
 
-        const claim_receipt3 = await redpacket.claim.sendTransaction(rp_id, password, recipient3, validation3, {'from':recipient3});
-        const logs3 = await web3.eth.getPastLogs({address: redpacket.address, topic: [web3.utils.sha3(claim_success_encode)]});
-        //console.log(web3.eth.abi.decodeParameters(claim_success_types, logs3[0].data));
+    it('should emit ClaimSuccess when everything is ok', async () => {
+      const { claimParams } = await createThenGetClaimParams(accounts[1])
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+      const claimResults = await getClaimRedPacketInfo(0)
+      expect(claimResults[0]).to.have.property('id').that.to.be.not.null
+    })
 
-        // Check Availability
-        returned = await redpacket.check_availability.call(rp_id, {'from': recipient3});
-        assert.equal(returned.ifclaimed, true);
+    it('should throw error when expired', async () => {
+      creationParams.duration = 0
+      const { claimParams } = await createThenGetClaimParams(accounts[1])
+      await expect(
+        redpacket.claim.sendTransaction(...Object.values(claimParams), {
+          from: accounts[1],
+        }),
+      ).to.be.rejectedWith(Error)
+    })
 
-        // Check balance
-        const balance1 = await testtoken.balanceOf.call(recipient1, {'from':recipient1});
-        const balance2 = await testtoken.balanceOf.call(recipient2, {'from':recipient2});
-        const balance3 = await testtoken.balanceOf.call(recipient3, {'from':recipient3});
-        const balance4 = await testtoken.balanceOf.call(accounts[4], {'from':accounts[4]});
+    it('should throw error when out of stock', async () => {
+      creationParams.number = 1
+      const { claimParams, redPacketInfo } = await createThenGetClaimParams(accounts[1])
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+      const availability = await redpacket.check_availability.call(redPacketInfo.id, { from: accounts[2] })
+      expect(Number(availability.balance)).to.be.eq(0)
+      const anotherClaimParams = createClaimParams(redPacketInfo.id, accounts[2])
+      await expect(
+        redpacket.claim.sendTransaction(...Object.values(anotherClaimParams), {
+          from: accounts[2],
+        }),
+      ).to.be.rejectedWith(Error)
+    })
 
-        // Assert
-        assert.isAbove(Number(balance1), 0);
-        assert.isAbove(Number(balance2), 0);
-        assert.isAbove(Number(balance3), 0);
-        assert.equal(Number(balance4), 0);
-        assert.equal(Number(balance1) + Number(balance2) + Number(balance3), _total_tokens)
+    it('should throw error when password is wrong', async () => {
+      let { claimParams } = await createThenGetClaimParams(accounts[1])
+      claimParams.password = 'wrong password'
+      await expect(
+        redpacket.claim.sendTransaction(...Object.values(claimParams), {
+          from: accounts[1],
+        }),
+      ).to.be.rejectedWith(Error)
+    })
 
-    });
+    it('should throw error when validation failed', async () => {
+      let { claimParams } = await createThenGetClaimParams(accounts[1])
+      claimParams.validation = 'wrong validation'
+      await expect(
+        redpacket.claim.sendTransaction(...Object.values(claimParams), {
+          from: accounts[1],
+        }),
+      ).to.be.rejectedWith(Error)
+    })
 
-});
-contract("TestToken", accounts => {
-    beforeEach(async () =>{
-        console.log("Before ALL\n");
-        testtoken = await TestToken.deployed();
-        redpacket = await HappyRedPacket.deployed();
-        _total_tokens = 101;
-    });
+    it('should throw error when already claimed', async () => {
+      const { claimParams, redPacketInfo } = await createThenGetClaimParams(accounts[1])
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
 
-    it("Should return the HappyRedPacket contract creator", async () => {
-        const contract_creator = await redpacket.contract_creator.call();
-        assert.equal(contract_creator, accounts[0]);
-    });
+      const availability = await redpacket.check_availability.call(redPacketInfo.id, { from: accounts[1] })
 
-    it("Should return a redpacket id", async () => {
+      expect(availability).have.property('ifclaimed').that.to.be.true
+      await expect(
+        redpacket.claim.sendTransaction(...Object.values(claimParams), {
+          from: accounts[1],
+        }),
+      ).to.be.rejectedWith(Error)
+    })
 
-        const passwords = ["1", "2"];
-        const hashes = passwords.map(function (pass) {
-            return web3.utils.sha3(pass);
-        });
-        const name = "cache";
-        const msg = "hi";
-        const number = 3;
-        const duration = 0;
-        const seed = web3.utils.sha3("lajsdklfjaskldfhaikl");
-        const token_type = 1;
-        const token_address = testtoken.address;
-        const token_ids = [];
-        const total_tokens = _total_tokens;
+    it('should claim average amount if not set random', async () => {
+      creationParams.ifrandom = false
+      const { claimParams, redPacketInfo } = await createThenGetClaimParams(accounts[1])
+      const anotherClaimParams = createClaimParams(redPacketInfo.id, accounts[2])
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+      await redpacket.claim.sendTransaction(...Object.values(anotherClaimParams), {
+        from: accounts[2],
+      })
 
-        const creation_success_encode = 'CreationSuccess(uint256,bytes32,string,string,address,uint256,address,uint256[])';
-        const creation_success_types = ['uint256', 'bytes32', 'string', 'string','address', 'uint256', 'address', 'uint256[]'];
+      const results = await getClaimRedPacketInfo()
+      expect(Number(results[0].claimed_value))
+        .to.be.eq(Number(results[1].claimed_value))
+        .and.to.be.eq(3)
+    })
 
-        await testtoken.approve.sendTransaction(redpacket.address, total_tokens);
-        const creation_receipt = await redpacket.create_red_packet
-                                .sendTransaction(hashes[0], number, true, duration, seed, msg,
-                                                    name, token_type, token_address, total_tokens, token_ids);
-        const logs = await web3.eth.getPastLogs({address: redpacket.address, topics: [web3.utils.sha3(creation_success_encode)]});
-        redpacket_id = web3.eth.abi.decodeParameters(creation_success_types, logs[0].data)['1'];
-        assert.notEqual(redpacket_id, null);
-    });
+    it('should claim random amount if set random', async () => {
+      creationParams.total_tokens = 1e5
+      creationParams.number = 4
+      creationParams.token_type = 1
+      creationParams.token_addr = testtoken.address
+      await testtoken.approve.sendTransaction(redpacket.address, creationParams.total_tokens)
+      const { claimParams, redPacketInfo } = await createThenGetClaimParams(accounts[1])
+      const claimParams2 = createClaimParams(redPacketInfo.id, accounts[2])
+      const claimParams3 = createClaimParams(redPacketInfo.id, accounts[3])
+      const claimParams4 = createClaimParams(redPacketInfo.id, accounts[4])
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+      await redpacket.claim.sendTransaction(...Object.values(claimParams2), {
+        from: accounts[2],
+      })
+      await redpacket.claim.sendTransaction(...Object.values(claimParams3), {
+        from: accounts[3],
+      })
+      await redpacket.claim.sendTransaction(...Object.values(claimParams4), {
+        from: accounts[4],
+      })
 
-    it("Should refund the red packets.", async () => {
-        const redpacket = await HappyRedPacket.deployed();
-        const rp_id = redpacket_id;
+      const results = await getClaimRedPacketInfo(3)
+      const v1 = Number(results[0].claimed_value)
+      const v2 = Number(results[1].claimed_value)
+      const v3 = Number(results[2].claimed_value)
+      const v4 = Number(results[3].claimed_value)
+      expect([v1, v2, v3].every(v => v === v4)).to.be.false
+      expect(v1 + v2 + v3 + v4).to.be.eq(1e5)
+    })
 
-        const refund_success_encode = "RefundSuccess(%s,%s,%s)";
-        const refund_success_types = ['bytes32', 'address', 'uint256'];
+    it('should claim the first erc721 token if not set random', async () => {
+      creationParams.ifrandom = false
+      await prepareERC721Token()
+      await test721token.setApprovalForAll.sendTransaction(redpacket.address, true)
+      const { claimParams, redPacketInfo } = await createThenGetClaimParams(accounts[1])
+      const claimParams2 = createClaimParams(redPacketInfo.id, accounts[2])
 
-        const refund_receipt = await redpacket.refund.sendTransaction(rp_id, {'from': accounts[0]});
-        const logs = await web3.eth.getPastLogs({address: redpacket.address, topic: [web3.utils.sha3(refund_success_encode)]});
-        //console.log(web3.eth.abi.decodeParameters(refund_success_types, logs[0].data));
-    });
-});
-contract("Test721Token", accounts => {
-    beforeEach(async () =>{
-        console.log("Before ALL\n");
-        test721token = await Test721Token.deployed();
-        redpacket = await HappyRedPacket.deployed();
-        _total_tokens = 10;
-    });
-    it("Should return the HappyRedPacket contract creator", async () => {
-        const contract_creator = await redpacket.contract_creator.call();
-        assert.equal(contract_creator, accounts[0]);
-    });
-    it("Should return a redpacket id", async () => {
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+      await redpacket.claim.sendTransaction(...Object.values(claimParams2), {
+        from: accounts[2],
+      })
 
-        const passwords = ["1", "2"];
-        const hashes = passwords.map(function (pass) {
-            return web3.utils.sha3(pass);
-        });
-        const name = "cache";
-        const msg = "hi";
-        const number = 3;
-        const duration = 1200;
-        const seed = web3.utils.sha3("lajsdklfjaskldfhaikl");
-        const token_type = 2;
-        const token_address = test721token.address;
-        // const token_total = await test721token.balanceOf.call(accounts[0]);
-        const token_total = 5;
-        const token_ids = [];
-        for (i=0; i < token_total; i++) {
-            token_id = await test721token.tokenOfOwnerByIndex.call(accounts[0], i);
-            token_ids.push(token_id);
-        }
-        const total_tokens = token_ids.length;
+      const results = await getClaimRedPacketInfo(1)
 
-        const creation_success_encode = 'CreationSuccess(uint256,bytes32,string,string,address,uint256,address,uint256[])';
-        const creation_success_types = ['uint256', 'bytes32', 'string', 'string','address', 'uint256', 'address', 'uint256[]'];
+      expect(results[0].token_id).to.be.eql([creationParams.erc721_token_ids[0].toString()])
+      expect(results[1].token_id).to.be.eql([creationParams.erc721_token_ids[1].toString()])
+    })
 
-        await test721token.setApprovalForAll.sendTransaction(redpacket.address, true);
-        const creation_receipt = await redpacket.create_red_packet
-                                .sendTransaction(hashes[0], number, true, duration, seed, msg,
-                                                    name, token_type, token_address, total_tokens, token_ids);
-        const logs = await web3.eth.getPastLogs({address: redpacket.address, topics: [web3.utils.sha3(creation_success_encode)]});
-        log = web3.eth.abi.decodeParameters(creation_success_types, logs[0].data);
-        redpacket_id = log['1']
-        redpacket_token_ids = log['5'];
-        assert.notEqual(redpacket_id, null);
-        assert.notEqual(token_ids, null);
-        assert.equal(await test721token.balanceOf(redpacket.address), 5)
-    });
-    it("Should allow two users to claim red packets.", async () => {
-        // const redpacket = await HappyRedPacket.deployed();
-        const password = "1";
-        const rp_id = redpacket_id;
+    it('should claim the first erc721 token if set random', async () => {
+      creationParams.total_tokens = 80
+      await prepareERC721Token()
+      await test721token.setApprovalForAll.sendTransaction(redpacket.address, true)
+      const { claimParams } = await createThenGetClaimParams(accounts[1])
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+      const results = await getClaimRedPacketInfo(0)
 
-        const claim_success_encode = "ClaimSuccess(%s,%s,%s,%s)";
-        const claim_success_types = ['bytes32', 'address', 'uint256', 'address'];
+      // Note: this test has 1/80 possibility to fail: 
+      // AssertionError: expected [ '0' ] to not deeply equal [ '0' ]
+      // see https://softwareengineering.stackexchange.com/a/147142
+      expect(results[0].token_id).to.be.not.eql([creationParams.erc721_token_ids[0].toString()])
+    })
+  })
 
-        // Check Availability
-        var returned = await redpacket.check_availability.call(rp_id);
-        assert.equal(returned.ifclaimed, false);
+  describe('refund()', async () => {
+    it('should throw error when the refunder is not creator', async () => {
+      const { redPacketInfo } = await createThenGetClaimParams(accounts[1])
+      await expect(
+        redpacket.refund.sendTransaction(redPacketInfo.id, {
+          from: accounts[1],
+        }),
+      ).to.be.rejectedWith(Error)
+    })
 
-        // 1st
-        const recipient1 = accounts[1];
-        const validation1 = web3.utils.sha3(recipient1);
+    it('should throw error before expiry', async () => {
+      const { redPacketInfo } = await createThenGetClaimParams(accounts[1])
+      await expect(
+        redpacket.refund.sendTransaction(redPacketInfo.id, {
+          from: accounts[0],
+        }),
+      ).to.be.rejectedWith(Error)
+    })
 
-        const claim_receipt = await redpacket.claim.sendTransaction(rp_id, password, recipient1, validation1, {'from': recipient1});
-        const logs = await web3.eth.getPastLogs({address: redpacket.address, topic: [web3.utils.sha3(claim_success_encode)]});
+    it("should throw error when there's no remaining", async () => {
+      creationParams.number = 1
+      const { claimParams, redPacketInfo } = await createThenGetClaimParams(accounts[1])
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+      const availability = await redpacket.check_availability.call(redPacketInfo.id, { from: accounts[1] })
+      expect(Number(availability.total)).to.be.eq(Number(availability.claimed))
+      expect(Number(availability.balance)).to.be.eq(0)
+      await expect(
+        redpacket.refund.sendTransaction(redPacketInfo.id, {
+          from: accounts[0],
+        }),
+      ).to.be.rejectedWith(Error)
+    })
 
+    it('should refund eth successfully', async () => {
+      const { claimParams, redPacketInfo } = await createThenGetClaimParams(accounts[1])
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
 
-        // Check Availability
-        returned = await redpacket.check_availability.call(rp_id, {'from': recipient1});
-        assert.equal(returned.ifclaimed, true);
+      await helper.advanceTimeAndBlock(2000)
 
-        // 2nd
-        const recipient2 = accounts[2];
-        const validation2 = web3.utils.sha3(recipient2);
+      await redpacket.refund.sendTransaction(redPacketInfo.id, {
+        from: accounts[0],
+      })
+    })
 
-        const claim_receipt2 = await redpacket.claim.sendTransaction(rp_id, password, recipient2, validation2, {'from':recipient2});
-        const logs2 = await web3.eth.getPastLogs({address: redpacket.address, topic: [web3.utils.sha3(claim_success_encode)]});
+    it('should refund eth successfully', async () => {
+      creationParams.ifrandom = false
+      const { claimParams, redPacketInfo } = await createThenGetClaimParams(accounts[1])
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
 
-        // Check Availability
-        returned = await redpacket.check_availability.call(rp_id, {'from': recipient2});
-        assert.equal(returned.ifclaimed, true);
+      await helper.advanceTimeAndBlock(2000)
 
-        // 3rd
-        const recipient3 = accounts[3];
-        const validation3 = web3.utils.sha3(recipient3);
+      await redpacket.refund.sendTransaction(redPacketInfo.id, {
+        from: accounts[0],
+      })
+      const result = await getRefundRedPacketInfo()
+      expect(result).to.have.property('id').that.to.be.eq(redPacketInfo.id)
+      expect(result).to.have.property('token_address').that.to.be.eq(eth_address)
+      expect(Number(result.remaining_balance)).to.be.eq(7)         
+    })
+    
+    it('should refund erc20 successfully', async () => {
+      creationParams.ifrandom = false
+      creationParams.token_type = 1
+      creationParams.token_addr = testtoken.address
+      await testtoken.approve.sendTransaction(redpacket.address, creationParams.total_tokens)
 
-        const claim_receipt3 = await redpacket.claim.sendTransaction(rp_id, password, recipient3, validation3, {'from':recipient3});
-        const logs3 = await web3.eth.getPastLogs({address: redpacket.address, topic: [web3.utils.sha3(claim_success_encode)]});
-        // Check Availability
-        returned = await redpacket.check_availability.call(rp_id, {'from': recipient3});
-        assert.equal(returned.ifclaimed, true);
+      const { claimParams, redPacketInfo } = await createThenGetClaimParams(accounts[1])
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
 
-        // Check balance
-        const balance1 = await test721token.balanceOf.call(recipient1, {'from':recipient1});
-        const balance2 = await test721token.balanceOf.call(recipient2, {'from':recipient2});
-        const balance3 = await test721token.balanceOf.call(recipient3, {'from':recipient3});
-        const balance4 = await test721token.balanceOf.call(accounts[4], {'from':accounts[4]});
+      await helper.advanceTimeAndBlock(2000)
 
-        // Assert
-        assert.isAbove(Number(balance1), 0);
-        assert.isAbove(Number(balance2), 0);
-        assert.isAbove(Number(balance3), 0);
-        assert.equal(Number(balance4), 0);
-        // assert.equal(Number(balance1) + Number(balance2) + Number(balance3), _total_tokens)
+      await redpacket.refund.sendTransaction(redPacketInfo.id, {
+        from: accounts[0],
+      })
+      const result = await getRefundRedPacketInfo()
+      expect(result).to.have.property('id').that.to.be.eq(redPacketInfo.id)
+      expect(result).to.have.property('token_address').that.to.be.eq(testtoken.address)
+      expect(Number(result.remaining_balance)).to.be.eq(7)      
+    })    
 
-    });
-});
+    it('should refund erc721 successfully', async () => {      
+      creationParams.ifrandom = false
+      await prepareERC721Token()
+
+      const { claimParams, redPacketInfo } = await createThenGetClaimParams(accounts[1])
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+
+      await helper.advanceTimeAndBlock(2000)
+
+      await redpacket.refund.sendTransaction(redPacketInfo.id, {
+        from: accounts[0],
+      })
+
+      const result = await getRefundRedPacketInfo()
+      expect(result).to.have.property('id').that.to.be.eq(redPacketInfo.id)
+      expect(result).to.have.property('token_address').that.to.be.eq(test721token.address)
+      expect(Number(result.remaining_balance)).to.be.eq(9)    
+    })    
+  })
+
+  async function prepareERC721Token() {
+    creationParams.token_type = 2
+    creationParams.token_addr = test721token.address
+    for (i = 0; i < creationParams.total_tokens; i++) {
+      const token_id = await test721token.tokenOfOwnerByIndex.call(accounts[0], i)
+      creationParams.erc721_token_ids.push(token_id)
+    }
+    await test721token.setApprovalForAll.sendTransaction(redpacket.address, true)    
+  }
+
+  async function createThenGetClaimParams(account) {
+    await createRedPacket()
+    const redPacketInfo = await getRedPacketInfo()
+    return { claimParams: createClaimParams(redPacketInfo.id, account), redPacketInfo }
+  }
+
+  function createClaimParams(id, recipient) {
+    return {
+      id,
+      password: PASSWORD,
+      recipient,
+      validation: web3.utils.sha3(recipient),
+    }
+  }
+
+  async function createRedPacket() {
+    await redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
+      from: accounts[0],
+      value: creationParams.total_tokens,
+    })
+  }
+
+  async function getRedPacketInfo() {
+    const logs = await web3.eth.getPastLogs({
+      address: redpacket.address,
+      topic: [web3.utils.sha3(creation_success_encode)],
+    })
+    return web3.eth.abi.decodeParameters(creation_success_types, logs[0].data)
+  }
+
+  async function getClaimRedPacketInfo(fromBlock = 1) {
+    const latestBlock = await web3.eth.getBlockNumber()
+    const logs = await web3.eth.getPastLogs({
+      address: redpacket.address,
+      topic: [web3.utils.sha3(claim_success_encode)],
+      fromBlock: latestBlock - fromBlock,
+      toBlock: latestBlock,
+    })
+    return logs.map(log => web3.eth.abi.decodeParameters(claim_success_types, log.data))
+  }
+
+  async function getRefundRedPacketInfo() {
+    const logs = await web3.eth.getPastLogs({
+      address: redpacket.address,
+      topic: [web3.utils.sha3(refund_success_encode)],
+    })
+    return web3.eth.abi.decodeParameters(refund_success_types, logs[0].data)
+  }
+})
