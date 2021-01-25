@@ -1,7 +1,6 @@
 pragma solidity 0.6.2;
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC721/IERC721.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 
@@ -89,7 +88,6 @@ contract HappyRedPacket {
         uint total_number = unbox(rp.packed2, 232, 8);
         uint claimed_number = unbox(rp.packed2, 224, 8);
         require (claimed_number < total_number, "Out of stock");
-        // require (1 > 2, 'test');
         require (uint256(keccak256(bytes(password))) >> 128 == unbox(rp.packed1, 0, 128), "Wrong password");
         require (validation == keccak256(toBytes(msg.sender)), "Validation failed");
 
@@ -97,7 +95,6 @@ contract HappyRedPacket {
         uint256 token_type = unbox(rp.packed2, 240, 8);
         uint ifrandom = unbox(rp.packed2, 248, 8);
         uint total_tokens = unbox(rp.packed1, 128, 96);
-        // Todo get erc721 token id;
         if (ifrandom == 1) {
             if (total_number - claimed_number == 1){
                 claimed_tokens = total_tokens;
@@ -108,7 +105,6 @@ contract HappyRedPacket {
             if (claimed_tokens == 0) {
                 claimed_tokens = 1;
             }
-            rp.packed1 = rewriteBox(rp.packed1, 128, 96, total_tokens - claimed_tokens);
         }
         else {
             if (total_number - claimed_number == 1){
@@ -117,9 +113,8 @@ contract HappyRedPacket {
             else{
                 claimed_tokens = SafeMath.div(total_tokens, (total_number - claimed_number));
             }
-
-            rp.packed1 = rewriteBox(rp.packed1, 128, 96, total_tokens - claimed_tokens);
         }
+        rp.packed1 = rewriteBox(rp.packed1, 128, 96, total_tokens - claimed_tokens);
 
         // Penalize greedy attackers by placing duplication check at the very last
         bool available = false;
