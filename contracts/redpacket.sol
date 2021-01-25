@@ -58,6 +58,7 @@ contract HappyRedPacket {
         require(_total_tokens >= _number, "#tokens > #packets");
         require(_number > 0, "At least 1 recipient");
         require(_number < 256, "At most 255 recipients");
+        require(_token_type == 0 || _token_type == 1, "Unrecognizable token type");
 
         if (_token_type == 0) {
             require(msg.value >= _total_tokens, "No enough tokens");

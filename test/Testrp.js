@@ -62,6 +62,16 @@ contract('HappyRedPacket', accounts => {
       ).to.be.rejectedWith(Error)
     })
 
+    it('should throw error when token_type is unrecognizable', async () => {
+      creationParams.token_type = 4
+      await expect(
+        redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
+          from: accounts[0],
+          value: creationParams.total_tokens,
+        }),
+      ).to.be.rejectedWith(Error)
+    })    
+
     it('should throw error when total_tokens is less than number', async () => {
       creationParams.number = 11
       await expect(
