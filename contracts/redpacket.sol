@@ -45,7 +45,7 @@ contract HappyRedPacket {
 
     constructor() public {
         contract_creator = msg.sender;
-        seed = keccak256(abi.encodePacked(magic, now, contract_creator));
+        seed = keccak256(abi.encodePacked(magic, block.timestamp, contract_creator));
     }
 
     // Inits a red packet instance
@@ -67,13 +67,13 @@ contract HappyRedPacket {
             IERC20(_token_addr).safeTransferFrom(msg.sender, address(this), _total_tokens);
         }
 
-        bytes32 _id = keccak256(abi.encodePacked(msg.sender, now, nonce, seed, _seed));
+        bytes32 _id = keccak256(abi.encodePacked(msg.sender, block.timestamp, nonce, seed, _seed));
         uint _random_type = _ifrandom ? 1 : 0;
         RedPacket storage redp = redpacket_by_id[_id];
         redp.packed1 = wrap1(_hash, _total_tokens, _duration);
         redp.packed2 = wrap2(_token_addr, _number, _token_type, _random_type);
         redp.claimed_list = new uint256[]((_number-1)/4 + 1);
-        emit CreationSuccess(_total_tokens, _id, _name, _message, msg.sender, now, _token_addr);
+        emit CreationSuccess(_total_tokens, _id, _name, _message, msg.sender, block.timestamp, _token_addr);
     }
 
     // It takes the unhashed password and a hashed random seed generated from the user
@@ -84,7 +84,7 @@ contract HappyRedPacket {
         address payable recipient = address(uint160(_recipient));
         // uint256 token_id;
         // Unsuccessful
-        require (unbox(rp.packed1, 224, 32) > now, "Expired");
+        require (unbox(rp.packed1, 224, 32) > block.timestamp, "Expired");
         uint total_number = unbox(rp.packed2, 232, 8);
         uint claimed_number = unbox(rp.packed2, 224, 8);
         require (claimed_number < total_number, "Out of stock");
@@ -157,13 +157,13 @@ contract HappyRedPacket {
                 break;
             }
         }
-        return (address(unbox(rp.packed2, 0, 160)), unbox(rp.packed1, 128, 96), unbox(rp.packed2, 232, 8), unbox(rp.packed2, 224, 8), now > unbox(rp.packed1, 224, 32), ifclaimed);
+        return (address(unbox(rp.packed2, 0, 160)), unbox(rp.packed1, 128, 96), unbox(rp.packed2, 232, 8), unbox(rp.packed2, 224, 8), block.timestamp > unbox(rp.packed1, 224, 32), ifclaimed);
     }
 
     function refund(bytes32 id) public {
         RedPacket storage rp = redpacket_by_id[id];
         require(uint256(keccak256(abi.encodePacked(msg.sender)) >> 192) == unbox(rp.packed2, 160, 64), "Creator Only");
-        require(unbox(rp.packed1, 224, 32) <= now, "Not expired yet");
+        require(unbox(rp.packed1, 224, 32) <= block.timestamp, "Not expired yet");
 
         uint256 remaining_tokens = unbox(rp.packed1, 128, 96);
         require(remaining_tokens != 0, "None left in the red packet.");
@@ -226,7 +226,7 @@ contract HappyRedPacket {
     
     // A boring wrapper
     function random(bytes32 _seed, uint32 nonce_rand) internal view returns (uint rand) {
-        return uint(keccak256(abi.encodePacked(nonce_rand, msg.sender, _seed, now))) + 1 ;
+        return uint(keccak256(abi.encodePacked(nonce_rand, msg.sender, _seed, block.timestamp))) + 1 ;
     }
     
     // https://ethereum.stackexchange.com/questions/884/how-to-convert-an-address-to-bytes-in-solidity
@@ -245,7 +245,7 @@ contract HappyRedPacket {
         uint256 _packed1 = 0;
         _packed1 |= box(0, 128, uint256(_hash) >> 128); // hash = 128 bits (NEED TO CONFIRM THIS)
         _packed1 |= box(128, 96, _total_tokens);        // total tokens = 80 bits = ~8 * 10^10 18 decimals
-        _packed1 |= box(224, 32, (now + _duration));    // expiration_time = 32 bits (until 2106)
+        _packed1 |= box(224, 32, (block.timestamp + _duration));    // expiration_time = 32 bits (until 2106)
         return _packed1;
     }
 
