@@ -52,6 +52,16 @@ contract('HappyRedPacket', accounts => {
   })
 
   describe('create_red_packet()', async () => {
+    it('should throw error when expiration_time is greater than 2106', async () => {
+      creationParams.duration = 2 ** 32
+      await expect(
+        redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
+          from: accounts[0],
+          value: creationParams.total_tokens,
+        }),
+      ).to.be.rejectedWith(Error)
+    })
+
     it('should throw error when total_tokens is less than number', async () => {
       creationParams.number = 11
       await expect(
@@ -225,18 +235,24 @@ contract('HappyRedPacket', accounts => {
     it('should claim average amount if not set random', async () => {
       creationParams.ifrandom = false
       const { claimParams, redPacketInfo } = await createThenGetClaimParams(accounts[1])
-      const anotherClaimParams = createClaimParams(redPacketInfo.id, accounts[2])
+      const claimParams2 = createClaimParams(redPacketInfo.id, accounts[2])
+      const claimParams3 = createClaimParams(redPacketInfo.id, accounts[3])
       await redpacket.claim.sendTransaction(...Object.values(claimParams), {
         from: accounts[1],
       })
-      await redpacket.claim.sendTransaction(...Object.values(anotherClaimParams), {
+      await redpacket.claim.sendTransaction(...Object.values(claimParams2), {
         from: accounts[2],
       })
+      await redpacket.claim.sendTransaction(...Object.values(claimParams3), {
+        from: accounts[3],
+      })
 
-      const results = await getClaimRedPacketInfo()
+      const results = await getClaimRedPacketInfo(2)
       expect(Number(results[0].claimed_value))
         .to.be.eq(Number(results[1].claimed_value))
         .and.to.be.eq(3)
+
+      expect(Number(results[2].claimed_value)).and.to.be.eq(4)
     })
 
     it('should claim random amount if set random', async () => {
@@ -271,7 +287,37 @@ contract('HappyRedPacket', accounts => {
       expect(v1 + v2 + v3 + v4).to.be.eq(1e5)
     })
 
+    // Note: this test is unable to increase the line coverage every time.
+    // see https://softwareengineering.stackexchange.com/a/147142
+    it('should claim at least 1 token when random token is 0', async () => {
+      creationParams.total_tokens = 3
+      creationParams.number = 3
+      creationParams.token_type = 1
+      creationParams.token_addr = testtoken.address
+      await testtoken.approve.sendTransaction(redpacket.address, creationParams.total_tokens)
+      const { claimParams, redPacketInfo } = await createThenGetClaimParams(accounts[1])
+      const claimParams2 = createClaimParams(redPacketInfo.id, accounts[2])
+      const claimParams3 = createClaimParams(redPacketInfo.id, accounts[3])
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+      await redpacket.claim.sendTransaction(...Object.values(claimParams2), {
+        from: accounts[2],
+      })
+      await redpacket.claim.sendTransaction(...Object.values(claimParams3), {
+        from: accounts[3],
+      })
 
+      const results = await getClaimRedPacketInfo(2)
+      const v1 = Number(results[0].claimed_value)
+      const v2 = Number(results[1].claimed_value)
+      const v3 = Number(results[2].claimed_value)
+
+      expect(v1)
+        .to.be.eq(v2)
+        .and.to.be.eq(v3)
+        .and.to.be.eq(1)
+    })
   })
 
   describe('refund()', async () => {
@@ -335,8 +381,12 @@ contract('HappyRedPacket', accounts => {
         from: accounts[0],
       })
       const result = await getRefundRedPacketInfo()
-      expect(result).to.have.property('id').that.to.be.eq(redPacketInfo.id)
-      expect(result).to.have.property('token_address').that.to.be.eq(eth_address)
+      expect(result)
+        .to.have.property('id')
+        .that.to.be.eq(redPacketInfo.id)
+      expect(result)
+        .to.have.property('token_address')
+        .that.to.be.eq(eth_address)
       expect(Number(result.remaining_balance)).to.be.eq(7)
     })
 
@@ -357,11 +407,14 @@ contract('HappyRedPacket', accounts => {
         from: accounts[0],
       })
       const result = await getRefundRedPacketInfo()
-      expect(result).to.have.property('id').that.to.be.eq(redPacketInfo.id)
-      expect(result).to.have.property('token_address').that.to.be.eq(testtoken.address)
+      expect(result)
+        .to.have.property('id')
+        .that.to.be.eq(redPacketInfo.id)
+      expect(result)
+        .to.have.property('token_address')
+        .that.to.be.eq(testtoken.address)
       expect(Number(result.remaining_balance)).to.be.eq(7)
     })
-
   })
 
   async function createThenGetClaimParams(account) {

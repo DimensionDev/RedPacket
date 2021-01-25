@@ -22,7 +22,7 @@ const refund_success_types = [
   { type: 'uint', name: 'remaining_balance' },
 ]
 const PASSWORD = 'password'
-const eth_address = "0x0000000000000000000000000000000000000000"
+const eth_address = '0x0000000000000000000000000000000000000000'
 
 module.exports = {
   creation_success_encode,
