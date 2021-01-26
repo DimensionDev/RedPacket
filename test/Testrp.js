@@ -159,8 +159,9 @@ contract('HappyRedPacket', accounts => {
     it('should return availability status when everything is ok', async () => {
       await createRedPacket()
       const redPacketInfo = await getRedPacketInfo()
-      const result = await redpacket.check_availability.call(redPacketInfo.id, { from: accounts[1] })
-      expect(result).to.be.an('object')
+      const availability = await redpacket.check_availability.call(redPacketInfo.id, { from: accounts[1] })
+      expect(availability).to.be.an('object')
+      expect(BigNumber(availability.claimed_amount).toFixed()).to.be.eq('0')
     })
   })
 
@@ -237,7 +238,7 @@ contract('HappyRedPacket', accounts => {
 
       const availability = await redpacket.check_availability.call(redPacketInfo.id, { from: accounts[1] })
 
-      expect(availability).have.property('ifclaimed').that.not.to.be.eq(0)
+      expect(BigNumber(availability.claimed_amount).toFixed()).not.to.be.eq('0')
       await expect(
         redpacket.claim.sendTransaction(...Object.values(claimParams), {
           from: accounts[1],
@@ -340,7 +341,7 @@ contract('HappyRedPacket', accounts => {
         .and.to.be.eq(1)
     })
 
-    // Note: this test spends a long time, on my machine is about 30s
+    // Note: this test spends a long time, on my machine is about 5s
     it('should create and claim successfully with 100 red packets and 100 claimers', async () => {
       creationParams.ifrandom = false
       const { results } = await testSuitCreateAndClaimManyRedPackets()
@@ -355,7 +356,7 @@ contract('HappyRedPacket', accounts => {
       ).to.be.true
     })
 
-    // Note: this test spends a long time, on my machine is about 40s
+    // Note: this test spends a long time, on my machine is about 5s
     it('should create and claim successfully with 100 random red packets and 100 claimers', async () => {
       const { results } = await testSuitCreateAndClaimManyRedPackets()
       const total_claimed_tokens = results.reduce((acc, cur) => BigNumber(cur.claimed_value).plus(acc), BigNumber(0))
@@ -461,7 +462,7 @@ contract('HappyRedPacket', accounts => {
       expect(Number(result.remaining_balance)).to.be.eq(66666667)
     })
 
-    // Note: this test spends a long time, on my machine is about 15s
+    // Note: this test spends a long time, on my machine is about 8s
     it("should refund erc20 successfully when there're 100 red packets and 50 claimers", async () => {
       creationParams.ifrandom = false
       const { redPacketInfo } = await testSuitCreateAndClaimManyRedPackets(50)

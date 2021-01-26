@@ -19,6 +19,9 @@ truffle build
 To test the project:
 ```
 npm install chai ganache-cli
+ganache-cli -a 100
+truffle test
+// or test with code coverage
 truffle run coverage
 ```
 

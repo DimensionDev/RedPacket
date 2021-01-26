@@ -127,7 +127,7 @@ contract HappyRedPacket {
 
     // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets
     function check_availability(bytes32 id) external view returns ( address token_address, uint balance, uint total, 
-                                                                    uint claimed, bool expired, uint256 ifclaimed) {
+                                                                    uint claimed, bool expired, uint256 claimed_amount) {
         RedPacket storage rp = redpacket_by_id[id];
         return (
             address(unbox(rp.packed2, 0, 160, "token_address")), 
