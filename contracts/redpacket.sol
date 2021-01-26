@@ -86,15 +86,15 @@ contract HappyRedPacket {
         // uint256 token_id;
         // Unsuccessful
         require (unbox(rp.packed1, 224, 32, "duration") > block.timestamp, "Expired");
-        uint total_number = unbox(rp.packed2, 232, 8, "total_number");
-        uint claimed_number = unbox(rp.packed2, 224, 8, "claimed_number");
+        uint total_number = unbox(rp.packed2, 239, 15, "total_number");
+        uint claimed_number = unbox(rp.packed2, 224, 15, "claimed_number");
         require (claimed_number < total_number, "Out of stock");
         require (uint256(keccak256(bytes(password))) >> 128 == unbox(rp.packed1, 0, 128, "hash"), "Wrong password");
         require (validation == keccak256(toBytes(msg.sender)), "Validation failed");
 
         uint claimed_tokens;
-        uint256 token_type = unbox(rp.packed2, 240, 8, "token_type");
-        uint ifrandom = unbox(rp.packed2, 248, 8, "ifrandom");
+        uint256 token_type = unbox(rp.packed2, 254, 1, "token_type");
+        uint ifrandom = unbox(rp.packed2, 255, 1, "ifrandom");
         uint remaining_tokens = unbox(rp.packed1, 128, 96, "remaining_tokens");
         if (ifrandom == 1) {
             if (total_number - claimed_number == 1){
@@ -119,7 +119,7 @@ contract HappyRedPacket {
 
         // Penalize greedy attackers by placing duplication check at the very last
         bool available = false;
-        for (uint i = 0; i < unbox(rp.packed2, 224, 8, "claimed_number"); i ++) {
+        for (uint i = 0; i < unbox(rp.packed2, 224, 15, "claimed_number"); i ++) {
             if (unbox(rp.claimed_list[i / 4], uint16(64*(i%4)), 64, "claimer") == (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192)) {
                 available = true;
                 break;
@@ -133,7 +133,7 @@ contract HappyRedPacket {
             (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192),
             "claimer"
         );
-        rp.packed2 = rewriteBox(rp.packed2, 224, 8, claimed_number + 1, "claimed_number");
+        rp.packed2 = rewriteBox(rp.packed2, 224, 15, claimed_number + 1, "claimed_number");
 
 
         // Transfer the red packet after state changing
@@ -156,7 +156,7 @@ contract HappyRedPacket {
         RedPacket storage rp = redpacket_by_id[id];
         ifclaimed = false;
         uint256 sender_hash = (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192);
-        uint256 number = unbox(rp.packed2, 224, 8, "claimed_number");
+        uint256 number = unbox(rp.packed2, 224, 15, "claimed_number");
         for (uint i = 0; i < number; i ++) {
             if (unbox(rp.claimed_list[i / 4], uint16(64*(i%4)), 64, "msg.sender") == sender_hash) {
                 ifclaimed = true;
@@ -166,8 +166,8 @@ contract HappyRedPacket {
         return (
             address(unbox(rp.packed2, 0, 160, "token_address")), 
             unbox(rp.packed1, 128, 96, "remaining_tokens"), 
-            unbox(rp.packed2, 232, 8, "total_number"), 
-            unbox(rp.packed2, 224, 8, "claimed_number"), 
+            unbox(rp.packed2, 239, 15, "total_number"), 
+            unbox(rp.packed2, 224, 15, "claimed_number"), 
             block.timestamp > unbox(rp.packed1, 224, 32, "duration"), 
             ifclaimed
         );
@@ -181,7 +181,7 @@ contract HappyRedPacket {
         uint256 remaining_tokens = unbox(rp.packed1, 128, 96, "remaining_tokens");
         require(remaining_tokens != 0, "None left in the red packet.");
 
-        uint256 token_type = unbox(rp.packed2, 240, 8, "token_type");
+        uint256 token_type = unbox(rp.packed2, 254, 1, "token_type");
         address token_address = address(unbox(rp.packed2, 0, 160, "token_address"));
 
         if (token_type == 0) {
@@ -265,10 +265,10 @@ contract HappyRedPacket {
         uint256 _packed2 = 0;
         _packed2 |= box(0, 160, uint256(_token_addr), "token_address");    // token_address = 160 bits
         _packed2 |= box(160, 64, (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192), "creator");  // creator.hash = 64 bit
-        _packed2 |= box(224, 8, 0, "claimed_number");                   // claimed_number = 8 bits
-        _packed2 |= box(232, 8, _number, "total_number");               // total_number = 8 bits
-        _packed2 |= box(240, 8, _token_type, "token_type");             // token_type = 8 bits
-        _packed2 |= box(248, 8, _ifrandom, "ifrandom");                 // ifrandom = 1 bit 
+        _packed2 |= box(224, 15, 0, "claimed_number");                   // claimed_number = 14 bits 16384
+        _packed2 |= box(239, 15, _number, "total_number");               // total_number = 14 bits 16384
+        _packed2 |= box(254, 1, _token_type, "token_type");             // token_type = 1 bit 2
+        _packed2 |= box(255, 1, _ifrandom, "ifrandom");                 // ifrandom = 1 bit 2
         return _packed2;
     }
 }
