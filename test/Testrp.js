@@ -49,6 +49,7 @@ contract('HappyRedPacket', accounts => {
   it('Should return the HappyRedPacket contract creator', async () => {
     const contract_creator = await redpacket.contract_creator.call()
     expect(contract_creator).to.be.eq(accounts[0])
+    expect(accounts.length).to.be.eq(100)
   })
 
   describe('create_red_packet()', async () => {
@@ -70,7 +71,7 @@ contract('HappyRedPacket', accounts => {
           value: creationParams.total_tokens,
         }),
       ).to.be.rejectedWith(Error)
-    })    
+    })
 
     it('should throw error when total_tokens is less than number', async () => {
       creationParams.number = 11
@@ -294,7 +295,9 @@ contract('HappyRedPacket', accounts => {
       const v3 = Number(results[2].claimed_value)
       const v4 = Number(results[3].claimed_value)
       expect([v1, v2, v3].every(v => v === v4)).to.be.false
-      expect(v1 + v2 + v3 + v4).to.be.eq(1e5)
+      expect(v1 + v2 + v3 + v4)
+        .to.be.eq(creationParams.total_tokens)
+        .and.to.be.eq(1e5)
     })
 
     // Note: this test is unable to increase the line coverage every time.
@@ -327,6 +330,26 @@ contract('HappyRedPacket', accounts => {
         .to.be.eq(v2)
         .and.to.be.eq(v3)
         .and.to.be.eq(1)
+    })
+
+    // Note: this test spends a long time, on my machine is about 30s
+    it('should create and claim successfully with 100 red packets and 100 claimers', async () => {
+      creationParams.ifrandom = false
+      const { results } = await testSuitCreateAndClaimManyRedPackets()
+      const total_claimed_tokens = results.reduce((acc, cur) => Number(cur.claimed_value) + acc, 0)
+      expect(total_claimed_tokens)
+        .to.be.eq(creationParams.total_tokens)
+        .and.to.be.eq(1e5)
+      expect(results.every(result => Number(result.claimed_value) === Number(results[0].claimed_value))).to.be.true
+    })
+
+    // Note: this test spends a long time, on my machine is about 40s
+    it('should create and claim successfully with 100 random red packets and 100 claimers', async () => {
+      const { results } = await testSuitCreateAndClaimManyRedPackets()
+      const total_claimed_tokens = results.reduce((acc, cur) => Number(cur.claimed_value) + acc, 0)
+      expect(total_claimed_tokens)
+        .to.be.eq(creationParams.total_tokens)
+        .and.to.be.eq(1e5)
     })
   })
 
@@ -425,7 +448,51 @@ contract('HappyRedPacket', accounts => {
         .that.to.be.eq(testtoken.address)
       expect(Number(result.remaining_balance)).to.be.eq(7)
     })
+
+    // Note: this test spends a long time, on my machine is about 15s
+    it("should refund erc20 successfully when there're 100 red packets and 50 claimers", async () => {
+      creationParams.ifrandom = false
+      const { redPacketInfo } = await testSuitCreateAndClaimManyRedPackets(50)
+      await helper.advanceTimeAndBlock(2000)
+      await redpacket.refund.sendTransaction(redPacketInfo.id, {
+        from: accounts[0],
+      })
+      const result = await getRefundRedPacketInfo()
+      expect(result)
+        .to.have.property('token_address')
+        .that.to.be.eq(testtoken.address)
+      expect(Number(result.remaining_balance))
+        .to.be.eq(creationParams.total_tokens / 2)
+        .and.to.be.eq(50000)
+    })
   })
+
+  async function testSuitCreateAndClaimManyRedPackets(claimers = 100) {
+    creationParams.total_tokens = 1e5
+    creationParams.number = 100
+    creationParams.token_type = 1
+    creationParams.token_addr = testtoken.address
+    await testtoken.approve.sendTransaction(redpacket.address, creationParams.total_tokens)
+
+    await createRedPacket()
+    const redPacketInfo = await getRedPacketInfo()
+
+    await Promise.all(
+      Array.from(Array(claimers).keys()).map(i => {
+        const claimParams = createClaimParams(redPacketInfo.id, accounts[i])
+        return new Promise(resolve => {
+          redpacket.claim
+            .sendTransaction(...Object.values(claimParams), {
+              from: accounts[i],
+            })
+            .then(() => resolve())
+        })
+      }),
+    )
+
+    const results = await getClaimRedPacketInfo(claimers - 1)
+    return { results, redPacketInfo }
+  }
 
   async function createThenGetClaimParams(account) {
     await createRedPacket()
