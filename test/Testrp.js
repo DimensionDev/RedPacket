@@ -237,7 +237,7 @@ contract('HappyRedPacket', accounts => {
 
       const availability = await redpacket.check_availability.call(redPacketInfo.id, { from: accounts[1] })
 
-      expect(availability).have.property('ifclaimed').that.to.be.true
+      expect(availability).have.property('ifclaimed').that.not.to.be.eq(0)
       await expect(
         redpacket.claim.sendTransaction(...Object.values(claimParams), {
           from: accounts[1],

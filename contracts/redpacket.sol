@@ -60,9 +60,8 @@ contract HappyRedPacket {
         require(_number < 256, "At most 255 recipients");
         require(_token_type == 0 || _token_type == 1, "Unrecognizable token type");
 
-        if (_token_type == 0) {
+        if (_token_type == 0)
             require(msg.value >= _total_tokens, "No enough tokens");
-        }
         else if (_token_type == 1) {
             require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "No enough allowance");
             IERC20(_token_addr).safeTransferFrom(msg.sender, address(this), _total_tokens);
@@ -73,7 +72,6 @@ contract HappyRedPacket {
         RedPacket storage redp = redpacket_by_id[_id];
         redp.packed1 = wrap1(_hash, _total_tokens, _duration);
         redp.packed2 = wrap2(_token_addr, _number, _token_type, _random_type);
-        //redp.claimed_list = new uint256[]((_number-1)/4 + 1);
         emit CreationSuccess(_total_tokens, _id, _name, _message, msg.sender, block.timestamp, _token_addr);
     }
 
@@ -83,7 +81,6 @@ contract HappyRedPacket {
 
         RedPacket storage rp = redpacket_by_id[id];
         address payable recipient = address(uint160(_recipient));
-        // uint256 token_id;
         // Unsuccessful
         require (unbox(rp.packed1, 224, 32, "duration") > block.timestamp, "Expired");
         uint total_number = unbox(rp.packed2, 239, 15, "total_number");
@@ -92,10 +89,10 @@ contract HappyRedPacket {
         require (uint256(keccak256(bytes(password))) >> 128 == unbox(rp.packed1, 0, 128, "hash"), "Wrong password");
         require (validation == keccak256(toBytes(msg.sender)), "Validation failed");
 
-        uint claimed_tokens;
+        uint256 claimed_tokens;
         uint256 token_type = unbox(rp.packed2, 254, 1, "token_type");
-        uint ifrandom = unbox(rp.packed2, 255, 1, "ifrandom");
-        uint remaining_tokens = unbox(rp.packed1, 128, 96, "remaining_tokens");
+        uint256 ifrandom = unbox(rp.packed2, 255, 1, "ifrandom");
+        uint256 remaining_tokens = unbox(rp.packed1, 128, 96, "remaining_tokens");
         if (ifrandom == 1) {
             if (total_number - claimed_number == 1)
                 claimed_tokens = remaining_tokens;
@@ -103,7 +100,6 @@ contract HappyRedPacket {
                 claimed_tokens = random(seed, nonce) % SafeMath.div(SafeMath.mul(remaining_tokens, 2), total_number - claimed_number);
             if (claimed_tokens == 0) 
                 claimed_tokens = 1;
-            
         } else {
             if (total_number - claimed_number == 1) 
                 claimed_tokens = remaining_tokens;
@@ -119,24 +115,20 @@ contract HappyRedPacket {
         rp.packed2 = rewriteBox(rp.packed2, 224, 15, claimed_number + 1, "claimed_number");
 
         // Transfer the red packet after state changing
-        if (token_type == 0) {
+        if (token_type == 0)
             recipient.transfer(claimed_tokens);
-        }
-        else if (token_type == 1) {
+        else if (token_type == 1)
             transfer_token(address(unbox(rp.packed2, 0, 160, "token_address")), address(this),
                             recipient, claimed_tokens);
-        }
-
         // Claim success event
         emit ClaimSuccess(id, recipient, claimed_tokens, address(unbox(rp.packed2, 0, 160, "token_address")));
         return claimed_tokens;
     }
 
     // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets
-    function check_availability(bytes32 id) external view returns (address token_address, uint balance, uint total, 
+    function check_availability(bytes32 id) external view returns ( address token_address, uint balance, uint total, 
                                                                     uint claimed, bool expired, uint256 ifclaimed) {
         RedPacket storage rp = redpacket_by_id[id];
-        uint256 number = unbox(rp.packed2, 224, 15, "claimed_number");
         return (
             address(unbox(rp.packed2, 0, 160, "token_address")), 
             unbox(rp.packed1, 128, 96, "remaining_tokens"), 
@@ -188,9 +180,8 @@ contract HappyRedPacket {
     }
 
     function validRange(uint16 size, uint256 data, string memory require_msg) public pure { 
-        if (data > 2 ** uint256(size) - 1) {
+        if (data > 2 ** uint256(size) - 1)
             require(false, require_msg);
-        }
     }
 
     function rewriteBox(uint256 _box, uint16 position, uint16 size, uint256 data, bytes32 require_msg_prefix) internal pure returns (uint256 boxed) {
