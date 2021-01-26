@@ -1,3 +1,4 @@
+const BigNumber = require('bignumber.js')
 const chai = require('chai')
 const expect = chai.expect
 chai.use(require('chai-as-promised'))
@@ -38,7 +39,7 @@ contract('HappyRedPacket', accounts => {
       name: 'cache',
       token_type: 0,
       token_addr: eth_address,
-      total_tokens: 10,
+      total_tokens: 100000000,
     }
   })
 
@@ -75,6 +76,7 @@ contract('HappyRedPacket', accounts => {
 
     it('should throw error when total_tokens is less than number', async () => {
       creationParams.number = 11
+      creationParams.total_tokens = 10
       await expect(
         redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
           from: accounts[0],
@@ -261,13 +263,13 @@ contract('HappyRedPacket', accounts => {
       const results = await getClaimRedPacketInfo(2)
       expect(Number(results[0].claimed_value))
         .to.be.eq(Number(results[1].claimed_value))
-        .and.to.be.eq(3)
+        .and.to.be.eq(33333333)
 
-      expect(Number(results[2].claimed_value)).and.to.be.eq(4)
+      expect(Number(results[2].claimed_value)).and.to.be.eq(33333334)
     })
 
     it('should claim random amount if set random', async () => {
-      creationParams.total_tokens = 1e5
+      creationParams.total_tokens = BigNumber(1e18).toFixed()
       creationParams.number = 4
       creationParams.token_type = 1
       creationParams.token_addr = testtoken.address
@@ -290,14 +292,20 @@ contract('HappyRedPacket', accounts => {
       })
 
       const results = await getClaimRedPacketInfo(3)
-      const v1 = Number(results[0].claimed_value)
-      const v2 = Number(results[1].claimed_value)
-      const v3 = Number(results[2].claimed_value)
-      const v4 = Number(results[3].claimed_value)
-      expect([v1, v2, v3].every(v => v === v4)).to.be.false
-      expect(v1 + v2 + v3 + v4)
-        .to.be.eq(creationParams.total_tokens)
-        .and.to.be.eq(1e5)
+      const v1 = BigNumber(results[0].claimed_value)
+      const v2 = BigNumber(results[1].claimed_value)
+      const v3 = BigNumber(results[2].claimed_value)
+      const v4 = BigNumber(results[3].claimed_value)
+      expect([v1, v2, v3].every(v => v.toFixed() === v4.toFixed())).to.be.false
+      expect(
+        v1
+          .plus(v2)
+          .plus(v3)
+          .plus(v4)
+          .toFixed(),
+      )
+        .to.be.eq(BigNumber(creationParams.total_tokens).toFixed())
+        .and.to.be.eq(BigNumber(1e18).toFixed())
     })
 
     // Note: this test is unable to increase the line coverage every time.
@@ -336,20 +344,24 @@ contract('HappyRedPacket', accounts => {
     it('should create and claim successfully with 100 red packets and 100 claimers', async () => {
       creationParams.ifrandom = false
       const { results } = await testSuitCreateAndClaimManyRedPackets()
-      const total_claimed_tokens = results.reduce((acc, cur) => Number(cur.claimed_value) + acc, 0)
-      expect(total_claimed_tokens)
-        .to.be.eq(creationParams.total_tokens)
-        .and.to.be.eq(1e5)
-      expect(results.every(result => Number(result.claimed_value) === Number(results[0].claimed_value))).to.be.true
+      const total_claimed_tokens = results.reduce((acc, cur) => BigNumber(cur.claimed_value).plus(acc), BigNumber(0))
+      expect(total_claimed_tokens.toFixed())
+        .to.be.eq(BigNumber(creationParams.total_tokens).toFixed())
+        .and.to.be.eq(BigNumber(1e18).toFixed())
+      expect(
+        results.every(
+          result => BigNumber(result.claimed_value).toFixed() === BigNumber(results[0].claimed_value).toFixed(),
+        ),
+      ).to.be.true
     })
 
     // Note: this test spends a long time, on my machine is about 40s
     it('should create and claim successfully with 100 random red packets and 100 claimers', async () => {
       const { results } = await testSuitCreateAndClaimManyRedPackets()
-      const total_claimed_tokens = results.reduce((acc, cur) => Number(cur.claimed_value) + acc, 0)
-      expect(total_claimed_tokens)
-        .to.be.eq(creationParams.total_tokens)
-        .and.to.be.eq(1e5)
+      const total_claimed_tokens = results.reduce((acc, cur) => BigNumber(cur.claimed_value).plus(acc), BigNumber(0))
+      expect(total_claimed_tokens.toFixed())
+        .to.be.eq(BigNumber(creationParams.total_tokens).toFixed())
+        .and.to.be.eq(BigNumber(1e18).toFixed())
     })
   })
 
@@ -420,7 +432,7 @@ contract('HappyRedPacket', accounts => {
       expect(result)
         .to.have.property('token_address')
         .that.to.be.eq(eth_address)
-      expect(Number(result.remaining_balance)).to.be.eq(7)
+      expect(Number(result.remaining_balance)).to.be.eq(66666667)
     })
 
     it('should refund erc20 successfully', async () => {
@@ -446,7 +458,7 @@ contract('HappyRedPacket', accounts => {
       expect(result)
         .to.have.property('token_address')
         .that.to.be.eq(testtoken.address)
-      expect(Number(result.remaining_balance)).to.be.eq(7)
+      expect(Number(result.remaining_balance)).to.be.eq(66666667)
     })
 
     // Note: this test spends a long time, on my machine is about 15s
@@ -461,14 +473,18 @@ contract('HappyRedPacket', accounts => {
       expect(result)
         .to.have.property('token_address')
         .that.to.be.eq(testtoken.address)
-      expect(Number(result.remaining_balance))
-        .to.be.eq(creationParams.total_tokens / 2)
-        .and.to.be.eq(50000)
+      expect(BigNumber(result.remaining_balance).toFixed())
+        .to.be.eq(
+          BigNumber(creationParams.total_tokens)
+            .div(2)
+            .toFixed(),
+        )
+        .and.to.be.eq(BigNumber(5e17).toFixed())
     })
   })
 
   async function testSuitCreateAndClaimManyRedPackets(claimers = 100) {
-    creationParams.total_tokens = 1e5
+    creationParams.total_tokens = BigNumber(1e18).toFixed()
     creationParams.number = 100
     creationParams.token_type = 1
     creationParams.token_addr = testtoken.address
