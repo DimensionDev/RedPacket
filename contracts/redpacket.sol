@@ -9,7 +9,7 @@ contract HappyRedPacket {
     struct RedPacket {
         uint256 packed1;            // exp(48) total_tokens(80) hash(64) id(64) BIG ENDIAN
         uint256 packed2;            // ifrandom(1) token_type(8) total_number(8) claimed(8) creator(64) token_addr(160)
-        uint256[] claimed_list;
+        mapping(address => uint256) claimed_list;
     }
 
     event CreationSuccess(
@@ -73,7 +73,7 @@ contract HappyRedPacket {
         RedPacket storage redp = redpacket_by_id[_id];
         redp.packed1 = wrap1(_hash, _total_tokens, _duration);
         redp.packed2 = wrap2(_token_addr, _number, _token_type, _random_type);
-        redp.claimed_list = new uint256[]((_number-1)/4 + 1);
+        //redp.claimed_list = new uint256[]((_number-1)/4 + 1);
         emit CreationSuccess(_total_tokens, _id, _name, _message, msg.sender, block.timestamp, _token_addr);
     }
 
@@ -97,44 +97,26 @@ contract HappyRedPacket {
         uint ifrandom = unbox(rp.packed2, 255, 1, "ifrandom");
         uint remaining_tokens = unbox(rp.packed1, 128, 96, "remaining_tokens");
         if (ifrandom == 1) {
-            if (total_number - claimed_number == 1){
+            if (total_number - claimed_number == 1)
                 claimed_tokens = remaining_tokens;
-            }
-            else {
+            else 
                 claimed_tokens = random(seed, nonce) % SafeMath.div(SafeMath.mul(remaining_tokens, 2), total_number - claimed_number);
-            }
-            if (claimed_tokens == 0) {
+            if (claimed_tokens == 0) 
                 claimed_tokens = 1;
-            }
-        }
-        else {
-            if (total_number - claimed_number == 1){
+            
+        } else {
+            if (total_number - claimed_number == 1) 
                 claimed_tokens = remaining_tokens;
-            }
-            else{
+            else
                 claimed_tokens = SafeMath.div(remaining_tokens, (total_number - claimed_number));
-            }
         }
         rp.packed1 = rewriteBox(rp.packed1, 128, 96, remaining_tokens - claimed_tokens, "remaining_tokens");
 
         // Penalize greedy attackers by placing duplication check at the very last
-        bool available = false;
-        for (uint i = 0; i < unbox(rp.packed2, 224, 15, "claimed_number"); i ++) {
-            if (unbox(rp.claimed_list[i / 4], uint16(64*(i%4)), 64, "claimer") == (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192)) {
-                available = true;
-                break;
-            }
-        }
-        require (available == false, "Already claimed");
+        require(rp.claimed_list[msg.sender] == 0, "Already claimed");
 
-        rp.claimed_list[claimed_number / 4] = rewriteBox(
-            rp.claimed_list[claimed_number / 4], 64 * uint16(claimed_number % 4), 
-            64, 
-            (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192),
-            "claimer"
-        );
+        rp.claimed_list[msg.sender] = claimed_tokens;
         rp.packed2 = rewriteBox(rp.packed2, 224, 15, claimed_number + 1, "claimed_number");
-
 
         // Transfer the red packet after state changing
         if (token_type == 0) {
@@ -152,24 +134,16 @@ contract HappyRedPacket {
 
     // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets
     function check_availability(bytes32 id) external view returns (address token_address, uint balance, uint total, 
-                                                                    uint claimed, bool expired, bool ifclaimed) {
+                                                                    uint claimed, bool expired, uint256 ifclaimed) {
         RedPacket storage rp = redpacket_by_id[id];
-        ifclaimed = false;
-        uint256 sender_hash = (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192);
         uint256 number = unbox(rp.packed2, 224, 15, "claimed_number");
-        for (uint i = 0; i < number; i ++) {
-            if (unbox(rp.claimed_list[i / 4], uint16(64*(i%4)), 64, "msg.sender") == sender_hash) {
-                ifclaimed = true;
-                break;
-            }
-        }
         return (
             address(unbox(rp.packed2, 0, 160, "token_address")), 
             unbox(rp.packed1, 128, 96, "remaining_tokens"), 
             unbox(rp.packed2, 239, 15, "total_number"), 
             unbox(rp.packed2, 224, 15, "claimed_number"), 
             block.timestamp > unbox(rp.packed1, 224, 32, "duration"), 
-            ifclaimed
+            rp.claimed_list[msg.sender]
         );
     }
 
@@ -197,9 +171,6 @@ contract HappyRedPacket {
         // Gas Refund
         rp.packed1 = 0;
         rp.packed2 = 0;
-        for (uint i = 0; i < rp.claimed_list.length; i++){
-            rp.claimed_list[i] = 0;
-        }
     }
 
 //------------------------------------------------------------------
