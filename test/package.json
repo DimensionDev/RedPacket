@@ -1,7 +1,0 @@
-{
-    "dependencies": {},
-    "devDependencies": {
-        "openzeppelin-solidity": "^2.4.0",
-        "solhint": "^2.3.0"
-    }
-}
