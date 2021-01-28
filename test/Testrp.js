@@ -61,7 +61,7 @@ contract('HappyRedPacket', accounts => {
           from: accounts[0],
           value: creationParams.total_tokens,
         }),
-      ).to.be.rejectedWith(Error)
+      ).to.be.rejectedWith(getRevertMsg('duration out of range BOX'))
     })
 
     it('should throw error when token_type is unrecognizable', async () => {
@@ -71,7 +71,7 @@ contract('HappyRedPacket', accounts => {
           from: accounts[0],
           value: creationParams.total_tokens,
         }),
-      ).to.be.rejectedWith(Error)
+      ).to.be.rejectedWith(getRevertMsg('Unrecognizable token type'))
     })
 
     it('should throw error when total_tokens is less than number', async () => {
@@ -82,7 +82,7 @@ contract('HappyRedPacket', accounts => {
           from: accounts[0],
           value: creationParams.total_tokens,
         }),
-      ).to.be.rejectedWith(Error)
+      ).to.be.rejectedWith(getRevertMsg('#tokens > #packets'))
     })
 
     it('should throw error when number is less than 1', async () => {
@@ -92,7 +92,7 @@ contract('HappyRedPacket', accounts => {
           from: accounts[0],
           value: creationParams.total_tokens,
         }),
-      ).to.be.rejectedWith(Error)
+      ).to.be.rejectedWith(getRevertMsg('At least 1 recipient'))
     })
 
     it('should throw error when number is greater than 255', async () => {
@@ -102,7 +102,7 @@ contract('HappyRedPacket', accounts => {
           from: accounts[0],
           value: creationParams.total_tokens,
         }),
-      ).to.be.rejectedWith(Error)
+      ).to.be.rejectedWith(getRevertMsg('At most 255 recipients'))
     })
 
     it('should throw error when eth is not enough', async () => {
@@ -111,7 +111,7 @@ contract('HappyRedPacket', accounts => {
           from: accounts[0],
           value: creationParams.total_tokens - 1,
         }),
-      ).to.be.rejectedWith(Error)
+      ).to.be.rejectedWith(getRevertMsg('No enough ETH'))
     })
 
     it('should throw error when erc20 token is not enough allowance', async () => {
@@ -122,7 +122,7 @@ contract('HappyRedPacket', accounts => {
         redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
           from: accounts[0],
         }),
-      ).to.be.rejectedWith(Error)
+      ).to.be.rejectedWith(getRevertMsg('No enough allowance'))
     })
 
     it('should emit CreationSuccess when everything is ok', async () => {
@@ -191,7 +191,7 @@ contract('HappyRedPacket', accounts => {
         redpacket.claim.sendTransaction(...Object.values(claimParams), {
           from: accounts[1],
         }),
-      ).to.be.rejectedWith(Error)
+      ).to.be.rejectedWith(getRevertMsg('Expired'))
     })
 
     it('should throw error when out of stock', async () => {
@@ -207,7 +207,7 @@ contract('HappyRedPacket', accounts => {
         redpacket.claim.sendTransaction(...Object.values(anotherClaimParams), {
           from: accounts[2],
         }),
-      ).to.be.rejectedWith(Error)
+      ).to.be.rejectedWith(getRevertMsg('Out of stock'))
     })
 
     it('should throw error when password is wrong', async () => {
@@ -217,7 +217,7 @@ contract('HappyRedPacket', accounts => {
         redpacket.claim.sendTransaction(...Object.values(claimParams), {
           from: accounts[1],
         }),
-      ).to.be.rejectedWith(Error)
+      ).to.be.rejectedWith(getRevertMsg('Wrong password'))
     })
 
     it('should throw error when validation failed', async () => {
@@ -243,7 +243,7 @@ contract('HappyRedPacket', accounts => {
         redpacket.claim.sendTransaction(...Object.values(claimParams), {
           from: accounts[1],
         }),
-      ).to.be.rejectedWith(Error)
+      ).to.be.rejectedWith(getRevertMsg('Already claimed'))
     })
 
     it('should claim average amount if not set random', async () => {
@@ -373,7 +373,7 @@ contract('HappyRedPacket', accounts => {
         redpacket.refund.sendTransaction(redPacketInfo.id, {
           from: accounts[1],
         }),
-      ).to.be.rejectedWith(Error)
+      ).to.be.rejectedWith(getRevertMsg('Creator Only'))
     })
 
     it('should throw error before expiry', async () => {
@@ -382,7 +382,7 @@ contract('HappyRedPacket', accounts => {
         redpacket.refund.sendTransaction(redPacketInfo.id, {
           from: accounts[0],
         }),
-      ).to.be.rejectedWith(Error)
+      ).to.be.rejectedWith(getRevertMsg('Not expired yet'))
     })
 
     it("should throw error when there's no remaining", async () => {
@@ -394,11 +394,31 @@ contract('HappyRedPacket', accounts => {
       const availability = await redpacket.check_availability.call(redPacketInfo.id, { from: accounts[1] })
       expect(Number(availability.total)).to.be.eq(Number(availability.claimed))
       expect(Number(availability.balance)).to.be.eq(0)
+      await helper.advanceTimeAndBlock(2000)
       await expect(
         redpacket.refund.sendTransaction(redPacketInfo.id, {
           from: accounts[0],
         }),
-      ).to.be.rejectedWith(Error)
+      ).to.be.rejectedWith(getRevertMsg('None left in the red packet'))
+    })
+
+    it('should throw error when already refunded', async () => {
+      const { claimParams, redPacketInfo } = await createThenGetClaimParams(accounts[1])
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+
+      await helper.advanceTimeAndBlock(2000)
+
+      await redpacket.refund.sendTransaction(redPacketInfo.id, {
+        from: accounts[0],
+      })
+
+      await expect(
+        redpacket.refund.sendTransaction(redPacketInfo.id, {
+          from: accounts[0],
+        }),
+      ).to.be.rejectedWith(getRevertMsg('Already Refunded'))
     })
 
     it('should refund eth successfully', async () => {
@@ -558,5 +578,9 @@ contract('HappyRedPacket', accounts => {
       topic: [web3.utils.sha3(refund_success_encode)],
     })
     return web3.eth.abi.decodeParameters(refund_success_types, logs[0].data)
+  }
+
+  function getRevertMsg(msg) {
+    return `Returned error: VM Exception while processing transaction: revert ${msg} -- Reason given: ${msg}.`
   }
 })
