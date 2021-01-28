@@ -61,7 +61,7 @@ contract HappyRedPacket {
         require(_token_type == 0 || _token_type == 1, "Unrecognizable token type");
 
         if (_token_type == 0)
-            require(msg.value >= _total_tokens, "No enough tokens");
+            require(msg.value >= _total_tokens, "No enough ETH");
         else if (_token_type == 1) {
             require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "No enough allowance");
             IERC20(_token_addr).safeTransferFrom(msg.sender, address(this), _total_tokens);
@@ -141,11 +141,12 @@ contract HappyRedPacket {
 
     function refund(bytes32 id) public {
         RedPacket storage rp = redpacket_by_id[id];
+        require(rp.packed1 != 0 && rp.packed2 != 0, "Already Refunded");
         require(uint256(keccak256(abi.encodePacked(msg.sender)) >> 192) == unbox(rp.packed2, 160, 64, "msg.sender"), "Creator Only");
         require(unbox(rp.packed1, 224, 32, "duration") <= block.timestamp, "Not expired yet");
 
         uint256 remaining_tokens = unbox(rp.packed1, 128, 96, "remaining_tokens");
-        require(remaining_tokens != 0, "None left in the red packet.");
+        require(remaining_tokens != 0, "None left in the red packet");
 
         uint256 token_type = unbox(rp.packed2, 254, 1, "token_type");
         address token_address = address(unbox(rp.packed2, 0, 160, "token_address"));
@@ -166,15 +167,14 @@ contract HappyRedPacket {
     }
 
 //------------------------------------------------------------------
-
-    function box (uint16 position, uint16 size, uint256 data, bytes32 require_msg_prefix) internal pure returns (uint256 boxed) {
-        bytes32 require_msg_suffix = " out of range BOX";
+    function box (uint16 position, uint16 size, uint256 data, string memory require_msg_prefix) internal pure returns (uint256 boxed) {
+        string memory require_msg_suffix = " out of range BOX";
         validRange(size, data, string(abi.encodePacked(require_msg_prefix, require_msg_suffix)));
         return data << (256 - size - position);
     }
 
-    function unbox (uint256 base, uint16 position, uint16 size, bytes32 require_msg_prefix) internal pure returns (uint256 unboxed) {
-        bytes32 require_msg_suffix = " out of range UNBOX";
+    function unbox (uint256 base, uint16 position, uint16 size, string memory require_msg_prefix) internal pure returns (uint256 unboxed) {
+        string memory require_msg_suffix = " out of range UNBOX";
         validRange(256, base, string(abi.encodePacked(require_msg_prefix, require_msg_suffix)));        
         return (base << position) >> (256 - size);
     }
@@ -184,7 +184,7 @@ contract HappyRedPacket {
             require(false, require_msg);
     }
 
-    function rewriteBox(uint256 _box, uint16 position, uint16 size, uint256 data, bytes32 require_msg_prefix) internal pure returns (uint256 boxed) {
+    function rewriteBox(uint256 _box, uint16 position, uint16 size, uint256 data, string memory require_msg_prefix) internal pure returns (uint256 boxed) {
         uint256 _boxData = box(position, size, data, require_msg_prefix);
         uint256 _mask = box(position, size, uint256(-1) >> (256 - size), require_msg_prefix);
         _box = (_box & ~_mask) | _boxData;
