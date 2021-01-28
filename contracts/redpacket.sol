@@ -179,7 +179,7 @@ contract HappyRedPacket {
         return (base << position) >> (256 - size);
     }
 
-    function validRange(uint16 size, uint256 data, string memory require_msg) public pure { 
+    function validRange(uint16 size, uint256 data, string memory require_msg) internal pure { 
         if (data > 2 ** uint256(size) - 1)
             require(false, require_msg);
     }
@@ -205,7 +205,7 @@ contract HappyRedPacket {
     
     // https://ethereum.stackexchange.com/questions/884/how-to-convert-an-address-to-bytes-in-solidity
     // 695 gas consumed
-    function toBytes(address a) public pure returns (bytes memory b) {
+    function toBytes(address a) internal pure returns (bytes memory b) {
         assembly {
             let m := mload(0x40)
             a := and(a, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
