@@ -21,9 +21,11 @@ jobs:
           key: hash-${{ hashFiles('package-lock.json') }}
       - name: install deps
         run: npm ci
-      - name: ganache-cli
-        run: npm run ganache
       - name: truffle test
         run: npm test
-
-    
+    services:      
+      ganache:
+        image: trufflesuite/ganache-cli
+        options: '-a 100'
+        ports: 
+          - 8545:8545
