@@ -1,0 +1,27 @@
+name: test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  run-ganache-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - name: Cache
+        uses: actions/cache@v2.1.3    
+        with:
+          path: 'node_modules'
+          key: hash-${{ hashFiles('package-lock.json') }}
+      - name: install ganache-cli
+        run: npm ci ganache-cli
+      - name: run ganache-cli
+        run: ganache-cli -a 100
+
+    
