@@ -22,8 +22,7 @@ jobs:
       - name: install deps
         run: npm ci
       - name: truffle test
-        run: npm run jest
-        continue-on-error: false
+        run: npm test
     services:      
       ganache:
         image: trufflesuite/ganache-cli
