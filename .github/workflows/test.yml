@@ -9,6 +9,11 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    container:
+      image: trufflesuite/ganache-cli
+      ports: 
+        - 8545:8545
+      options: --accounts 100
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: actions/setup-node@v2
@@ -23,8 +28,3 @@ jobs:
         run: npm ci
       - name: truffle test
         run: npm test
-    services:      
-      ganache:
-        image: trufflesuite/ganache-cli -a 100
-        ports: 
-          - 8545:8545

@@ -48,9 +48,9 @@ contract('HappyRedPacket', accounts => {
   })
 
   it('Should return the HappyRedPacket contract creator', async () => {
-    // const contract_creator = await redpacket.contract_creator.call()
-    // expect(contract_creator).to.be.eq(accounts[0])
-    expect(accounts.length).to.be.eq(101)
+    const contract_creator = await redpacket.contract_creator.call()
+    expect(contract_creator).to.be.eq(accounts[0])
+    expect(accounts.length).to.be.eq(100)
   })
 
   describe('create_red_packet()', async () => {
