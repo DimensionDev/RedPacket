@@ -23,6 +23,7 @@ jobs:
         run: npm ci
       - name: truffle test
         run: npm test
+        continue-on-error: false
     services:      
       ganache:
         image: trufflesuite/ganache-cli
