@@ -26,5 +26,6 @@ jobs:
     services:      
       ganache:
         image: trufflesuite/ganache-cli
+        options: '--accounts 100'
         ports: 
           - 8545:8545
