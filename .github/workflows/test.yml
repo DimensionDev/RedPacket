@@ -22,7 +22,7 @@ jobs:
       - name: install deps
         run: npm ci
       - name: truffle test
-        run: npm test
+        run: npm run jest
         continue-on-error: false
     services:      
       ganache:
