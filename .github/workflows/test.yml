@@ -25,6 +25,6 @@ jobs:
         run: npm test
     services:      
       ganache:
-        image: trufflesuite/ganache-cli
+        image: trufflesuite/ganache-cli -a 100
         ports: 
           - 8545:8545
