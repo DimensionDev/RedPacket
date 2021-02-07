@@ -4,7 +4,8 @@
         "chai": "^4.2.0"
     },
     "scripts": {
-        "format:test": "prettier --write ./test/**.js"
+        "format:test": "prettier --write ./test/**.js",
+        "test": "truffle test"
     },
     "devDependencies": {
         "bignumber.js": "2.0.0",
@@ -12,6 +13,7 @@
         "openzeppelin-solidity": "^3.3.0",
         "prettier": "^1.19.1",
         "solhint": "^3.2.0",
-        "solidity-coverage": "^0.7.13"
+        "solidity-coverage": "^0.7.13",
+        "truffle": "^5.1.65"
     }
 }
