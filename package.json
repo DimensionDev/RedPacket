@@ -5,7 +5,7 @@
     },
     "scripts": {
         "test": "truffle test",
-        "format:test": "prettier --write ./test/**.js"        
+        "format:test": "prettier --write ./test/**.js"
     },
     "devDependencies": {
         "bignumber.js": "2.0.0",
