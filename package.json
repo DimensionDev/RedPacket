@@ -6,8 +6,7 @@
     "scripts": {
         "format:test": "prettier --write ./test/**.js",
         "ganache": "ganache-cli",
-        "test": "truffle test",
-        "mocha": "mocha"
+        "test": "mocha --timeout 50000 --grep '@ganache|@standalone' --invert --colors"
     },
     "devDependencies": {
         "bignumber.js": "2.0.0",
