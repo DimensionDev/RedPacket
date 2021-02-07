@@ -4,9 +4,7 @@
         "chai": "^4.2.0"
     },
     "scripts": {
-        "format:test": "prettier --write ./test/**.js",
-        "ganache": "ganache-cli",
-        "test": "mocha --timeout 50000 --grep '@ganache|@standalone' --invert --colors"
+        "test": "truffle test"
     },
     "devDependencies": {
         "bignumber.js": "2.0.0",
