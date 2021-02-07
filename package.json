@@ -4,8 +4,8 @@
         "chai": "^4.2.0"
     },
     "scripts": {
-        "format:test": "prettier --write ./test/**.js",
-        "test": "truffle test"
+        "test": "truffle test",
+        "format:test": "prettier --write ./test/**.js"        
     },
     "devDependencies": {
         "bignumber.js": "2.0.0",
