@@ -9,12 +9,12 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      ganache: 
+        image: trufflesuite/ganache-cli
+        ports:
+          - 8545:8545
     steps:
-      - uses: addnab/docker-run-action@v1
-        with:
-          image: trufflesuite/ganache-cli
-          ports: 8545:8545
-          run: ganache-cli -a 100
       - uses: actions/checkout@v2.3.4
       - uses: actions/setup-node@v2
         with:
