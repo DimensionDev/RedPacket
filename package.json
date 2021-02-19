@@ -1,14 +1,14 @@
 {
-    "dependencies": {
-        "@openzeppelin/contracts": "^3.3.0",
-        "chai": "^4.2.0"
-    },
     "scripts": {
-        "test": "truffle test",
-        "format:test": "prettier --write ./test/**.js"
+        "format:test": "prettier --write ./test/**.js",
+        "test": "truffle test"
+    },
+    "dependencies": {
+        "@openzeppelin/contracts": "^3.3.0"
     },
     "devDependencies": {
         "bignumber.js": "2.0.0",
+        "chai": "^4.3.0",
         "chai-as-promised": "^7.1.1",
         "openzeppelin-solidity": "^3.3.0",
         "prettier": "^1.19.1",
