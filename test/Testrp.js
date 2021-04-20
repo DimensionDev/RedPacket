@@ -61,7 +61,7 @@ contract('HappyRedPacket', accounts => {
           from: accounts[0],
           value: creationParams.total_tokens,
         }),
-      ).to.be.rejectedWith(getRevertMsg('duration out of range BOX'))
+      ).to.be.rejectedWith(getRevertMsg('Value out of range BOX'))
     })
 
     it('should throw error when token_type is unrecognizable', async () => {
