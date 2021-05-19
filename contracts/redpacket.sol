@@ -171,7 +171,6 @@ contract HappyRedPacket {
             payable(msg.sender).transfer(remaining_tokens);
         }
         else if (token_type == 1) {
-            IERC20(token_address).approve(msg.sender, remaining_tokens);
             transfer_token(token_address, address(this),
                             msg.sender, remaining_tokens);
         }
@@ -249,7 +248,6 @@ contract HappyRedPacket {
     // Check the balance of the given token
     function transfer_token(address token_address, address sender_address,
                             address recipient_address, uint amount) internal{
-        require(IERC20(token_address).balanceOf(sender_address) >= amount, "Balance too low");
         IERC20(token_address).safeTransfer(recipient_address, amount);
     }
     

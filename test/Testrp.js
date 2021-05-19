@@ -480,6 +480,9 @@ contract('HappyRedPacket', accounts => {
         .to.have.property('token_address')
         .that.to.be.eq(testtoken.address)
       expect(Number(result.remaining_balance)).to.be.eq(66666667)
+
+      const allowance = await testtoken.allowance(redpacket.address, accounts[0]);
+      expect(Number(allowance)).to.be.eq(0);
     })
 
     // Note: this test spends a long time, on my machine is about 8s
