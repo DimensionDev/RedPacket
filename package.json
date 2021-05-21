@@ -4,7 +4,7 @@
         "test": "truffle test"
     },
     "dependencies": {
-        "@openzeppelin/contracts": "^3.3.0"
+        "@openzeppelin/contracts": "^4.0.0"
     },
     "devDependencies": {
         "bignumber.js": "2.0.0",

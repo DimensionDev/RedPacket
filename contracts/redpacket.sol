@@ -1,7 +1,17 @@
-pragma solidity 0.6.2;
-import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+// SPDX-License-Identifier: MIT
+
+/**
+ * @author          Yisi Liu
+ * @contact         yisiliu@gmail.com
+ * @author_time     04/20/2021
+ * @maintainer      Hancheng Zhou, Yisi Liu
+ * @maintain_time   05/21/2021
+**/
+
+pragma solidity >= 0.8.0;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 
 contract HappyRedPacket {
@@ -47,7 +57,7 @@ contract HappyRedPacket {
     bytes32 private seed;
     uint256 constant MASK = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
-    constructor() public {
+    constructor() {
         contract_creator = msg.sender;
         seed = keccak256(abi.encodePacked(magic, block.timestamp, contract_creator));
     }
@@ -80,12 +90,11 @@ contract HappyRedPacket {
     }
 
     // It takes the unhashed password and a hashed random seed generated from the user
-    function claim(bytes32 id, string memory password, address _recipient, bytes32 validation) 
+    function claim(bytes32 id, string memory password, address payable recipient, bytes32 validation) 
     public returns (uint claimed) {
 
         RedPacket storage rp = redpacket_by_id[id];
         Packed memory packed = rp.packed;
-        address payable recipient = address(uint160(_recipient));
         // Unsuccessful
         require (unbox(packed.packed1, 224, 32) > block.timestamp, "Expired");
         uint total_number = unbox(packed.packed2, 239, 15);
@@ -123,10 +132,10 @@ contract HappyRedPacket {
         if (token_type == 0)
             recipient.transfer(claimed_tokens);
         else if (token_type == 1)
-            transfer_token(address(unbox(packed.packed2, 0, 160)), address(this),
+            transfer_token(address(uint160(unbox(packed.packed2, 0, 160))), address(this),
                             recipient, claimed_tokens);
         // Claim success event
-        emit ClaimSuccess(id, recipient, claimed_tokens, address(unbox(packed.packed2, 0, 160)));
+        emit ClaimSuccess(id, recipient, claimed_tokens, address(uint160(unbox(packed.packed2, 0, 160))));
         return claimed_tokens;
     }
 
@@ -136,7 +145,7 @@ contract HappyRedPacket {
         RedPacket storage rp = redpacket_by_id[id];
         Packed memory packed = rp.packed;
         return (
-            address(unbox(packed.packed2, 0, 160)), 
+            address(uint160(unbox(packed.packed2, 0, 160))), 
             unbox(packed.packed1, 128, 96), 
             unbox(packed.packed2, 239, 15), 
             unbox(packed.packed2, 224, 15), 
@@ -156,10 +165,10 @@ contract HappyRedPacket {
         require(remaining_tokens != 0, "None left in the red packet");
 
         uint256 token_type = unbox(packed.packed2, 254, 1);
-        address token_address = address(unbox(packed.packed2, 0, 160));
+        address token_address = address(uint160(unbox(packed.packed2, 0, 160)));
 
         if (token_type == 0) {
-            msg.sender.transfer(remaining_tokens);
+            payable(msg.sender).transfer(remaining_tokens);
         }
         else if (token_type == 1) {
             IERC20(token_address).approve(msg.sender, remaining_tokens);
@@ -259,7 +268,7 @@ contract HappyRedPacket {
 
     function wrap2 (address _token_addr, uint _number, uint _token_type, uint _ifrandom) internal view returns (uint256 packed2) {
         uint256 _packed2 = 0;
-        _packed2 |= box(0, 160, uint256(_token_addr));    // token_address = 160 bits
+        _packed2 |= box(0, 160, uint160(_token_addr));    // token_address = 160 bits
         _packed2 |= box(160, 64, (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192));  // creator.hash = 64 bit
         _packed2 |= box(224, 15, 0);                   // claimed_number = 14 bits 16384
         _packed2 |= box(239, 15, _number);               // total_number = 14 bits 16384
