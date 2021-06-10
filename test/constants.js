@@ -1,4 +1,4 @@
-const creation_success_encode = 'CreationSuccess(uint,bytes32,string,string,address,uint,address,uint256[])'
+const creation_success_encode = 'CreationSuccess(uint,bytes32,string,string,address,uint,address,uint256[],uint,bool,uint)'
 const creation_success_types = [
   { type: 'uint', name: 'total' },
   { type: 'bytes32', name: 'id' },
@@ -7,6 +7,9 @@ const creation_success_types = [
   { type: 'address', name: 'creator' },
   { type: 'uint', name: 'creation_time' },
   { type: 'address', name: 'token_address' },
+  { type: 'uint', name: 'number' },
+  { type: 'bool', name: 'ifrandom' },
+  { type: 'uint', name: 'duration' },
 ]
 const claim_success_encode = 'ClaimSuccess(bytes32,address,uint,address,uint256[])'
 const claim_success_types = [

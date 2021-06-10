@@ -33,7 +33,10 @@ contract HappyRedPacket {
         string message,
         address creator,
         uint creation_time,
-        address token_address
+        address token_address,
+        uint number,
+        bool ifrandom,
+        uint duration
     );
 
     event ClaimSuccess(
@@ -82,11 +85,19 @@ contract HappyRedPacket {
         }
 
         bytes32 _id = keccak256(abi.encodePacked(msg.sender, block.timestamp, nonce, seed, _seed));
-        uint _random_type = _ifrandom ? 1 : 0;
-        RedPacket storage redp = redpacket_by_id[_id];
-        redp.packed.packed1 = wrap1(_hash, _total_tokens, _duration);
-        redp.packed.packed2 = wrap2(_token_addr, _number, _token_type, _random_type);
-        emit CreationSuccess(_total_tokens, _id, _name, _message, msg.sender, block.timestamp, _token_addr);
+        {
+            uint _random_type = _ifrandom ? 1 : 0;
+            RedPacket storage redp = redpacket_by_id[_id];
+            redp.packed.packed1 = wrap1(_hash, _total_tokens, _duration);
+            redp.packed.packed2 = wrap2(_token_addr, _number, _token_type, _random_type);
+        }
+        {
+            // as a workaround for "CompilerError: Stack too deep, try removing local variables"
+            uint number = _number;
+            bool ifrandom = _ifrandom;
+            uint duration = _duration;
+            emit CreationSuccess(_total_tokens, _id, _name, _message, msg.sender, block.timestamp, _token_addr, number, ifrandom, duration);
+        }
     }
 
     // It takes the unhashed password and a hashed random seed generated from the user
