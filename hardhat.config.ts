@@ -7,6 +7,7 @@ import 'hardhat-deploy-ethers'
 import "@nomiclabs/hardhat-waffle"
 import "@nomiclabs/hardhat-ethers"
 import "solidity-coverage"
+import '@openzeppelin/hardhat-upgrades'
 
 const {
      infura_project_id,
@@ -23,6 +24,15 @@ const networks = {
           chainId: 31337,
           gas: 'auto',
      },
+     mainnet: {
+          url: 'https://mainnet.infura.io/v3/' + infura_project_id,
+          accounts: private_key_list,
+          chainId: 1,
+          gasPrice: ethers.utils.parseUnits('25', 'gwei').toNumber(),
+          // blockGasLimit 8000000
+          // to solve timeout error, increase the hardcoded `waitAndValidateDeployment` in `@openzeppelin/upgrades-core/dist/deployment.js`
+          // timeout: 600000,
+      },
      ropsten: {
           url: 'https://ropsten.infura.io/v3/' + infura_project_id,
           accounts: private_key_list,
@@ -49,21 +59,26 @@ const networks = {
           // blockGasLimit 8000000
      },
      matic_mumbai_test: {
-          url: 'https://rpc-mumbai.maticvigil.com',
+          url: 'https://rpc-mumbai.matic.today',
           accounts: private_key_list,
           chainId: 80001,
-          gasPrice: ethers.utils.parseUnits('10', 'gwei').toNumber(),
+          gasPrice: ethers.utils.parseUnits('2', 'gwei').toNumber(),
           // blockGasLimit 8000000
      },
      matic_mainnet: {
           url: 'https://rpc-mainnet.matic.network',
           accounts: private_key_list,
           chainId: 137,
-          gasPrice: ethers.utils.parseUnits('1', 'gwei').toNumber(),
+          gasPrice: ethers.utils.parseUnits('2.5', 'gwei').toNumber(),
           // blockGasLimit 8000000
      },
+    arbitrum_rinkeby: {
+        url: 'https://rinkeby.arbitrum.io/rpc',
+        accounts: private_key_list,
+        chainId: 421611,
+        gasPrice: ethers.utils.parseUnits('10', 'gwei').toNumber(),
+    },
 };
-
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -76,12 +91,12 @@ module.exports = {
      solidity: {
           version: "0.8.0",
           settings: {
-              optimizer: {
-                  enabled: true,
-                  runs: 200
-              }
+               optimizer: {
+                    enabled: true,
+                    runs: 200
+               }
           }
-      },
+     },
      namedAccounts: {
           deployer: {
                default: 0,

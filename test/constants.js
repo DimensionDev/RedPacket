@@ -1,4 +1,5 @@
-const creation_success_encode = 'CreationSuccess(uint,bytes32,string,string,address,uint,address,uint256[],uint,bool,uint)'
+const creation_success_encode =
+  'CreationSuccess(uint,bytes32,string,string,address,uint,address,uint256[],uint,bool,uint)'
 const creation_success_types = [
   { type: 'uint', name: 'total' },
   { type: 'bytes32', name: 'id' },

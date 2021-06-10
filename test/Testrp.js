@@ -24,11 +24,14 @@ contract('HappyRedPacket', accounts => {
   let redpacket
   let creationParams
 
-  beforeEach(async () => {
+  before(async () => {
     snapShot = await helper.takeSnapshot()
     snapshotId = snapShot['result']
     testtoken = await TestToken.deployed()
     redpacket = await HappyRedPacket.deployed()
+  })
+
+  beforeEach(async () => {
     creationParams = {
       hash: web3.utils.sha3(PASSWORD),
       number: 3,
@@ -45,12 +48,6 @@ contract('HappyRedPacket', accounts => {
 
   afterEach(async () => {
     await helper.revertToSnapShot(snapshotId)
-  })
-
-  it('Should return the HappyRedPacket contract creator', async () => {
-    const contract_creator = await redpacket.contract_creator.call()
-    expect(contract_creator).to.be.eq(accounts[0])
-    expect(accounts.length).to.be.eq(100)
   })
 
   describe('create_red_packet()', async () => {
@@ -481,8 +478,8 @@ contract('HappyRedPacket', accounts => {
         .that.to.be.eq(testtoken.address)
       expect(Number(result.remaining_balance)).to.be.eq(66666667)
 
-      const allowance = await testtoken.allowance(redpacket.address, accounts[0]);
-      expect(Number(allowance)).to.be.eq(0);
+      const allowance = await testtoken.allowance(redpacket.address, accounts[0])
+      expect(Number(allowance)).to.be.eq(0)
     })
 
     // Note: this test spends a long time, on my machine is about 8s

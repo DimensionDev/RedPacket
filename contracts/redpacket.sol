@@ -12,9 +12,9 @@ pragma solidity >= 0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-
-contract HappyRedPacket {
+contract HappyRedPacket is Initializable {
 
     struct RedPacket {
         Packed packed;
@@ -54,15 +54,12 @@ contract HappyRedPacket {
 
     using SafeERC20 for IERC20;
     uint32 nonce;
-    address public contract_creator;
     mapping(bytes32 => RedPacket) redpacket_by_id;
-    string constant private magic = "Former NBA Commissioner David St"; // 32 bytes
     bytes32 private seed;
     uint256 constant MASK = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
-    constructor() {
-        contract_creator = msg.sender;
-        seed = keccak256(abi.encodePacked(magic, block.timestamp, contract_creator));
+    function initialize() public initializer {
+        seed = keccak256(abi.encodePacked("Former NBA Commissioner David St", block.timestamp, msg.sender));
     }
 
     // Inits a red packet instance
@@ -256,7 +253,6 @@ contract HappyRedPacket {
         }
     }
 
-    // Check the balance of the given token
     function transfer_token(address token_address, address sender_address,
                             address recipient_address, uint amount) internal{
         IERC20(token_address).safeTransfer(recipient_address, amount);

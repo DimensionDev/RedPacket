@@ -1,17 +1,19 @@
 {
     "scripts": {
-        "format:test": "prettier --write ./test/**.js",
+        "compile": "hardhat compile",
+        "deploy:arbitrum_rinkeby": "hardhat --network arbitrum_rinkeby deploy",
+        "deploy:arbitrum": "hardhat --network arbitrum deploy",
+        "deploy:mainnet": "hardhat --network mainnet deploy",
         "deploy:ropsten": "hardhat --network ropsten deploy",
         "deploy:bsc_test": "hardhat --network bsc_test deploy",
         "deploy:bsc_mainnet": "hardhat --network bsc_mainnet deploy",
         "deploy:matic_mumbai_test": "hardhat --network matic_mumbai_test deploy",
         "deploy:matic_mainnet": "hardhat --network matic_mainnet deploy",
-        "test": "truffle test"
+        "test": "truffle test",
+        "format": "prettier --write './test/*.js' './deploy/*.ts'"
     },
     "dependencies": {
         "@openzeppelin/contracts": "^4.0.0",
-        "hardhat-deploy": "^0.7.6",
-        "hardhat-deploy-ethers": "^0.3.0-beta.7",
         "openzeppelin-solidity": "^4.1.0",
         "ts-node": "^9.1.1",
         "typescript": "^4.2.4"
@@ -19,13 +21,17 @@
     "devDependencies": {
         "@nomiclabs/hardhat-ethers": "^2.0.2",
         "@nomiclabs/hardhat-waffle": "^2.0.1",
+        "@openzeppelin/hardhat-upgrades": "^1.9.0",
         "bignumber.js": "2.0.0",
         "chai": "^4.3.0",
         "chai-as-promised": "^7.1.1",
+        "ethers": "^5.4.1",
+        "hardhat": "^2.2.1",
         "prettier": "^1.19.1",
         "solhint": "^3.2.0",
         "solidity-coverage": "^0.7.13",
-        "hardhat": "^2.2.1",
-        "truffle": "^5.1.65"
+        "truffle": "^5.1.65",
+        "hardhat-deploy": "^0.7.6",
+        "hardhat-deploy-ethers": "^0.3.0-beta.7"
     }
 }
