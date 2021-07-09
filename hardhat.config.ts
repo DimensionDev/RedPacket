@@ -72,6 +72,12 @@ const networks = {
           gasPrice: ethers.utils.parseUnits('2.5', 'gwei').toNumber(),
           // blockGasLimit 8000000
      },
+    arbitrum_rinkeby: {
+        url: 'https://rinkeby.arbitrum.io/rpc',
+        accounts: private_key_list,
+        chainId: 421611,
+        gasPrice: ethers.utils.parseUnits('10', 'gwei').toNumber(),
+    },
 };
 
 /**

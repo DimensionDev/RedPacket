@@ -32,14 +32,17 @@ truffle debug [TX_ID]
 
 ## Deployed Contract Address
 
-| Chain   | Address                    |
-| ------- | -------------------------- |
-| Mainnet | [0x7323ec10][ito-0x7323ec10] |
-| Ropsten | [0x52a80151][ito-0x52a80151] |
-| BSC     | [0x3EB4C32b][ito-0x3EB4C32b] |
-| Matic   | [0xCCf18218][ito-0xCCf18218] |
+| Chain            | Address                      |
+| ---------------- | ---------------------------- |
+| Mainnet          | [0x7323ec10][ito-0x7323ec10] |
+| Ropsten          | [0x52a80151][ito-0x52a80151] |
+| BSC              | [0x3EB4C32b][ito-0x3EB4C32b] |
+| Matic            | [0xCCf18218][ito-0xCCf18218] |
+| Rinkeby-Arbitrum | [0x6B70EC65][ito-0x6B70EC65] |
+
 
 [ito-0x7323ec10]: https://etherscan.io/address/0x7323ec104a689480dEbE8Eb1404FB0f9D425D2ca
 [ito-0x52a80151]: https://ropsten.etherscan.io/address/0x52a80151dDF3E1AffE6537c5f56191dD2d97c46C
 [ito-0x3EB4C32b]: https://bscscan.com/address/0x3EB4C32bB45ca9b6160476a2e839190BD60FA623
 [ito-0xCCf18218]: https://polygonscan.com/address/0xCCf182182376730c2c23Edc815bBdc714e91741c
+[ito-0x6B70EC65]: https://rinkeby-explorer.arbitrum.io/address/0x6B70EC653c4331bdD0D0DCC7C941eb594e69a91d

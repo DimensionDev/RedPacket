@@ -1,6 +1,8 @@
 {
     "scripts": {
         "compile": "hardhat compile",
+        "deploy:arbitrum_rinkeby": "hardhat --network arbitrum_rinkeby deploy",
+        "deploy:arbitrum": "hardhat --network arbitrum deploy",
         "deploy:mainnet": "hardhat --network mainnet deploy",
         "deploy:ropsten": "hardhat --network ropsten deploy",
         "deploy:bsc_test": "hardhat --network bsc_test deploy",
