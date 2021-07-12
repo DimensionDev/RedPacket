@@ -175,6 +175,9 @@ contract HappyRedPacket is Initializable {
         uint256 token_type = unbox(packed.packed2, 254, 1);
         address token_address = address(uint160(unbox(packed.packed2, 0, 160)));
 
+        // Gas Refund
+        rp.packed.packed1 = 0;
+        rp.packed.packed2 = 0;
         if (token_type == 0) {
             payable(msg.sender).transfer(remaining_tokens);
         }
@@ -184,9 +187,6 @@ contract HappyRedPacket is Initializable {
         }
 
         emit RefundSuccess(id, token_address, remaining_tokens);
-        // Gas Refund
-        rp.packed.packed1 = 0;
-        rp.packed.packed2 = 0;
     }
 
 //------------------------------------------------------------------
