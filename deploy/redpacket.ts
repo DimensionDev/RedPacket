@@ -21,6 +21,7 @@ const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
   const network: string = hre.hardhatArguments.network ? hre.hardhatArguments.network : 'ropsten'
   const proxyAddress = deployedContracts[network]
 
+  /*
   if (false) {
     // deploy, we normally do this only once
     const HappyRedPacketImpl = await ethers.getContractFactory('HappyRedPacket')
@@ -32,6 +33,7 @@ const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
     const HappyRedPacketImpl = await ethers.getContractFactory('HappyRedPacket')
     await upgrades.upgradeProxy(proxyAddress, HappyRedPacketImpl)
   }
+  */
 }
 
 func.tags = ['HappyRedPacket']

@@ -3,6 +3,8 @@
         "compile": "hardhat compile",
         "deploy:arbitrum_rinkeby": "hardhat --network arbitrum_rinkeby deploy",
         "deploy:arbitrum": "hardhat --network arbitrum deploy",
+        "deploy:optimism": "hardhat --network optimism deploy",
+        "deploy:optimism_kovan": "hardhat --network optimism_kovan deploy",
         "deploy:mainnet": "hardhat --network mainnet deploy",
         "deploy:ropsten": "hardhat --network ropsten deploy",
         "deploy:bsc_test": "hardhat --network bsc_test deploy",
@@ -13,14 +15,15 @@
         "format": "prettier --write './test/*.js' './deploy/*.ts'"
     },
     "dependencies": {
-        "@openzeppelin/contracts": "^4.0.0",
-        "openzeppelin-solidity": "^4.1.0",
+        "@openzeppelin/contracts": "^3.4.1-solc-0.7",
         "ts-node": "^9.1.1",
         "typescript": "^4.2.4"
     },
     "devDependencies": {
         "@nomiclabs/hardhat-ethers": "^2.0.2",
         "@nomiclabs/hardhat-waffle": "^2.0.1",
+        "@eth-optimism/hardhat-ovm": "^0.2.2",
+        "@eth-optimism/plugins": "^1.0.0-alpha.3",
         "@openzeppelin/hardhat-upgrades": "^1.9.0",
         "bignumber.js": "2.0.0",
         "chai": "^4.3.0",

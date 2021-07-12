@@ -8,6 +8,7 @@ import "@nomiclabs/hardhat-waffle"
 import "@nomiclabs/hardhat-ethers"
 import "solidity-coverage"
 import '@openzeppelin/hardhat-upgrades'
+import "@eth-optimism/plugins/hardhat/compiler"
 
 const {
      infura_project_id,
@@ -78,6 +79,25 @@ const networks = {
         chainId: 421611,
         gasPrice: ethers.utils.parseUnits('10', 'gwei').toNumber(),
     },
+    optimism: {
+        // https://community.optimism.io/docs/developers/networks.html#optimistic-kovan
+        // We currently have a whitelist system in place that limits who can deploy
+        // contracts to this network (for security reasons). We know this isn't
+        // ideal and we really appreciate your patience
+        url: 'https://optimism-mainnet.infura.io/v3/' + infura_project_id,
+        accounts: private_key_list,
+        chainId: 10,
+        gasPrice: ethers.utils.parseUnits('10', 'gwei').toNumber(),
+        ovm: true,
+    },
+    optimism_kovan: {
+        url: 'https://optimism-kovan.infura.io/v3/' + infura_project_id,
+        accounts: private_key_list,
+        chainId: 69,
+        // ProviderError: tx.gasPrice must be 15000000
+        gasPrice: 15000000,
+        ovm: true,
+    },
 };
 
 /**
@@ -89,7 +109,7 @@ module.exports = {
           timeout: 500000
      },
      solidity: {
-          version: "0.8.0",
+          version: "0.7.6",
           settings: {
                optimizer: {
                     enabled: true,
@@ -97,6 +117,9 @@ module.exports = {
                }
           }
      },
+     ovm: {
+          solcVersion: '0.7.6+commit.3b061308' // Your version goes here.
+      },
      namedAccounts: {
           deployer: {
                default: 0,

@@ -8,13 +8,12 @@
  * @maintain_time   05/21/2021
 **/
 
-pragma solidity >= 0.8.0;
+pragma solidity >=0.6.0 <0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
-contract HappyRedPacket is Initializable {
+contract HappyRedPacket {
 
     struct RedPacket {
         Packed packed;
@@ -58,7 +57,7 @@ contract HappyRedPacket is Initializable {
     bytes32 private seed;
     uint256 constant MASK = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
-    function initialize() public initializer {
+    constructor() {
         seed = keccak256(abi.encodePacked("Former NBA Commissioner David St", block.timestamp, msg.sender));
     }
 
