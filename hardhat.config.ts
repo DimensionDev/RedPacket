@@ -41,6 +41,13 @@ const networks = {
           gasPrice: ethers.utils.parseUnits('10', 'gwei').toNumber(),
           // blockGasLimit 8000000
      },
+     rinkeby: {
+          url: "https://rinkeby.infura.io/v3/" + infura_project_id,
+          accounts: private_key_list,
+          chainId: 4,
+          gasPrice: ethers.utils.parseUnits('5', 'gwei').toNumber(),
+          // blockGasLimit 8000000
+      },
      bsc_test: {
           url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
           accounts: private_key_list,
@@ -72,7 +79,13 @@ const networks = {
           gasPrice: ethers.utils.parseUnits('2.5', 'gwei').toNumber(),
           // blockGasLimit 8000000
      },
-    arbitrum_rinkeby: {
+     arbitrum: {
+          url: 'https://arb1.arbitrum.io/rpc',
+          accounts: private_key_list,
+          chainId: 42161,
+          gasPrice: ethers.utils.parseUnits('0.4', 'gwei').toNumber(),
+      },
+     arbitrum_rinkeby: {
         url: 'https://rinkeby.arbitrum.io/rpc',
         accounts: private_key_list,
         chainId: 421611,

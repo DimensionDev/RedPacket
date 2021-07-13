@@ -11,6 +11,7 @@ const deployedContracts: MyMapLikeType = {
   bsc_mainnet: '0x3EB4C32bB45ca9b6160476a2e839190BD60FA623',
   matic_mumbai_test: '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
   matic_mainnet: '0xCCf182182376730c2c23Edc815bBdc714e91741c',
+  arbitrum: '0x02Ea0720254F7fa4eca7d09A1b9C783F1020EbEF',
   arbitrum_rinkeby: '0x6B70EC653c4331bdD0D0DCC7C941eb594e69a91d',
 }
 
