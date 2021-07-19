@@ -15,6 +15,7 @@
     },
     "dependencies": {
         "@openzeppelin/contracts": "^4.0.0",
+        "ganache-cli": "^6.12.2",
         "openzeppelin-solidity": "^4.1.0",
         "ts-node": "^9.1.1",
         "typescript": "^4.2.4"
@@ -24,15 +25,15 @@
         "@nomiclabs/hardhat-waffle": "^2.0.1",
         "@openzeppelin/hardhat-upgrades": "^1.9.0",
         "bignumber.js": "2.0.0",
-        "chai": "^4.3.0",
+        "chai": "^4.3.4",
         "chai-as-promised": "^7.1.1",
         "ethers": "^5.4.1",
         "hardhat": "^2.2.1",
+        "hardhat-deploy": "^0.7.6",
+        "hardhat-deploy-ethers": "^0.3.0-beta.7",
         "prettier": "^1.19.1",
         "solhint": "^3.2.0",
         "solidity-coverage": "^0.7.13",
-        "truffle": "^5.1.65",
-        "hardhat-deploy": "^0.7.6",
-        "hardhat-deploy-ethers": "^0.3.0-beta.7"
+        "truffle": "^5.1.65"
     }
 }

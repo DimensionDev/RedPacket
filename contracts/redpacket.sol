@@ -13,17 +13,20 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract HappyRedPacket is Initializable {
 
     struct RedPacket {
         Packed packed;
         mapping(address => uint256) claimed_list;
+        uint160 public_key;
+        address creator;
     }
 
     struct Packed {
-        uint256 packed1;            // exp(48) total_tokens(80) hash(64) id(64) BIG ENDIAN
-        uint256 packed2;            // ifrandom(1) token_type(8) total_number(8) claimed(8) creator(64) token_addr(160)
+        uint256 packed1;            // 0 (128) total_tokens (96) expire_time(32)
+        uint256 packed2;            // 0 (64) token_addr (160) claimed_numbers(15) total_numbers(15) token_type(1) ifrandom(1)
     }
 
     event CreationSuccess(
@@ -63,7 +66,7 @@ contract HappyRedPacket is Initializable {
     }
 
     // Inits a red packet instance
-    // _token_type: 0 - ETH 1 - ERC20
+    // _token_type: 0 - ETH  1 - ERC20
     function create_red_packet (bytes32 _hash, uint _number, bool _ifrandom, uint _duration, 
                                 bytes32 _seed, string memory _message, string memory _name,
                                 uint _token_type, address _token_addr, uint _total_tokens) 
@@ -85,8 +88,10 @@ contract HappyRedPacket is Initializable {
         {
             uint _random_type = _ifrandom ? 1 : 0;
             RedPacket storage redp = redpacket_by_id[_id];
-            redp.packed.packed1 = wrap1(_hash, _total_tokens, _duration);
+            redp.packed.packed1 = wrap1(_total_tokens, _duration);
             redp.packed.packed2 = wrap2(_token_addr, _number, _token_type, _random_type);
+            redp.public_key = uint160(uint256(_hash));
+            redp.creator = msg.sender;
         }
         {
             // as a workaround for "CompilerError: Stack too deep, try removing local variables"
@@ -108,8 +113,13 @@ contract HappyRedPacket is Initializable {
         uint total_number = unbox(packed.packed2, 239, 15);
         uint claimed_number = unbox(packed.packed2, 224, 15);
         require (claimed_number < total_number, "Out of stock");
-        require (uint256(keccak256(bytes(password))) >> 128 == unbox(packed.packed1, 0, 128), "Wrong password");
-        require (validation == keccak256(abi.encodePacked(msg.sender)), "Validation failed");
+        
+        uint160 public_key = rp.public_key;
+        bytes memory prefix = "\x19Ethereum Signed Message:\n20";
+        bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, msg.sender));
+        bytes memory signedMsg = bytes(password);
+        uint160 calculated_public_key = uint160(ECDSA.recover(prefixedHash, signedMsg));
+        require(calculated_public_key == public_key, "Verification failed");
 
         uint256 claimed_tokens;
         uint256 token_type = unbox(packed.packed2, 254, 1);
@@ -175,6 +185,9 @@ contract HappyRedPacket is Initializable {
         uint256 token_type = unbox(packed.packed2, 254, 1);
         address token_address = address(uint160(unbox(packed.packed2, 0, 160)));
 
+        // Gas Refund
+        rp.packed.packed1 = 0;
+        rp.packed.packed2 = 0;
         if (token_type == 0) {
             payable(msg.sender).transfer(remaining_tokens);
         }
@@ -184,9 +197,6 @@ contract HappyRedPacket is Initializable {
         }
 
         emit RefundSuccess(id, token_address, remaining_tokens);
-        // Gas Refund
-        rp.packed.packed1 = 0;
-        rp.packed.packed2 = 0;
     }
 
 //------------------------------------------------------------------
@@ -263,18 +273,16 @@ contract HappyRedPacket is Initializable {
         return uint(keccak256(abi.encodePacked(nonce_rand, msg.sender, _seed, block.timestamp))) + 1 ;
     }
     
-    function wrap1 (bytes32 _hash, uint _total_tokens, uint _duration) internal view returns (uint256 packed1) {
+    function wrap1 (uint _total_tokens, uint _duration) internal view returns (uint256 packed1) {
         uint256 _packed1 = 0;
-        _packed1 |= box(0, 128, uint256(_hash) >> 128); // hash = 128 bits (NEED TO CONFIRM THIS)
         _packed1 |= box(128, 96, _total_tokens);        // total tokens = 80 bits = ~8 * 10^10 18 decimals
         _packed1 |= box(224, 32, (block.timestamp + _duration));    // expiration_time = 32 bits (until 2106)
         return _packed1;
     }
 
-    function wrap2 (address _token_addr, uint _number, uint _token_type, uint _ifrandom) internal view returns (uint256 packed2) {
+    function wrap2 (address _token_addr, uint _number, uint _token_type, uint _ifrandom) internal pure returns (uint256 packed2) {
         uint256 _packed2 = 0;
-        _packed2 |= box(0, 160, uint160(_token_addr));    // token_address = 160 bits
-        _packed2 |= box(160, 64, (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192));  // creator.hash = 64 bit
+        _packed2 |= box(64, 160, uint160(_token_addr));    // token_address = 160 bits
         _packed2 |= box(224, 15, 0);                   // claimed_number = 14 bits 16384
         _packed2 |= box(239, 15, _number);               // total_number = 14 bits 16384
         _packed2 |= box(254, 1, _token_type);             // token_type = 1 bit 2
