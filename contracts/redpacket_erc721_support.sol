@@ -164,6 +164,28 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         );
     }
 
+    function refund(bytes32 id) external {
+        RedPacket storage rp = redpacket_by_id[id];
+        Packed memory packed = rp.packed;
+        require(packed.packed1 != 0 && packed.packed2 != 0, "Already Refunded");
+        require(uint160(msg.sender) == unbox(packed.packed1, 0, 160), "Creator Only");
+        require(unbox(packed.packed2, 194, 32) <= block.timestamp, "Not expired yet");
+
+        uint256 remaining_tokens = unbox(packed.packed1, 160, 96);
+        require(remaining_tokens != 0, "None left in the red packet");
+
+        address token_addr = address(uint160(unbox(packed.packed2, 34, 160)));
+        uint256[] memory erc721_token_list = rp.erc721_list;
+
+        //Gas Refund
+        rp.packed.packed1 = 0;
+        rp.packed.packed2 = 0;
+        delete rp.erc721_list;
+
+        transfer_erc721(token_addr, address(this), msg.sender, remaining_tokens, erc721_token_list);
+        emit RefundSuccess(id, token_addr, remaining_tokens, erc721_token_list);
+    }
+
 //------------------------------------------------------------------
 
     // as a workaround for "CompilerError: Stack too deep, try removing local variables"
@@ -173,7 +195,6 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         uint160 calculated_public_key = uint160(ECDSA.recover(prefixedHash, signedMsg));
         return (calculated_public_key == public_key);
     }
-
 
     /**
      * position      position in a memory block
