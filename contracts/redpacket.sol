@@ -115,11 +115,7 @@ contract HappyRedPacket is Initializable {
         require (claimed_number < total_number, "Out of stock");
         
         uint160 public_key = rp.public_key;
-        bytes memory prefix = "\x19Ethereum Signed Message:\n20";
-        bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, msg.sender));
-        bytes memory signedMsg = bytes(password);
-        uint160 calculated_public_key = uint160(ECDSA.recover(prefixedHash, signedMsg));
-        require(calculated_public_key == public_key, "Verification failed");
+        require(_verify(bytes(password), public_key), "Verification failed");
 
         uint256 claimed_tokens;
         uint256 token_type = unbox(packed.packed2, 254, 1);
@@ -155,6 +151,14 @@ contract HappyRedPacket is Initializable {
         // Claim success event
         emit ClaimSuccess(id, recipient, claimed_tokens, address(uint160(unbox(packed.packed2, 0, 160))));
         return claimed_tokens;
+    }
+
+    // as a workaround for "CompilerError: Stack too deep, try removing local variables"
+    function _verify(bytes memory signedMsg, uint160 public_key) private view returns (bool verified) {
+        bytes memory prefix = "\x19Ethereum Signed Message:\n20";
+        bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, msg.sender));
+        uint160 calculated_public_key = uint160(ECDSA.recover(prefixedHash, signedMsg));
+        return (calculated_public_key == public_key);
     }
 
     // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets
