@@ -146,10 +146,10 @@ contract HappyRedPacket is Initializable {
         if (token_type == 0)
             recipient.transfer(claimed_tokens);
         else if (token_type == 1)
-            transfer_token(address(uint160(unbox(packed.packed2, 0, 160))), address(this),
+            transfer_token(address(uint160(unbox(packed.packed2, 64, 160))), address(this),
                             recipient, claimed_tokens);
         // Claim success event
-        emit ClaimSuccess(id, recipient, claimed_tokens, address(uint160(unbox(packed.packed2, 0, 160))));
+        emit ClaimSuccess(id, recipient, claimed_tokens, address(uint160(unbox(packed.packed2, 64, 160))));
         return claimed_tokens;
     }
 
@@ -167,7 +167,7 @@ contract HappyRedPacket is Initializable {
         RedPacket storage rp = redpacket_by_id[id];
         Packed memory packed = rp.packed;
         return (
-            address(uint160(unbox(packed.packed2, 0, 160))), 
+            address(uint160(unbox(packed.packed2, 64, 160))), 
             unbox(packed.packed1, 128, 96), 
             unbox(packed.packed2, 239, 15), 
             unbox(packed.packed2, 224, 15), 
@@ -179,15 +179,16 @@ contract HappyRedPacket is Initializable {
     function refund(bytes32 id) public {
         RedPacket storage rp = redpacket_by_id[id];
         Packed memory packed = rp.packed;
+        address creator = rp.creator;
         require(packed.packed1 != 0 && packed.packed2 != 0, "Already Refunded");
-        require(uint256(keccak256(abi.encodePacked(msg.sender)) >> 192) == unbox(packed.packed2, 160, 64), "Creator Only");
+        require(creator == msg.sender, "Creator Only");
         require(unbox(packed.packed1, 224, 32) <= block.timestamp, "Not expired yet");
 
         uint256 remaining_tokens = unbox(packed.packed1, 128, 96);
         require(remaining_tokens != 0, "None left in the red packet");
 
         uint256 token_type = unbox(packed.packed2, 254, 1);
-        address token_address = address(uint160(unbox(packed.packed2, 0, 160)));
+        address token_address = address(uint160(unbox(packed.packed2, 64, 160)));
 
         // Gas Refund
         rp.packed.packed1 = 0;
