@@ -22,7 +22,7 @@ var private_key = account.privateKey;
 var public_key = account.address;
 
 const creation_success_encode =
-  'CreationSuccess(uint,bytes32,string,string,address,uint,address,uint256[],uint,bool,uint)'
+  'CreationSuccess(uint,bytes32,string,string,address,uint,address,uint,bool,uint)'
 const creation_success_types = [
   { type: 'uint', name: 'total' },
   { type: 'bytes32', name: 'id' },
@@ -35,7 +35,7 @@ const creation_success_types = [
   { type: 'bool', name: 'ifrandom' },
   { type: 'uint', name: 'duration' },
 ]
-const claim_success_encode = 'ClaimSuccess(bytes32,address,uint,address,uint256[])'
+const claim_success_encode = 'ClaimSuccess(bytes32,address,uint,address)'
 const claim_success_types = [
   { type: 'bytes32', name: 'id' },
   { type: 'address', name: 'claimer' },

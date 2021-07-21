@@ -495,7 +495,7 @@ contract('HappyRedPacket', accounts => {
       expect(Number(allowance)).to.be.eq(0)
     })
 
-    // Note: this test spends a long time, on my machine is 11122ms
+    // Note: this test spends a long time, on my machine is 10570ms
     it("should refund erc20 successfully when there're 100 red packets and 50 claimers", async () => {
       creationParams.ifrandom = false
       const { redPacketInfo } = await testSuitCreateAndClaimManyRedPackets(50)

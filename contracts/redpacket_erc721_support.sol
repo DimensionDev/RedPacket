@@ -55,6 +55,12 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         uint256[] remaining_token_ids
     );
 
+    // event show(
+    //     uint256 token_id,
+    //     address approved,
+    //     address con
+    // );
+
     uint32 nonce;
     mapping(bytes32 => RedPacket) redpacket_by_id;
     bytes32 private seed;
@@ -71,10 +77,11 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         nonce ++;
         // unsuccessful condition
         require(_total_tokens == _number, "require #tokens = #packets");
-        require(_total_tokens == _erc721_token_ids.length, "No enough erc721_token_id provided");
         require(_number > 0, "At least 1 recipient");
         require(_number < 256, "At most 255 recipients");
+        require(_total_tokens == _erc721_token_ids.length, "No enough erc721_token_id provided");
         require(IERC721(_token_addr).isApprovedForAll(msg.sender, address(this)), "No approved yet");
+        _check_ownership(_erc721_token_ids, msg.sender, _token_addr);
 
         bytes32 packet_id = keccak256(abi.encodePacked(msg.sender, block.timestamp, nonce, seed, _seed));
         {
@@ -114,7 +121,8 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
 
         uint256 claimed_index;
         uint256 claimed_token_id;
-        (claimed_index, claimed_token_id) = _get_token_index(erc721_token_id_list, remaining_tokens, token_addr);
+        (claimed_index, claimed_token_id) = _get_token_index(erc721_token_id_list, remaining_tokens, 
+                                                            token_addr, address(uint160(unbox(packed.packed1, 0, 160))));
         // pop the claimed erc721 token and update in rp
         erc721_token_id_list[claimed_index] = erc721_token_id_list[remaining_tokens - 1]; 
         rp.erc721_list = erc721_token_id_list;
@@ -199,16 +207,23 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         return (calculated_public_key == public_key);
     }
 
+    function _check_ownership(uint256[] memory erc721_token_id_list, address _sender, address token_addr) private view {
+        for (uint256 i= 0; i < erc721_token_id_list.length; i ++){
+            address owner = IERC721(token_addr).ownerOf(erc721_token_id_list[i]);
+            require (owner == _sender, "Not your token");
+        }
+    }
+
     function _get_token_index(uint256[] memory erc721_token_id_list,
                               uint256 remaining_tokens,
-                              address token_addr) 
+                              address token_addr,
+                              address creator) 
     private view returns (uint256 index, uint256 token_id){
         uint256 claimed_index;
         uint256 claimed_token_id;
         claimed_index = random(seed, nonce) % (remaining_tokens);
         claimed_token_id = erc721_token_id_list[claimed_index];
-        while(IERC721(token_addr).getApproved(claimed_token_id) != address(this)){
-            require(gasleft()>0, "Run out of gas");
+        while(IERC721(token_addr).ownerOf(claimed_token_id) != creator){
             claimed_index = random(seed, nonce) % (remaining_tokens);
             claimed_token_id = erc721_token_id_list[claimed_index];
         }
@@ -290,10 +305,10 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         return _packed1;
     }
 
-    function wrap2 (address _token_addr,uint256 _duration, uint256 _number) internal pure returns (uint256 packed2) {
+    function wrap2 (address _token_addr,uint256 _duration, uint256 _number) internal view returns (uint256 packed2) {
         uint256 _packed2 = 0;
         _packed2 |= box(34, 160, uint160(_token_addr));    // token_address = 160 bits
-        _packed2 |= box(194, 32, _duration);               // expire_time = 32 bits
+        _packed2 |= box(194, 32, (block.timestamp + _duration));               // expire_time = 32 bits
         _packed2 |= box(226, 15, 0);                       // claimed_number = 14 bits 16384
         _packed2 |= box(241, 15, _number);                 // total_number = 14 bits 16384
         return _packed2;
