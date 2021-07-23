@@ -11,10 +11,22 @@ import '@openzeppelin/hardhat-upgrades'
 import "@nomiclabs/hardhat-truffle5"
 import "hardhat-gas-reporter"
 
-const {
-     infura_project_id,
-     private_key_list,
-} = require('./project.secret');
+const fs = require('fs');
+
+let project_secret;
+try {
+     if (fs.existsSync('./project.secret.js')) {
+         project_secret = require('./project.secret');
+     } else if (fs.existsSync('./project.secret.sample.js')) {
+         project_secret = require('./project.secret.sample');
+         console.log('Warning: loading secrets from tempalte file, might be invalid');
+     } else {
+         console.log('Warning: project secure config file does not exist.');
+     }
+} catch (err) {
+console.error(err);
+}
+ 
 
 const networks = {
      localhost: {
@@ -30,8 +42,8 @@ const networks = {
           }
      },
      mainnet: {
-          url: 'https://mainnet.infura.io/v3/' + infura_project_id,
-          accounts: private_key_list,
+          url: 'https://mainnet.infura.io/v3/' + project_secret.infura_project_id,
+          accounts: project_secret.private_key_list,
           chainId: 1,
           gasPrice: ethers.utils.parseUnits('25', 'gwei').toNumber(),
           // blockGasLimit 8000000
@@ -39,23 +51,23 @@ const networks = {
           // timeout: 600000,
       },
      ropsten: {
-          url: 'https://ropsten.infura.io/v3/' + infura_project_id,
-          accounts: private_key_list,
+          url: 'https://ropsten.infura.io/v3/' + project_secret.infura_project_id,
+          accounts: project_secret.private_key_list,
           chainId: 3,
           // 10gwei make test faster
           gasPrice: ethers.utils.parseUnits('10', 'gwei').toNumber(),
           // blockGasLimit 8000000
      },
      rinkeby: {
-          url: "https://rinkeby.infura.io/v3/" + infura_project_id,
-          accounts: private_key_list,
+          url: "https://rinkeby.infura.io/v3/" + project_secret.infura_project_id,
+          accounts: project_secret.private_key_list,
           chainId: 4,
           gasPrice: ethers.utils.parseUnits('5', 'gwei').toNumber(),
           // blockGasLimit 8000000
       },
      bsc_test: {
           url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
-          accounts: private_key_list,
+          accounts: project_secret.private_key_list,
           chainId: 97,
           // 25 Gwei, if too low, we would see "ProviderError: transaction underpriced"
           gasPrice: ethers.utils.parseUnits('25', 'gwei').toNumber(),
@@ -64,7 +76,7 @@ const networks = {
      // BSC mainnet not tested yet, not sure if it works
      bsc_mainnet: {
           url: 'https://bsc-dataseed1.binance.org:443',
-          accounts: private_key_list,
+          accounts: project_secret.private_key_list,
           chainId: 56,
           // 5 Gwei
           gasPrice: ethers.utils.parseUnits('5', 'gwei').toNumber(),
@@ -72,27 +84,27 @@ const networks = {
      },
      matic_mumbai_test: {
           url: 'https://rpc-mumbai.matic.today',
-          accounts: private_key_list,
+          accounts: project_secret.private_key_list,
           chainId: 80001,
           gasPrice: ethers.utils.parseUnits('2', 'gwei').toNumber(),
           // blockGasLimit 8000000
      },
      matic_mainnet: {
           url: 'https://rpc-mainnet.matic.network',
-          accounts: private_key_list,
+          accounts: project_secret.private_key_list,
           chainId: 137,
           gasPrice: ethers.utils.parseUnits('2.5', 'gwei').toNumber(),
           // blockGasLimit 8000000
      },
      arbitrum: {
           url: 'https://arb1.arbitrum.io/rpc',
-          accounts: private_key_list,
+          accounts: project_secret.private_key_list,
           chainId: 42161,
           gasPrice: ethers.utils.parseUnits('0.4', 'gwei').toNumber(),
       },
      arbitrum_rinkeby: {
         url: 'https://rinkeby.arbitrum.io/rpc',
-        accounts: private_key_list,
+        accounts: project_secret.private_key_list,
         chainId: 421611,
         gasPrice: ethers.utils.parseUnits('10', 'gwei').toNumber(),
     },
