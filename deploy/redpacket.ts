@@ -22,17 +22,17 @@ const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
   const network: string = hre.hardhatArguments.network ? hre.hardhatArguments.network : 'ropsten'
   const proxyAddress = deployedContracts[network]
 
-  if (false) {
-    // deploy, we normally do this only once
-    const HappyRedPacketImpl = await ethers.getContractFactory('HappyRedPacket')
-    const HappyRedPacketProxy = await upgrades.deployProxy(HappyRedPacketImpl, [])
-    await HappyRedPacketProxy.deployed()
-    console.log('HappyRedPacketProxy: ' + HappyRedPacketProxy.address)
-  } else {
-    // upgrade contract
-    const HappyRedPacketImpl = await ethers.getContractFactory('HappyRedPacket')
-    await upgrades.upgradeProxy(proxyAddress, HappyRedPacketImpl)
-  }
+  // if (false) {
+  //   // deploy, we normally do this only once
+  //   const HappyRedPacketImpl = await ethers.getContractFactory('HappyRedPacket')
+  //   const HappyRedPacketProxy = await upgrades.deployProxy(HappyRedPacketImpl, [])
+  //   await HappyRedPacketProxy.deployed()
+  //   console.log('HappyRedPacketProxy: ' + HappyRedPacketProxy.address)
+  // } else {
+  //   // upgrade contract
+  //   const HappyRedPacketImpl = await ethers.getContractFactory('HappyRedPacket')
+  //   await upgrades.upgradeProxy(proxyAddress, HappyRedPacketImpl)
+  // }
 }
 
 func.tags = ['HappyRedPacket']

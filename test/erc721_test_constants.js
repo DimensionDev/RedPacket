@@ -34,7 +34,6 @@ const refund_success_types = [
   { type: 'uint256', name: 'remaining_balance' },
   { type: 'uint256[]', name: 'remaining_token_ids' },
 ]
-const eth_address = '0x0000000000000000000000000000000000000000'
 
 module.exports = {
     creation_success_encode,
@@ -45,5 +44,4 @@ module.exports = {
     refund_success_types,
     public_key,
     private_key,
-    eth_address,
   }

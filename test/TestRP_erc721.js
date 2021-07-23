@@ -162,15 +162,14 @@ contract('HappyRedPacket_ERC721', accounts => {
 	describe('claim() test', async () => {
 		// This test case may take a long time, On my machine it takes 9484ms
 		it('should throw error when the nft is transferred to others before claim ', async () => {
-      await createRedPacket([6,7,8])
+      creationParams.number = 1
+			creationParams.total_tokens = 1
+      await createRedPacket([6])
 			const redPacketInfo = await getRedPacketInfo()
 			const claimParams = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
-			var transferred_token_ids = [6,7,8]
-			for (var i = 0; i < transferred_token_ids.length; i ++){
-				await test_token_721.safeTransferFrom(accounts[0], accounts[2], transferred_token_ids[i], {
-          from: accounts[0],
-        })
-			}
+      await test_token_721.safeTransferFrom(accounts[0], accounts[2], 6, {
+        from: accounts[0],
+      })
       await expect(
         redpacket_721.claim.sendTransaction(...Object.values(claimParams), {
           from: accounts[1],
@@ -285,7 +284,7 @@ contract('HappyRedPacket_ERC721', accounts => {
 			for (var i = 100; i < 150; i ++){
 				erc_token_ids.push(i)
 			}
-      const { results } = await testSuitCreateAndClaimManyRedPackets(erc_token_ids, 50)
+      const { results } = await testSuitCreateAndClaimManyRedPackets(erc_token_ids, 50, 50)
 			var claimed_ids = []
       results.reduce((acc, cur) => claimed_ids.push(cur.claimed_token_id))
 			claimed_ids.push(results[0].claimed_token_id)
@@ -373,13 +372,13 @@ contract('HappyRedPacket_ERC721', accounts => {
       })
     })
 
-		// Note: this test spends a long time, on my machine is 10570ms
-		it("should refund erc20 successfully when there're 50 red packets and 30 claimers", async () => {
+    // Note: this test spends a long time, on my machine is 10570ms
+		it("should refund successfully when there're 20 red packets and 10 claimers", async () => {
 			var erc_token_ids = []
-			for (var i = 50; i < 100; i ++){
+			for (var i = 80; i < 100; i ++){
 				erc_token_ids.push(i)
 			}
-      const { results, redPacketInfo } = await testSuitCreateAndClaimManyRedPackets(erc_token_ids, 30)
+      const { results, redPacketInfo } = await testSuitCreateAndClaimManyRedPackets(erc_token_ids, 10, 20)
 			var claimed_ids = []
       results.reduce((acc, cur) => claimed_ids.push(cur.claimed_token_id))
 			claimed_ids.push(results[0].claimed_token_id)
@@ -393,7 +392,7 @@ contract('HappyRedPacket_ERC721', accounts => {
 			var remained = get_ids_from_event.slice(0, result.remaining_balance)
 			var claimed_ids_set = new Set(claimed_ids)
 			var remained_set = new Set(remained)
-			expect(claimed_ids_set.size + remained_set.size).to.be.eq(50)
+			expect(claimed_ids_set.size + remained_set.size).to.be.eq(20)
       expect(result)
         .to.have.property('token_address')
         .that.to.be.eq(test_token_721.address)
@@ -401,9 +400,57 @@ contract('HappyRedPacket_ERC721', accounts => {
 
 	})
 
-	async function testSuitCreateAndClaimManyRedPackets(erc_token_ids, claimers) {
-    creationParams.total_tokens = 50
-    creationParams.number = 50
+  describe('check_claimed_id() test', async () => {
+    it('should throw error when red packet does not exist', async () => {
+      await expect(redpacket_721.check_claimed_id.call('id not exist', { from: accounts[1] })).to.be.rejectedWith(Error)
+    })
+
+    it('should return claimed id when everything is ok', async () => {
+      await createRedPacket([13,14,15])
+      const redPacketInfo = await getRedPacketInfo()
+      const claimParams = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
+      await redpacket_721.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+      const claimed_id = await redpacket_721.check_claimed_id.call(redPacketInfo.id, { from: accounts[1] })
+      expect(claimed_id).to.be.an('object')
+      expect(Number(claimed_id)).to.be.gte(13).and.to.be.lte(15)
+    })
+  })
+
+  describe('check_erc721_remain_ids() test', async () => {
+    it('should throw error when red packet does not exist', async () => {
+      await expect(redpacket_721.check_erc721_remain_ids.call('id not exist', { from: accounts[1] })).to.be.rejectedWith(Error)
+    })
+
+    it('should return claimed id when everything is ok', async () => {
+      var input_erc_ids = [16,17,18]
+      await createRedPacket(input_erc_ids)
+      const redPacketInfo = await getRedPacketInfo()
+      const claimParams = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
+      await redpacket_721.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+      const claimed_id = await redpacket_721.check_claimed_id.call(redPacketInfo.id, { from: accounts[1] })
+      const remaining = await redpacket_721.check_erc721_remain_ids.call(redPacketInfo.id, { from: accounts[1] })
+      expect(remaining).to.be.an('object')
+      var remaining_tokens = remaining.remaining_tokens
+      var erc_token_ids = remaining.erc721_token_ids
+      var remaining_ids = erc_token_ids.slice(0, remaining_tokens)
+      var calculated_remaining_ids = input_erc_ids.filter(function(value, index, arr) {
+        return value != claimed_id;
+      })
+      expect(remaining_ids.length).to.be.eq(calculated_remaining_ids.length)
+      for (var i = 0; i < remaining_ids.length; i ++){
+        expect(calculated_remaining_ids.includes(Number(remaining_ids[i]))).to.be.eq(true)
+      }
+
+    })
+  })
+
+	async function testSuitCreateAndClaimManyRedPackets(erc_token_ids, claimers, number) {
+    creationParams.total_tokens = number
+    creationParams.number = number
     creationParams.token_addr = test_token_721.address
 		
     await createRedPacket(erc_token_ids)

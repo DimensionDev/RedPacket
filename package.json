@@ -10,7 +10,8 @@
         "deploy:bsc_mainnet": "hardhat --network bsc_mainnet deploy",
         "deploy:matic_mumbai_test": "hardhat --network matic_mumbai_test deploy",
         "deploy:matic_mainnet": "hardhat --network matic_mainnet deploy",
-        "test": "truffle test",
+        "test erc721": "truffle test ./test/TestRP_erc721.js",
+        "test normal": "truffle test ./test/TestRedPacket.js",
         "format": "prettier --write './test/*.js' './deploy/*.ts'"
     },
     "dependencies": {
@@ -28,7 +29,7 @@
         "chai": "^4.3.4",
         "chai-as-promised": "^7.1.1",
         "ethers": "^5.4.1",
-        "hardhat": "^2.2.1",
+        "hardhat": "^2.5.0",
         "hardhat-deploy": "^0.7.6",
         "hardhat-deploy-ethers": "^0.3.0-beta.7",
         "prettier": "^1.19.1",
