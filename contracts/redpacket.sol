@@ -67,7 +67,7 @@ contract HappyRedPacket is Initializable {
 
     // Inits a red packet instance
     // _token_type: 0 - ETH  1 - ERC20
-    function create_red_packet (bytes32 _hash, uint _number, bool _ifrandom, uint _duration, 
+    function create_red_packet (address _public_key, uint _number, bool _ifrandom, uint _duration, 
                                 bytes32 _seed, string memory _message, string memory _name,
                                 uint _token_type, address _token_addr, uint _total_tokens) 
     public payable {
@@ -90,7 +90,7 @@ contract HappyRedPacket is Initializable {
             RedPacket storage redp = redpacket_by_id[_id];
             redp.packed.packed1 = wrap1(_total_tokens, _duration);
             redp.packed.packed2 = wrap2(_token_addr, _number, _token_type, _random_type);
-            redp.public_key = uint160(uint256(_hash));
+            redp.public_key = uint160(_public_key);
             redp.creator = msg.sender;
         }
         {
@@ -102,8 +102,8 @@ contract HappyRedPacket is Initializable {
         }
     }
 
-    // It takes the unhashed password and a hashed random seed generated from the user
-    function claim(bytes32 id, string memory password, address payable recipient, bytes32 validation) 
+    // It takes the signed msg.sender message as verification passcode
+    function claim(bytes32 id, bytes memory signedMsg, address payable recipient) 
     public returns (uint claimed) {
 
         RedPacket storage rp = redpacket_by_id[id];
@@ -115,7 +115,7 @@ contract HappyRedPacket is Initializable {
         require (claimed_number < total_number, "Out of stock");
         
         uint160 public_key = rp.public_key;
-        require(_verify(bytes(password), public_key), "Verification failed");
+        require(_verify(signedMsg, public_key), "Verification failed");
 
         uint256 claimed_tokens;
         uint256 token_type = unbox(packed.packed2, 254, 1);
@@ -157,8 +157,8 @@ contract HappyRedPacket is Initializable {
     function _verify(bytes memory signedMsg, uint160 public_key) private view returns (bool verified) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n20";
         bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, msg.sender));
-        uint160 calculated_public_key = uint160(ECDSA.recover(prefixedHash, signedMsg));
-        return (calculated_public_key == public_key);
+        address calculated_public_key = ECDSA.recover(prefixedHash, signedMsg);
+        return (calculated_public_key == address(public_key));
     }
 
     // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets
