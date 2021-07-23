@@ -8,6 +8,8 @@ import "@nomiclabs/hardhat-waffle"
 import "@nomiclabs/hardhat-ethers"
 import "solidity-coverage"
 import '@openzeppelin/hardhat-upgrades'
+import "@nomiclabs/hardhat-truffle5"
+import "hardhat-gas-reporter"
 
 const {
      infura_project_id,
@@ -23,6 +25,9 @@ const networks = {
           blockGasLimit: 6000000,
           chainId: 31337,
           gas: 'auto',
+          accounts: {
+               count: 100,  
+          }
      },
      mainnet: {
           url: 'https://mainnet.infura.io/v3/' + infura_project_id,

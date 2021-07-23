@@ -55,12 +55,6 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         uint256[] remaining_token_ids
     );
 
-    // event show(
-    //     uint256 token_id,
-    //     address approved,
-    //     address con
-    // );
-
     uint32 nonce;
     mapping(bytes32 => RedPacket) redpacket_by_id;
     bytes32 private seed;
@@ -219,10 +213,8 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
                               address token_addr,
                               address creator) 
     private view returns (uint256 index, uint256 token_id){
-        uint256 claimed_index;
-        uint256 claimed_token_id;
-        claimed_index = random(seed, nonce) % (remaining_tokens);
-        claimed_token_id = erc721_token_id_list[claimed_index];
+        uint256 claimed_index = random(seed, nonce) % (remaining_tokens);
+        uint256 claimed_token_id = erc721_token_id_list[claimed_index];
         while(IERC721(token_addr).ownerOf(claimed_token_id) != creator){
             claimed_index = random(seed, nonce) % (remaining_tokens);
             claimed_token_id = erc721_token_id_list[claimed_index];

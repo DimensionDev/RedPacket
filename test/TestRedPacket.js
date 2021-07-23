@@ -555,7 +555,8 @@ contract('HappyRedPacket', accounts => {
   }
 
   function getRevertMsg(msg) {
-    return `Returned error: VM Exception while processing transaction: revert ${msg} -- Reason given: ${msg}.`
+    return `VM Exception while processing transaction: reverted with reason string '${msg}'`
+    // return `Returned error: VM Exception while processing transaction: revert ${msg} -- Reason given: ${msg}.`
   }
 
   async function createThenGetClaimParams(account) {

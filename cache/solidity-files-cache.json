@@ -44,8 +44,8 @@
       ]
     },
     "/Users/chen/Desktop/WorkDir/RP/RedPacket/contracts/redpacket_erc721_support.sol": {
-      "lastModificationDate": 1626921749761,
-      "contentHash": "dec75ed6dacb0a1c9ecf8510cb23cc69",
+      "lastModificationDate": 1627009827653,
+      "contentHash": "b01ff76bbe0047cbaf7d5357fd040e9a",
       "sourceName": "contracts/redpacket_erc721_support.sol",
       "solcConfig": {
         "version": "0.8.0",
@@ -522,8 +522,8 @@
       ]
     },
     "/Users/chen/Desktop/WorkDir/RP/RedPacket/contracts/test_token_erc721.sol": {
-      "lastModificationDate": 1626838607143,
-      "contentHash": "82fbb6020e4996be1af22c25719d5e85",
+      "lastModificationDate": 1627021998351,
+      "contentHash": "ccf6d6b568229d5c02cfae29032007b9",
       "sourceName": "contracts/test_token_erc721.sol",
       "solcConfig": {
         "version": "0.8.0",

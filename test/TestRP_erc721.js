@@ -12,7 +12,6 @@ const {
 	refund_success_types,
 	public_key,
 	private_key,
-	eth_address,
 } = require('./erc721_test_constants')
 
 const TestToken_721 = artifacts.require('TestToken_721');
@@ -25,12 +24,14 @@ contract('HappyRedPacket_ERC721', accounts => {
 	let redpacket
 	let creationParams
 	let initial_owner
+  let SignedMsgs
 
 	before(async () => {
 		snapShot = await helper.takeSnapshot()
 		snapshotId = snapShot['result']
 		redpacket_721 = await HappyRedPacket_ERC721.deployed()
 		test_token_721 = await TestToken_721.deployed()
+    SignedMsgs = getSignedMsgs(accounts)
 	})
 
 	beforeEach(async () => {
@@ -174,7 +175,7 @@ contract('HappyRedPacket_ERC721', accounts => {
         redpacket_721.claim.sendTransaction(...Object.values(claimParams), {
           from: accounts[1],
         }),
-      ).to.be.rejectedWith("Returned error: VM Exception while processing transaction: out of gas")
+      ).to.be.rejectedWith("Returned error: Transaction ran out of gas")
       
     })
 
@@ -370,15 +371,23 @@ contract('HappyRedPacket_ERC721', accounts => {
       await redpacket_721.refund.sendTransaction(redPacketInfo.id, {
         from: accounts[0],
       })
+      const remaining = await redpacket_721.check_erc721_remain_ids.call(redPacketInfo.id, { from: accounts[1] })
+      var erc_token_ids = remaining.erc721_token_ids
+      const availability = await redpacket_721.check_availability.call(redPacketInfo.id, { from: accounts[1] })
+      expect(erc_token_ids.length).to.be.eq(0)
+      expect(Number(availability.total_pkts)).to.be.eq(0)
+      expect(Number(availability.balance)).to.be.eq(0)
+      expect(Number(availability.claimed_pkts)).to.be.eq(0)
+
     })
 
     // Note: this test spends a long time, on my machine is 10570ms
-		it("should refund successfully when there're 20 red packets and 10 claimers", async () => {
+		it("should refund successfully when there're 50 red packets and 25 claimers", async () => {
 			var erc_token_ids = []
-			for (var i = 80; i < 100; i ++){
+			for (var i = 50; i < 100; i ++){
 				erc_token_ids.push(i)
 			}
-      const { results, redPacketInfo } = await testSuitCreateAndClaimManyRedPackets(erc_token_ids, 10, 20)
+      const { results, redPacketInfo } = await testSuitCreateAndClaimManyRedPackets(erc_token_ids, 25, 50)
 			var claimed_ids = []
       results.reduce((acc, cur) => claimed_ids.push(cur.claimed_token_id))
 			claimed_ids.push(results[0].claimed_token_id)
@@ -392,7 +401,7 @@ contract('HappyRedPacket_ERC721', accounts => {
 			var remained = get_ids_from_event.slice(0, result.remaining_balance)
 			var claimed_ids_set = new Set(claimed_ids)
 			var remained_set = new Set(remained)
-			expect(claimed_ids_set.size + remained_set.size).to.be.eq(20)
+			expect(claimed_ids_set.size + remained_set.size).to.be.eq(50)
       expect(result)
         .to.have.property('token_address')
         .that.to.be.eq(test_token_721.address)
@@ -458,11 +467,17 @@ contract('HappyRedPacket_ERC721', accounts => {
 
     await Promise.all(
       Array.from(Array(claimers).keys()).map(i => {
-        const claimParams = createClaimParams(redPacketInfo.id, accounts[i], accounts[i])
+        var a = accounts[i]
+        var signedMsg = SignedMsgs[a]
+        const claimParams = {
+          id: redPacketInfo.id,
+          signedMsg: signedMsg,
+          recipient: a,
+        }
         return new Promise(resolve => {
-          redpacket_721.claim
-            .sendTransaction(...Object.values(claimParams), {
-              from: accounts[i],
+          redpacket_721.claim.sendTransaction(...Object.values(claimParams), {
+              from: a,
+              gasLimit: 300000,
             })
             .then(() => resolve())
         })
@@ -508,7 +523,19 @@ contract('HappyRedPacket_ERC721', accounts => {
   }
 
 	function getRevertMsg(msg) {
-    return `Returned error: VM Exception while processing transaction: revert ${msg} -- Reason given: ${msg}.`
+    // -VM Exception while processing transaction: reverted with reason string 'At most 255 recipients'
+    //  +Returned error: VM Exception while processing transaction: revert At most 255 recipients -- Reason given: At most 255 recipients.
+    return `VM Exception while processing transaction: reverted with reason string '${msg}'`
+    // return `Returned error: VM Exception while processing transaction: revert ${msg} -- Reason given: ${msg}.`
+  }
+
+  function getSignedMsgs(sender_addrs) {
+    var signedMsgs = {}
+    for (var i = 0; i < sender_addrs.length; i ++){
+      var signedMsg = web3.eth.accounts.sign(sender_addrs[i], private_key).signature
+      signedMsgs[sender_addrs[i]] = signedMsg
+    }
+    return signedMsgs
   }
 
 	function createClaimParams(id, recipient, caller) {
