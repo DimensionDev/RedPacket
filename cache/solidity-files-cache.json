@@ -44,8 +44,8 @@
       ]
     },
     "/Users/chen/Desktop/WorkDir/RP/RedPacket/contracts/redpacket_erc721_support.sol": {
-      "lastModificationDate": 1627009827653,
-      "contentHash": "b01ff76bbe0047cbaf7d5357fd040e9a",
+      "lastModificationDate": 1627027313256,
+      "contentHash": "c21e3c3bfc4eea8b1ce032cd4f681968",
       "sourceName": "contracts/redpacket_erc721_support.sol",
       "solcConfig": {
         "version": "0.8.0",
