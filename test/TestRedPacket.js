@@ -596,7 +596,7 @@ contract('HappyRedPacket', accounts => {
     // var signedMsg_to_str = web3.utils.hexToAscii(signedMsg);
     return {
       id,
-      signedMsg: signedMsg,
+      signedMsg,
       recipient,
     }
   }
