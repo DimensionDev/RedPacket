@@ -20,7 +20,7 @@ contract HappyRedPacket is Initializable {
     struct RedPacket {
         Packed packed;
         mapping(address => uint256) claimed_list;
-        uint160 public_key;
+        address public_key;
         address creator;
     }
 
@@ -90,7 +90,7 @@ contract HappyRedPacket is Initializable {
             RedPacket storage redp = redpacket_by_id[_id];
             redp.packed.packed1 = wrap1(_total_tokens, _duration);
             redp.packed.packed2 = wrap2(_token_addr, _number, _token_type, _random_type);
-            redp.public_key = uint160(_public_key);
+            redp.public_key = _public_key;
             redp.creator = msg.sender;
         }
         {
@@ -114,7 +114,7 @@ contract HappyRedPacket is Initializable {
         uint claimed_number = unbox(packed.packed2, 224, 15);
         require (claimed_number < total_number, "Out of stock");
         
-        uint160 public_key = rp.public_key;
+        address public_key = rp.public_key;
         require(_verify(signedMsg, public_key), "Verification failed");
 
         uint256 claimed_tokens;
@@ -154,11 +154,11 @@ contract HappyRedPacket is Initializable {
     }
 
     // as a workaround for "CompilerError: Stack too deep, try removing local variables"
-    function _verify(bytes memory signedMsg, uint160 public_key) private view returns (bool verified) {
+    function _verify(bytes memory signedMsg, address public_key) private view returns (bool verified) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n20";
         bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, msg.sender));
         address calculated_public_key = ECDSA.recover(prefixedHash, signedMsg);
-        return (calculated_public_key == address(public_key));
+        return (calculated_public_key == public_key);
     }
 
     // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets

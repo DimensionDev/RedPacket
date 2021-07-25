@@ -35,7 +35,7 @@ contract('HappyRedPacket', accounts => {
 
   beforeEach(async () => {
     creationParams = {
-      hash: public_key,
+      public_key: public_key,
       number: 3,
       ifrandom: true,
       duration: 1000,
