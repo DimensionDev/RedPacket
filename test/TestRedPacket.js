@@ -556,7 +556,6 @@ contract('HappyRedPacket', accounts => {
 
   function getRevertMsg(msg) {
     return `VM Exception while processing transaction: reverted with reason string '${msg}'`
-    // return `Returned error: VM Exception while processing transaction: revert ${msg} -- Reason given: ${msg}.`
   }
 
   async function createThenGetClaimParams(account) {
@@ -593,10 +592,9 @@ contract('HappyRedPacket', accounts => {
 
   function createClaimParams(id, recipient, caller) {
     var signedMsg = web3.eth.accounts.sign(caller, private_key).signature
-    // var signedMsg_to_str = web3.utils.hexToAscii(signedMsg);
     return {
       id,
-      signedMsg: signedMsg,
+      signedMsg,
       recipient,
     }
   }
