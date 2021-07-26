@@ -162,6 +162,126 @@ contract('HappyRedPacket', accounts => {
       expect(availability).to.be.an('object')
       expect(BigNumber(availability.claimed_amount).toFixed()).to.be.eq('0')
     })
+
+    it('should return red packet info after expired', async () => {
+      const { claimParams, redPacketInfo } = await createThenGetClaimParams(accounts[1])
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+      const claimResults = await getClaimRedPacketInfo(0)
+      const claimed_tokens = claimResults[0].claimed_value
+      const remain = 100000000 - Number(claimed_tokens)
+
+      await helper.advanceTimeAndBlock(2000)
+
+      const availability = await redpacket.check_availability.call(redPacketInfo.id, { from: accounts[1] })
+      expect(availability).to.be.an('object')
+      expect(BigNumber(availability.claimed).toFixed()).to.be.eq('1')
+      expect(availability.token_address).to.be.eq('0x0000000000000000000000000000000000000000')
+      expect(BigNumber(availability.total).toFixed()).to.be.eq('3')
+      expect(BigNumber(availability.claimed_amount).toFixed()).to.be.eq(claimed_tokens)
+      expect(Number(availability.balance)).to.be.eq(remain)
+      expect(availability.expired).to.be.eq(true)
+    })
+
+    it('should return red packet info after expired (erc20)', async () => {
+      creationParams.token_type = 1
+      creationParams.token_addr = testtoken.address
+
+      // create red packet
+      await testtoken.transfer(accounts[0], creationParams.total_tokens + 1)
+      await testtoken.approve.sendTransaction(redpacket.address, creationParams.total_tokens, { from: accounts[0] })
+      await redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
+        from: accounts[0],
+      })
+      const redPacketInfo = await getRedPacketInfo()
+      var signedMsg = web3.eth.accounts.sign(accounts[1], private_key).signature
+      claimParams = {
+        id : redPacketInfo.id,
+        signedMsg,
+        recipient: accounts[1],
+      }
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+      const claimResults = await getClaimRedPacketInfo(0)
+      const claimed_tokens = claimResults[0].claimed_value
+      const remain = 100000000 - Number(claimed_tokens)
+
+      await helper.advanceTimeAndBlock(2000)
+
+      const availability = await redpacket.check_availability.call(redPacketInfo.id, { from: accounts[1] })
+      expect(availability).to.be.an('object')
+      expect(BigNumber(availability.claimed).toFixed()).to.be.eq('1')
+      expect(availability.token_address).to.be.eq(testtoken.address)
+      expect(BigNumber(availability.total).toFixed()).to.be.eq('3')
+      expect(BigNumber(availability.claimed_amount).toFixed()).to.be.eq(claimed_tokens)
+      expect(Number(availability.balance)).to.be.eq(remain)
+      expect(availability.expired).to.be.eq(true)
+    })
+
+    it('should return red packet info after refund', async () => {
+      const { claimParams, redPacketInfo } = await createThenGetClaimParams(accounts[1])
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+      const claimResults = await getClaimRedPacketInfo(0)
+      const claimed_tokens = claimResults[0].claimed_value
+
+      await helper.advanceTimeAndBlock(2000)
+
+      await redpacket.refund.sendTransaction(redPacketInfo.id, {
+        from: accounts[0],
+      })
+
+      const availability = await redpacket.check_availability.call(redPacketInfo.id, { from: accounts[1] })
+      expect(availability).to.be.an('object')
+      expect(BigNumber(availability.claimed).toFixed()).to.be.eq('1')
+      expect(availability.token_address).to.be.eq('0x0000000000000000000000000000000000000000')
+      expect(BigNumber(availability.total).toFixed()).to.be.eq('3')
+      expect(BigNumber(availability.balance).toFixed()).to.be.eq('0')
+      expect(BigNumber(availability.claimed_amount).toFixed()).to.be.eq(claimed_tokens)
+      expect(availability.expired).to.be.eq(true)
+    })
+
+    it('should return red packet info after refund (erc20)', async () => {
+      creationParams.token_type = 1
+      creationParams.token_addr = testtoken.address
+
+      // create red packet
+      await testtoken.transfer(accounts[0], creationParams.total_tokens + 1)
+      await testtoken.approve.sendTransaction(redpacket.address, creationParams.total_tokens, { from: accounts[0] })
+      await redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
+        from: accounts[0],
+      })
+      const redPacketInfo = await getRedPacketInfo()
+      var signedMsg = web3.eth.accounts.sign(accounts[1], private_key).signature
+      claimParams = {
+        id : redPacketInfo.id,
+        signedMsg,
+        recipient: accounts[1],
+      }
+      await redpacket.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+      const claimResults = await getClaimRedPacketInfo(0)
+      const claimed_tokens = claimResults[0].claimed_value
+
+      await helper.advanceTimeAndBlock(2000)
+
+      await redpacket.refund.sendTransaction(redPacketInfo.id, {
+        from: accounts[0],
+      })
+
+      const availability = await redpacket.check_availability.call(redPacketInfo.id, { from: accounts[1] })
+      expect(availability).to.be.an('object')
+      expect(BigNumber(availability.claimed).toFixed()).to.be.eq('1')
+      expect(availability.token_address).to.be.eq(testtoken.address)
+      expect(BigNumber(availability.total).toFixed()).to.be.eq('3')
+      expect(BigNumber(availability.claimed_amount).toFixed()).to.be.eq(claimed_tokens)
+      expect(BigNumber(availability.balance).toFixed()).to.be.eq('0')
+      expect(availability.expired).to.be.eq(true)
+    })
   })
 
   describe('claim() test', async () => {
