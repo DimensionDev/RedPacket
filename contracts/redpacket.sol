@@ -180,19 +180,16 @@ contract HappyRedPacket is Initializable {
         RedPacket storage rp = redpacket_by_id[id];
         Packed memory packed = rp.packed;
         address creator = rp.creator;
-        require(packed.packed1 != 0 && packed.packed2 != 0, "Already Refunded");
         require(creator == msg.sender, "Creator Only");
         require(unbox(packed.packed1, 224, 32) <= block.timestamp, "Not expired yet");
-
         uint256 remaining_tokens = unbox(packed.packed1, 128, 96);
         require(remaining_tokens != 0, "None left in the red packet");
 
         uint256 token_type = unbox(packed.packed2, 254, 1);
         address token_address = address(uint160(unbox(packed.packed2, 64, 160)));
 
-        // Gas Refund
-        rp.packed.packed1 = 0;
-        rp.packed.packed2 = 0;
+        rp.packed.packed1 = rewriteBox(packed.packed1, 128, 96, 0);
+
         if (token_type == 0) {
             payable(msg.sender).transfer(remaining_tokens);
         }

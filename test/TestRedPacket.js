@@ -426,7 +426,7 @@ contract('HappyRedPacket', accounts => {
         redpacket.refund.sendTransaction(redPacketInfo.id, {
           from: accounts[0],
         }),
-      ).to.be.rejectedWith(getRevertMsg('Already Refunded'))
+      ).to.be.rejectedWith(getRevertMsg('None left in the red packet'))
     })
 
     it('should refund eth successfully', async () => {
