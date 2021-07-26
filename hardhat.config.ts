@@ -22,7 +22,7 @@ const networks = {
           chainId: 1337,
      },
      hardhat: {
-          blockGasLimit: 6000000,
+          blockGasLimit: 8000000,
           chainId: 31337,
           gas: 'auto',
           accounts: {

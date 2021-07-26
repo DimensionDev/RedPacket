@@ -20,10 +20,9 @@ const HappyRedPacket_ERC721 = artifacts.require('HappyRedPacket_ERC721')
 contract('HappyRedPacket_ERC721', accounts => {
 	let snapShot
 	let snapshotId
-	let testtoken
-	let redpacket
+	let test_token_721
+	let redpacket_721
 	let creationParams
-	let initial_owner
   let SignedMsgs
 
 	before(async () => {
@@ -37,7 +36,7 @@ contract('HappyRedPacket_ERC721', accounts => {
 	beforeEach(async () => {
 		var input_token_ids = [0,1,2]
 		creationParams = {
-			public_key: public_key,
+			public_key,
 			number: 3,
 			duration: 1000,
 			seed: web3.utils.sha3('lajsdklfjaskldfhaikl'),
@@ -83,16 +82,6 @@ contract('HappyRedPacket_ERC721', accounts => {
         ).to.be.rejectedWith(getRevertMsg('At least 1 recipient'))
     })
 
-		it('should throw error when number is greater than 255', async () => {
-      creationParams.number = 256
-			creationParams.total_tokens = 256
-      await expect(
-        redpacket_721.create_red_packet.sendTransaction(...Object.values(creationParams), {
-          from: accounts[0],
-        }),
-      ).to.be.rejectedWith(getRevertMsg('At most 255 recipients'))
-    })
-
 		it('should throw error no enough erc721_token_id is provided', async () => {
 			creationParams.erc721_token_ids = [0,1,2,3]
       await expect(
@@ -125,7 +114,6 @@ contract('HappyRedPacket_ERC721', accounts => {
       await redpacket_721.create_red_packet.sendTransaction(...Object.values(creationParams), {
         from: accounts[0],
       })
-
       const result = await getRedPacketInfo()
       expect(result)
         .to.have.property('total_tokens')
@@ -157,6 +145,27 @@ contract('HappyRedPacket_ERC721', accounts => {
       const availability = await redpacket_721.check_availability.call(redPacketInfo.id, { from: accounts[1] })
       expect(availability).to.be.an('object')
       expect(BigNumber(availability.claimed_pkts).toFixed()).to.be.eq('0')
+    })
+
+    it('should return red packet info when expired', async () => {
+      await createRedPacket([33,34,35])
+			const redPacketInfo = await getRedPacketInfo()
+			const claimParams = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
+      await redpacket_721.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+      const claimResults = await getClaimRedPacketInfo(0)
+      const claimed_id = claimResults[0].claimed_token_id
+
+      await helper.advanceTimeAndBlock(2000)
+
+      const claimed = await redpacket_721.check_claimed_id.call(redPacketInfo.id, { from: accounts[1] })
+      
+      const availability = await redpacket_721.check_availability.call(redPacketInfo.id, { from: accounts[1] })
+      expect(Number(availability.total_pkts)).to.be.eq(3)
+      expect(Number(availability.balance)).to.be.eq(2)
+      expect(Number(availability.claimed_pkts)).to.be.eq(1)
+      expect(Number(availability.claimed_id)).to.be.eq(Number(claimed)).and.to.be.eq(Number(claimed_id))
     })
   })
 
@@ -355,7 +364,7 @@ contract('HappyRedPacket_ERC721', accounts => {
         redpacket_721.refund.sendTransaction(redPacketInfo.id, {
           from: accounts[0],
         }),
-      ).to.be.rejectedWith(getRevertMsg('Already Refunded'))
+      ).to.be.rejectedWith(getRevertMsg('None left in the red packet'))
     })
 
 		it('should refund successfully', async () => {
@@ -374,10 +383,10 @@ contract('HappyRedPacket_ERC721', accounts => {
       const remaining = await redpacket_721.check_erc721_remain_ids.call(redPacketInfo.id, { from: accounts[1] })
       var erc_token_ids = remaining.erc721_token_ids
       const availability = await redpacket_721.check_availability.call(redPacketInfo.id, { from: accounts[1] })
-      expect(erc_token_ids.length).to.be.eq(0)
-      expect(Number(availability.total_pkts)).to.be.eq(0)
+      expect(erc_token_ids.length).to.be.eq(3)
+      expect(Number(availability.total_pkts)).to.be.eq(3)
       expect(Number(availability.balance)).to.be.eq(0)
-      expect(Number(availability.claimed_pkts)).to.be.eq(0)
+      expect(Number(availability.claimed_pkts)).to.be.eq(1)
 
     })
 
@@ -425,6 +434,25 @@ contract('HappyRedPacket_ERC721', accounts => {
       expect(claimed_id).to.be.an('object')
       expect(Number(claimed_id)).to.be.gte(13).and.to.be.lte(15)
     })
+
+    it('should return claimed id when everything is ok (after expire)', async () => {
+      await createRedPacket([151,152,153])
+      const redPacketInfo = await getRedPacketInfo()
+      const claimParams = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
+      await redpacket_721.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+
+      const claimResults = await getClaimRedPacketInfo(0)
+      const claimed_id_log = claimResults[0].claimed_token_id
+
+      await helper.advanceTimeAndBlock(2000)
+
+
+      const claimed_id = await redpacket_721.check_claimed_id.call(redPacketInfo.id, { from: accounts[1] })
+      expect(claimed_id).to.be.an('object')
+      expect(Number(claimed_id)).to.be.gte(151).and.to.be.lte(153).to.be.eq(Number(claimed_id_log))
+    })
   })
 
   describe('check_erc721_remain_ids() test', async () => {
@@ -432,7 +460,7 @@ contract('HappyRedPacket_ERC721', accounts => {
       await expect(redpacket_721.check_erc721_remain_ids.call('id not exist', { from: accounts[1] })).to.be.rejectedWith(Error)
     })
 
-    it('should return claimed id when everything is ok', async () => {
+    it('should return remained id when everything is ok', async () => {
       var input_erc_ids = [16,17,18]
       await createRedPacket(input_erc_ids)
       const redPacketInfo = await getRedPacketInfo()
@@ -453,7 +481,34 @@ contract('HappyRedPacket_ERC721', accounts => {
       for (var i = 0; i < remaining_ids.length; i ++){
         expect(calculated_remaining_ids.includes(Number(remaining_ids[i]))).to.be.eq(true)
       }
+    })
 
+    it('should return remained id when everything is ok (after expire)', async () => {
+      var input_erc_ids = [154,155,156]
+      await createRedPacket(input_erc_ids)
+      const redPacketInfo = await getRedPacketInfo()
+      const claimParams = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
+      await redpacket_721.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+
+      const claimResults = await getClaimRedPacketInfo(0)
+      const claimed_id_log = claimResults[0].claimed_token_id
+
+      await helper.advanceTimeAndBlock(2000)
+
+      const remaining = await redpacket_721.check_erc721_remain_ids.call(redPacketInfo.id, { from: accounts[1] })
+      expect(remaining).to.be.an('object')
+      var remaining_tokens = remaining.remaining_tokens
+      var erc_token_ids = remaining.erc721_token_ids
+      var remaining_ids = erc_token_ids.slice(0, remaining_tokens)
+      var calculated_remaining_ids = input_erc_ids.filter(function(value, index, arr) {
+        return value != claimed_id_log;
+      })
+      expect(remaining_ids.length).to.be.eq(calculated_remaining_ids.length)
+      for (var i = 0; i < remaining_ids.length; i ++){
+        expect(calculated_remaining_ids.includes(Number(remaining_ids[i]))).to.be.eq(true)
+      }
     })
   })
 
@@ -471,7 +526,7 @@ contract('HappyRedPacket_ERC721', accounts => {
         var signedMsg = SignedMsgs[a]
         const claimParams = {
           id: redPacketInfo.id,
-          signedMsg: signedMsg,
+          signedMsg,
           recipient: a,
         }
         return new Promise(resolve => {
@@ -523,10 +578,7 @@ contract('HappyRedPacket_ERC721', accounts => {
   }
 
 	function getRevertMsg(msg) {
-    // -VM Exception while processing transaction: reverted with reason string 'At most 255 recipients'
-    //  +Returned error: VM Exception while processing transaction: revert At most 255 recipients -- Reason given: At most 255 recipients.
     return `VM Exception while processing transaction: reverted with reason string '${msg}'`
-    // return `Returned error: VM Exception while processing transaction: revert ${msg} -- Reason given: ${msg}.`
   }
 
   function getSignedMsgs(sender_addrs) {
@@ -540,10 +592,9 @@ contract('HappyRedPacket_ERC721', accounts => {
 
 	function createClaimParams(id, recipient, caller) {
     var signedMsg = web3.eth.accounts.sign(caller, private_key).signature
-    // var signedMsg_to_str = web3.utils.hexToAscii(signedMsg);
     return {
       id,
-      signedMsg: signedMsg,
+      signedMsg,
       recipient,
     }
   }

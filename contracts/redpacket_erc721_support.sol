@@ -64,6 +64,7 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         seed = keccak256(abi.encodePacked("Former NBA Commissioner David St", block.timestamp, msg.sender));
     }
 
+    // create a red packet with 256 tokens may need 6,825,308
     function create_red_packet (uint160 _public_key, uint256 _number, uint256 _duration,
                                 bytes32 _seed, string memory _message, string memory _name,
                                 address _token_addr, uint256 _total_tokens, uint256[] memory _erc721_token_ids)
@@ -72,7 +73,6 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         // unsuccessful condition
         require(_total_tokens == _number, "require #tokens = #packets");
         require(_number > 0, "At least 1 recipient");
-        require(_number < 256, "At most 255 recipients");
         require(_total_tokens == _erc721_token_ids.length, "No enough erc721_token_id provided");
         require(IERC721(_token_addr).isApprovedForAll(msg.sender, address(this)), "No approved yet");
         _check_ownership(_erc721_token_ids, msg.sender, _token_addr);
@@ -172,7 +172,6 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
     function refund(bytes32 id) external {
         RedPacket storage rp = redpacket_by_id[id];
         Packed memory packed = rp.packed;
-        require(packed.packed1 != 0 && packed.packed2 != 0, "Already Refunded");
         require(uint160(msg.sender) == unbox(packed.packed1, 0, 160), "Creator Only");
         require(unbox(packed.packed2, 194, 32) <= block.timestamp, "Not expired yet");
 
@@ -182,10 +181,7 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         address token_addr = address(uint160(unbox(packed.packed2, 34, 160)));
         uint256[] memory erc721_token_list = rp.erc721_list;
 
-        //Gas Refund
-        rp.packed.packed1 = 0;
-        rp.packed.packed2 = 0;
-        delete rp.erc721_list;
+        rp.packed.packed1 = rewriteBox(packed.packed1, 160, 96, 0);
 
         emit RefundSuccess(id, token_addr, remaining_tokens, erc721_token_list);
         // Remember to setApprovedForAll(address(this),false)
