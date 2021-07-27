@@ -21,6 +21,7 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         mapping(address => uint256) claimed_list; 
         uint256[] erc721_list;
         uint160 public_key;
+        uint256 bit_status; //0 - available 1 - not available
     }
 
     struct Packed{
@@ -64,6 +65,17 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         seed = keccak256(abi.encodePacked("Former NBA Commissioner David St", block.timestamp, msg.sender));
     }
 
+    // Remember to call check_ownership() before create_red_packet()
+    function check_ownership(uint256[] memory erc721_token_id_list, address token_addr) external view returns(bool not_your_token){
+        not_your_token = false;
+        for (uint256 i= 0; i < erc721_token_id_list.length; i ++){
+            address owner = IERC721(token_addr).ownerOf(erc721_token_id_list[i]);
+            if (owner != msg.sender)
+                return true;
+        }
+        return not_your_token;
+    }
+
     // create a red packet with 256 tokens may need 6,825,308
     function create_red_packet (uint160 _public_key, uint256 _number, uint256 _duration,
                                 bytes32 _seed, string memory _message, string memory _name,
@@ -74,8 +86,7 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         require(_total_tokens == _number, "require #tokens = #packets");
         require(_number > 0, "At least 1 recipient");
         require(_total_tokens == _erc721_token_ids.length, "No enough erc721_token_id provided");
-        require(IERC721(_token_addr).isApprovedForAll(msg.sender, address(this)), "No approved yet");
-        _check_ownership(_erc721_token_ids, msg.sender, _token_addr);
+        require(IERC721(_token_addr).isApprovedForAll(msg.sender, address(this)), "No approved yet");                                                                       
 
         bytes32 packet_id = keccak256(abi.encodePacked(msg.sender, block.timestamp, nonce, seed, _seed));
         {
@@ -115,11 +126,14 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
 
         uint256 claimed_index;
         uint256 claimed_token_id;
-        (claimed_index, claimed_token_id) = _get_token_index(erc721_token_id_list, remaining_tokens, 
-                                                            token_addr, address(uint160(unbox(packed.packed1, 0, 160))));
+        uint256 new_bit_status;
+        (claimed_index, claimed_token_id, new_bit_status) = _get_token_index(erc721_token_id_list, remaining_tokens, 
+                                                            token_addr, address(uint160(unbox(packed.packed1, 0, 160))), 
+                                                            rp.bit_status);
         // pop the claimed erc721 token and update in rp
         erc721_token_id_list[claimed_index] = erc721_token_id_list[remaining_tokens - 1]; 
         rp.erc721_list = erc721_token_id_list;
+        rp.bit_status = new_bit_status;
         rp.packed.packed1 = rewriteBox(packed.packed1, 160, 96, remaining_tokens - 1);
 
         // Penalize greedy attackers by placing duplication check at the very last
@@ -197,25 +211,33 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         return (calculated_public_key == public_key);
     }
 
-    function _check_ownership(uint256[] memory erc721_token_id_list, address _sender, address token_addr) private view {
-        for (uint256 i= 0; i < erc721_token_id_list.length; i ++){
-            address owner = IERC721(token_addr).ownerOf(erc721_token_id_list[i]);
-            require (owner == _sender, "Not your token");
-        }
-    }
-
     function _get_token_index(uint256[] memory erc721_token_id_list,
                               uint256 remaining_tokens,
                               address token_addr,
-                              address creator) 
-    private view returns (uint256 index, uint256 token_id){
+                              address creator,
+                              uint256 bit_status) 
+    private view returns (uint256 index, uint256 token_id, uint new_bit_status){
         uint256 claimed_index = random(seed, nonce) % (remaining_tokens);
         uint256 claimed_token_id = erc721_token_id_list[claimed_index];
-        while(IERC721(token_addr).ownerOf(claimed_token_id) != creator){
+
+        while(_get_bit_value(bit_status, claimed_index) || IERC721(token_addr).ownerOf(claimed_token_id) != creator){
+            bit_status = _set_bit_value(bit_status, claimed_index);
             claimed_index = random(seed, nonce) % (remaining_tokens);
             claimed_token_id = erc721_token_id_list[claimed_index];
         }
-        return (claimed_index, claimed_token_id);
+        return (claimed_index, claimed_token_id, new_bit_status);
+    }
+
+    // index count from right
+    // if return true, then th bit is set (1)
+    function _get_bit_value(uint256 bit_status, uint256 bit_index) private pure returns (bool is_set){
+        is_set = ((bit_status & (1 << bit_index)) != 0);
+        return is_set;
+    }
+
+    function _set_bit_value(uint256 bit_status, uint256 bit_index) private pure returns (uint256 new_bit_status){
+        new_bit_status = bit_status | (1 << bit_index);
+        return new_bit_status;
     }
 
     /**
