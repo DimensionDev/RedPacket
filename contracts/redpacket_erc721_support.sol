@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@nomiclabs/buidler/console.sol";
 
 contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
 
@@ -53,7 +54,8 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         bytes32 id,
         address token_address,
         uint256 remaining_balance,
-        uint256[] remaining_token_ids
+        uint256[] remaining_token_ids,
+        uint256 bit_status
     );
 
     uint32 nonce;
@@ -66,14 +68,16 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
     }
 
     // Remember to call check_ownership() before create_red_packet()
-    function check_ownership(uint256[] memory erc721_token_id_list, address token_addr) external view returns(bool not_your_token){
-        not_your_token = false;
+    function check_ownership(uint256[] memory erc721_token_id_list, address token_addr) external view returns(bool is_your_token){
+        is_your_token = true;
         for (uint256 i= 0; i < erc721_token_id_list.length; i ++){
             address owner = IERC721(token_addr).ownerOf(erc721_token_id_list[i]);
-            if (owner != msg.sender)
-                return true;
+            if (owner != msg.sender){
+                is_your_token = false;
+                break;
+            }
         }
-        return not_your_token;
+        return is_your_token;
     }
 
     // create a red packet with 256 tokens may need 6,825,308
@@ -85,6 +89,7 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         // unsuccessful condition
         require(_total_tokens == _number, "require #tokens = #packets");
         require(_number > 0, "At least 1 recipient");
+        require(_number <= 256, "At most 256 recipient");
         require(_total_tokens == _erc721_token_ids.length, "No enough erc721_token_id provided");
         require(IERC721(_token_addr).isApprovedForAll(msg.sender, address(this)), "No approved yet");                                                                       
 
@@ -122,27 +127,31 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         require(_verify(signedMsg, public_key), "verification failed");
 
         uint256 remaining_tokens = unbox(packed.packed1, 160, 96);
-        address token_addr = address(uint160(unbox(packed.packed2, 34, 160)));
+        require(remaining_tokens > 0, "No available token remain");
 
         uint256 claimed_index;
         uint256 claimed_token_id;
         uint256 new_bit_status;
-        (claimed_index, claimed_token_id, new_bit_status) = _get_token_index(erc721_token_id_list, remaining_tokens, 
-                                                            token_addr, address(uint160(unbox(packed.packed1, 0, 160))), 
+        (claimed_index, claimed_token_id, new_bit_status, remaining_tokens) = _get_token_index(erc721_token_id_list, remaining_tokens, packed,
                                                             rp.bit_status);
-        // pop the claimed erc721 token and update in rp
-        erc721_token_id_list[claimed_index] = erc721_token_id_list[remaining_tokens - 1]; 
-        rp.erc721_list = erc721_token_id_list;
-        rp.bit_status = new_bit_status;
+        // update bitmap in rp
+        rp.bit_status  = new_bit_status | (1 << claimed_index);
         rp.packed.packed1 = rewriteBox(packed.packed1, 160, 96, remaining_tokens - 1);
+
 
         // Penalize greedy attackers by placing duplication check at the very last
         require(rp.claimed_list[msg.sender] == 0, "Already claimed");
         rp.claimed_list[msg.sender] = claimed_token_id;
         rp.packed.packed2 = rewriteBox(packed.packed2, 226, 15, claimed_number + 1);
-        address owner = IERC721(token_addr).ownerOf(claimed_token_id);
-        IERC721(token_addr).safeTransferFrom(owner, recipient, claimed_token_id);
-        emit ClaimSuccess(pkt_id, recipient, claimed_token_id, token_addr);
+        address token_addr;
+        {
+            token_addr = address(uint160(unbox(packed.packed2, 34, 160)));
+            address creator = address(uint160(unbox(packed.packed1, 0, 160)));
+            address payable _recipient = recipient;
+            IERC721(token_addr).safeTransferFrom(creator, _recipient, claimed_token_id);
+        }
+
+        emit ClaimSuccess(pkt_id, address(recipient), claimed_token_id, token_addr);
         return claimed_token_id;
     }
 
@@ -150,7 +159,7 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
     function check_availability(bytes32 pkt_id) 
     external view returns ( address token_address, uint balance, 
                             uint total_pkts, uint claimed_pkts, bool expired, 
-                            uint256 claimed_id) 
+                            uint256 claimed_id, uint256 bit_status) 
     {
         RedPacket storage rp = redpacket_by_id[pkt_id];
         Packed memory packed = rp.packed;
@@ -160,7 +169,8 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
             unbox(packed.packed2, 241, 15), 
             unbox(packed.packed2, 226, 15), 
             block.timestamp > unbox(packed.packed2, 194, 32), 
-            rp.claimed_list[msg.sender]
+            rp.claimed_list[msg.sender],
+            rp.bit_status
         );
     }
 
@@ -173,14 +183,12 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
     }
 
     function check_erc721_remain_ids(bytes32 id)
-             external view returns(uint256 remaining_tokens, uint256[] memory erc721_token_ids)
+             external view returns(uint256 bit_status, uint256[] memory erc721_token_ids)
     {
         RedPacket storage rp = redpacket_by_id[id];
-        Packed memory packed = rp.packed;
-        remaining_tokens = unbox(packed.packed1, 160, 96);
         erc721_token_ids = rp.erc721_list;
         // use remaining_tokens to get remained token id in erc_721_token_ids
-        return(remaining_tokens, erc721_token_ids);
+        return(rp.bit_status, erc721_token_ids);
     }
 
     function refund(bytes32 id) external {
@@ -197,7 +205,7 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
 
         rp.packed.packed1 = rewriteBox(packed.packed1, 160, 96, 0);
 
-        emit RefundSuccess(id, token_addr, remaining_tokens, erc721_token_list);
+        emit RefundSuccess(id, token_addr, remaining_tokens, erc721_token_list, rp.bit_status);
         // Remember to setApprovedForAll(address(this),false)
     }
 
@@ -213,31 +221,40 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
 
     function _get_token_index(uint256[] memory erc721_token_id_list,
                               uint256 remaining_tokens,
-                              address token_addr,
-                              address creator,
+                              Packed memory packed,
                               uint256 bit_status) 
-    private view returns (uint256 index, uint256 token_id, uint new_bit_status){
+    private view returns (uint256 index, uint256 claimed_token_id, uint256 new_bit_status, uint256 new_remaining_tokens){
+        address token_addr = address(uint160(unbox(packed.packed2, 34, 160)));
+        address creator = address(uint160(unbox(packed.packed1, 0, 160)));
         uint256 claimed_index = random(seed, nonce) % (remaining_tokens);
-        uint256 claimed_token_id = erc721_token_id_list[claimed_index];
-
-        while(_get_bit_value(bit_status, claimed_index) || IERC721(token_addr).ownerOf(claimed_token_id) != creator){
-            bit_status = _set_bit_value(bit_status, claimed_index);
+        uint16 real_index = _get_exact_index(bit_status, claimed_index);
+        claimed_token_id = erc721_token_id_list[real_index];
+        while (IERC721(token_addr).ownerOf(claimed_token_id) != creator){
+            //update bit for new unavailable token
+            bit_status = bit_status | (1 << real_index);
+            remaining_tokens --;
+            console.log("rerandom");
+            // re-random
+            require(remaining_tokens > 0, "No available token remain");
             claimed_index = random(seed, nonce) % (remaining_tokens);
-            claimed_token_id = erc721_token_id_list[claimed_index];
+            real_index = _get_exact_index(bit_status, claimed_index);
+            claimed_token_id = erc721_token_id_list[real_index];
         }
-        return (claimed_index, claimed_token_id, new_bit_status);
+        return(real_index, claimed_token_id, bit_status, remaining_tokens);
     }
 
-    // index count from right
-    // if return true, then th bit is set (1)
-    function _get_bit_value(uint256 bit_status, uint256 bit_index) private pure returns (bool is_set){
-        is_set = ((bit_status & (1 << bit_index)) != 0);
-        return is_set;
-    }
-
-    function _set_bit_value(uint256 bit_status, uint256 bit_index) private pure returns (uint256 new_bit_status){
-        new_bit_status = bit_status | (1 << bit_index);
-        return new_bit_status;
+    function _get_exact_index(uint256 bit_status, uint256 claimed_index) private pure returns (uint16 real_index){
+        uint16 real_count = 0;
+        uint16 count = uint16(claimed_index + 1);
+        while (count > 0){
+            if ((bit_status & 1) == 0){
+                count --;
+            }
+            real_count ++;
+            bit_status = bit_status >> 1;  
+        }
+        
+        return real_count -1;
     }
 
     /**
