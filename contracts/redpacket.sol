@@ -146,8 +146,7 @@ contract HappyRedPacket is Initializable {
         if (token_type == 0)
             recipient.transfer(claimed_tokens);
         else if (token_type == 1)
-            transfer_token(address(uint160(unbox(packed.packed2, 64, 160))), address(this),
-                            recipient, claimed_tokens);
+            transfer_token(address(uint160(unbox(packed.packed2, 64, 160))), recipient, claimed_tokens);
         // Claim success event
         emit ClaimSuccess(id, recipient, claimed_tokens, address(uint160(unbox(packed.packed2, 64, 160))));
         return claimed_tokens;
@@ -194,8 +193,7 @@ contract HappyRedPacket is Initializable {
             payable(msg.sender).transfer(remaining_tokens);
         }
         else if (token_type == 1) {
-            transfer_token(token_address, address(this),
-                            msg.sender, remaining_tokens);
+            transfer_token(token_address, msg.sender, remaining_tokens);
         }
 
         emit RefundSuccess(id, token_address, remaining_tokens);
@@ -265,8 +263,7 @@ contract HappyRedPacket is Initializable {
         }
     }
 
-    function transfer_token(address token_address, address sender_address,
-                            address recipient_address, uint amount) internal{
+    function transfer_token(address token_address, address recipient_address, uint amount) internal{
         IERC20(token_address).safeTransfer(recipient_address, amount);
     }
     
