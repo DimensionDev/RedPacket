@@ -175,19 +175,14 @@
           "type": "bytes32"
         },
         {
-          "internalType": "string",
-          "name": "password",
-          "type": "string"
+          "internalType": "bytes",
+          "name": "signedMsg",
+          "type": "bytes"
         },
         {
           "internalType": "address payable",
           "name": "recipient",
           "type": "address"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "validation",
-          "type": "bytes32"
         }
       ],
       "name": "claim",
@@ -204,9 +199,9 @@
     {
       "inputs": [
         {
-          "internalType": "bytes32",
-          "name": "_hash",
-          "type": "bytes32"
+          "internalType": "address",
+          "name": "_public_key",
+          "type": "address"
         },
         {
           "internalType": "uint256",
