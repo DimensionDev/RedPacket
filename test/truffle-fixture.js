@@ -1,12 +1,12 @@
-const BigNumber = require('bignumber.js');
+// const BigNumber = require('bignumber.js');
 const TestToken_721 = artifacts.require('TestToken_721');
 const RedPacket_721 = artifacts.require('HappyRedPacket_ERC721');
 
-const TestToken  = artifacts.require('TestToken');
-const Redpacket = artifacts.require('HappyRedPacket');
+// const TestToken  = artifacts.require('TestToken');
+// const Redpacket = artifacts.require('HappyRedPacket');
 
 module.exports = async () => {
-    const test_token_721 = await TestToken_721.new(200)
+    const test_token_721 = await TestToken_721.new(250)
     TestToken_721.setAsDeployed(test_token_721);
 
     const redpacket_721 = await RedPacket_721.new()

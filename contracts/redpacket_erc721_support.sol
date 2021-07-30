@@ -10,12 +10,12 @@
 
 pragma solidity >= 0.8.0;
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+// import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@nomiclabs/buidler/console.sol";
+// import "@nomiclabs/buidler/console.sol";
 
-contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
+contract HappyRedPacket_ERC721 is Initializable {
 
     struct RedPacket {
         Packed packed;
@@ -114,7 +114,7 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
     external returns (uint256 claimed){
         RedPacket storage rp = redpacket_by_id[pkt_id];
         Packed memory packed = rp.packed;
-        uint256[] memory erc721_token_id_list = rp.erc721_list;
+        uint256[] storage erc721_token_id_list = rp.erc721_list;
 
         //Claim requirements
         require(unbox(packed.packed2, 194, 32) > block.timestamp, "Expired"); 
@@ -155,7 +155,6 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         return claimed_token_id;
     }
 
-    // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets
     function check_availability(bytes32 pkt_id) 
     external view returns ( address token_address, uint balance, 
                             uint total_pkts, uint claimed_pkts, bool expired, 
@@ -187,7 +186,7 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
     {
         RedPacket storage rp = redpacket_by_id[id];
         erc721_token_ids = rp.erc721_list;
-        // use remaining_tokens to get remained token id in erc_721_token_ids
+        // use bit_status to get remained token id in erc_721_token_ids
         return(rp.bit_status, erc721_token_ids);
     }
 
@@ -201,16 +200,14 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         require(remaining_tokens != 0, "None left in the red packet");
 
         address token_addr = address(uint160(unbox(packed.packed2, 34, 160)));
-        uint256[] memory erc721_token_list = rp.erc721_list;
 
         rp.packed.packed1 = rewriteBox(packed.packed1, 160, 96, 0);
 
-        emit RefundSuccess(id, token_addr, remaining_tokens, erc721_token_list, rp.bit_status);
+        emit RefundSuccess(id, token_addr, remaining_tokens, rp.erc721_list, rp.bit_status);
         // Remember to setApprovedForAll(address(this),false)
     }
 
 //------------------------------------------------------------------
-
     // as a workaround for "CompilerError: Stack too deep, try removing local variables"
     function _verify(bytes memory signedMsg, uint160 public_key) private view returns (bool verified) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n20";
@@ -219,10 +216,10 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
         return (calculated_public_key == public_key);
     }
 
-    function _get_token_index(uint256[] memory erc721_token_id_list,
+    function _get_token_index(uint256[] storage erc721_token_id_list,
                               uint256 remaining_tokens,
                               Packed memory packed,
-                              uint256 bit_status) 
+                              uint256 bit_status)
     private view returns (uint256 index, uint256 claimed_token_id, uint256 new_bit_status, uint256 new_remaining_tokens){
         address token_addr = address(uint160(unbox(packed.packed2, 34, 160)));
         address creator = address(uint160(unbox(packed.packed1, 0, 160)));
@@ -233,7 +230,6 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
             //update bit for new unavailable token
             bit_status = bit_status | (1 << real_index);
             remaining_tokens --;
-            console.log("rerandom");
             // re-random
             require(remaining_tokens > 0, "No available token remain");
             claimed_index = random(seed, nonce) % (remaining_tokens);
@@ -254,7 +250,7 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
             bit_status = bit_status >> 1;  
         }
         
-        return real_count -1;
+        return real_count - 1;
     }
 
     /**
@@ -342,13 +338,13 @@ contract HappyRedPacket_ERC721 is Initializable, IERC721Receiver {
     }
 
     // for receiving ERC721 token
-    function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes calldata data
-    ) public override returns (bytes4) {
-        return this.onERC721Received.selector;
-    }
+    // function onERC721Received(
+    //     address operator,
+    //     address from,
+    //     uint256 tokenId,
+    //     bytes calldata data
+    // ) public override returns (bytes4) {
+    //     return this.onERC721Received.selector;
+    // }
 
 }
