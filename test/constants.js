@@ -1,5 +1,11 @@
+const Web3 = require('web3');
+var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+var account = web3.eth.accounts.create();
+var private_key = account.privateKey;
+var public_key = account.address;
+
 const creation_success_encode =
-  'CreationSuccess(uint,bytes32,string,string,address,uint,address,uint256[],uint,bool,uint)'
+  'CreationSuccess(uint,bytes32,string,string,address,uint,address,uint,bool,uint)'
 const creation_success_types = [
   { type: 'uint', name: 'total' },
   { type: 'bytes32', name: 'id' },
@@ -12,7 +18,7 @@ const creation_success_types = [
   { type: 'bool', name: 'ifrandom' },
   { type: 'uint', name: 'duration' },
 ]
-const claim_success_encode = 'ClaimSuccess(bytes32,address,uint,address,uint256[])'
+const claim_success_encode = 'ClaimSuccess(bytes32,address,uint,address)'
 const claim_success_types = [
   { type: 'bytes32', name: 'id' },
   { type: 'address', name: 'claimer' },
@@ -35,6 +41,7 @@ module.exports = {
   claim_success_types,
   refund_success_encode,
   refund_success_types,
-  PASSWORD,
+  public_key,
+  private_key,
   eth_address,
 }
