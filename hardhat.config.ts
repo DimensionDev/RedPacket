@@ -45,7 +45,7 @@ const networks = {
           url: 'https://mainnet.infura.io/v3/' + project_secret.infura_project_id,
           accounts: project_secret.private_key_list,
           chainId: 1,
-          gasPrice: ethers.utils.parseUnits('25', 'gwei').toNumber(),
+          gasPrice: ethers.utils.parseUnits('21', 'gwei').toNumber(),
           // blockGasLimit 8000000
           // to solve timeout error, increase the hardcoded `waitAndValidateDeployment` in `@openzeppelin/upgrades-core/dist/deployment.js`
           // timeout: 600000,
@@ -65,15 +65,6 @@ const networks = {
           gasPrice: ethers.utils.parseUnits('5', 'gwei').toNumber(),
           // blockGasLimit 8000000
       },
-     bsc_test: {
-          url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
-          accounts: project_secret.private_key_list,
-          chainId: 97,
-          // 25 Gwei, if too low, we would see "ProviderError: transaction underpriced"
-          gasPrice: ethers.utils.parseUnits('25', 'gwei').toNumber(),
-          // blockGasLimit 8000000
-     },
-     // BSC mainnet not tested yet, not sure if it works
      bsc_mainnet: {
           url: 'https://bsc-dataseed1.binance.org:443',
           accounts: project_secret.private_key_list,
@@ -82,18 +73,11 @@ const networks = {
           gasPrice: ethers.utils.parseUnits('5', 'gwei').toNumber(),
           // blockGasLimit 8000000
      },
-     matic_mumbai_test: {
-          url: 'https://rpc-mumbai.matic.today',
-          accounts: project_secret.private_key_list,
-          chainId: 80001,
-          gasPrice: ethers.utils.parseUnits('2', 'gwei').toNumber(),
-          // blockGasLimit 8000000
-     },
      matic_mainnet: {
-          url: 'https://rpc-mainnet.matic.network',
+          url: 'https://rpc-mainnet.maticvigil.com',
           accounts: project_secret.private_key_list,
           chainId: 137,
-          gasPrice: ethers.utils.parseUnits('2.5', 'gwei').toNumber(),
+          gasPrice: ethers.utils.parseUnits('1.5', 'gwei').toNumber(),
           // blockGasLimit 8000000
      },
      arbitrum: {

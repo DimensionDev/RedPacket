@@ -4,15 +4,12 @@ import { ethers, upgrades } from 'hardhat'
 
 type MyMapLikeType = Record<string, string>
 const deployedContracts: MyMapLikeType = {
-  mainnet: '0x7323ec104a689480dEbE8Eb1404FB0f9D425D2ca',
-  ropsten: '0x52a80151dDF3E1AffE6537c5f56191dD2d97c46C',
-  rinkeby: '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  bsc_test: '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  bsc_mainnet: '0x3EB4C32bB45ca9b6160476a2e839190BD60FA623',
-  matic_mumbai_test: '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  matic_mainnet: '0xCCf182182376730c2c23Edc815bBdc714e91741c',
-  arbitrum: '0x02Ea0720254F7fa4eca7d09A1b9C783F1020EbEF',
-  arbitrum_rinkeby: '0x6B70EC653c4331bdD0D0DCC7C941eb594e69a91d',
+  mainnet: '0xaBBe1101FD8fa5847c452A6D70C8655532B03C33',
+  ropsten: '0x0722507c3b776A6B205946592016e358B0D34c3F',
+  bsc_mainnet: '0x0ca42C178e14c618c81B8438043F27d9D38145f6',
+  matic_mainnet: '0x93e0b87A0aD0C991dc1B5176ddCD850c9a78aabb',
+  arbitrum: '0x83D6b366f21e413f214EB077D5378478e71a5eD2',
+  arbitrum_rinkeby: '0x4A77E797031257db72F7D2C3Ec08a4FAc5c8CfE9',
 }
 
 const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {

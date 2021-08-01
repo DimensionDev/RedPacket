@@ -6,44 +6,48 @@
 
 ## Getting Started
 
-This is a standard truffle project.
-To install:
-```
-npm i
-```
-To build the project:
-```
-truffle build
+This is a hardhat project. To install required node.js modules:
+
+```bash
+npm ci
 ```
 
-To test the project:
-```
-npm install chai ganache-cli
-ganache-cli -a 100
-truffle test
-// or test with code coverage
-truffle run coverage
+To compile the solidity source code
+
+```bash
+npm run compile
 ```
 
-To debug:
+To run unit test:
+
+```bash
+npm run test:normal
 ```
-truffle debug [TX_ID]
+
+To deploy the smart contract on Ethereum ropsten testnet:
+
+```bash
+npm run deploy:ropsten
 ```
 
 ## Deployed Contract Address
 
-| Chain            | Address                      |
-| ---------------- | ---------------------------- |
-| Mainnet          | [0x7323ec10][link-0x7323ec10] |
-| Ropsten          | [0x52a80151][link-0x52a80151] |
-| BSC              | [0x3EB4C32b][link-0x3EB4C32b] |
-| Matic            | [0xCCf18218][link-0xCCf18218] |
-| Rinkeby-Arbitrum | [0x6B70EC65][link-0x6B70EC65] |
-| Arbitrum         | [0x02Ea0720][link-0x02Ea0720] |
+| Chain            | Address                                                                                       |
+| ---------------- | --------------------------------------------------------------------------------------------- |
+| Mainnet          | [0xaBBe1101FD8fa5847c452A6D70C8655532B03C33][link-0xaBBe1101FD8fa5847c452A6D70C8655532B03C33] |
+| Ropsten          | [0x0722507c3b776A6B205946592016e358B0D34c3F][link-0x0722507c3b776A6B205946592016e358B0D34c3F] |
+| BSC              | [0x0ca42C178e14c618c81B8438043F27d9D38145f6][link-0x0ca42C178e14c618c81B8438043F27d9D38145f6] |
+| Matic            | [0x93e0b87A0aD0C991dc1B5176ddCD850c9a78aabb][link-0x93e0b87A0aD0C991dc1B5176ddCD850c9a78aabb] |
+| Rinkeby-Arbitrum | [0x4A77E797031257db72F7D2C3Ec08a4FAc5c8CfE9][link-0x4A77E797031257db72F7D2C3Ec08a4FAc5c8CfE9] |
+| Arbitrum         | [0x83D6b366f21e413f214EB077D5378478e71a5eD2][link-0x83D6b366f21e413f214EB077D5378478e71a5eD2] |
 
-[link-0x7323ec10]: https://etherscan.io/address/0x7323ec104a689480dEbE8Eb1404FB0f9D425D2ca
-[link-0x52a80151]: https://ropsten.etherscan.io/address/0x52a80151dDF3E1AffE6537c5f56191dD2d97c46C
-[link-0x3EB4C32b]: https://bscscan.com/address/0x3EB4C32bB45ca9b6160476a2e839190BD60FA623
-[link-0xCCf18218]: https://polygonscan.com/address/0xCCf182182376730c2c23Edc815bBdc714e91741c
-[link-0x6B70EC65]: https://rinkeby-explorer.arbitrum.io/address/0x6B70EC653c4331bdD0D0DCC7C941eb594e69a91d
-[link-0x02Ea0720]: https://explorer.arbitrum.io/address/0x02Ea0720254F7fa4eca7d09A1b9C783F1020EbEF
+[link-0xaBBe1101FD8fa5847c452A6D70C8655532B03C33]: https://etherscan.io/address/0xaBBe1101FD8fa5847c452A6D70C8655532B03C33
+[link-0x0722507c3b776A6B205946592016e358B0D34c3F]: https://ropsten.etherscan.io/address/0x0722507c3b776A6B205946592016e358B0D34c3F
+[link-0x0ca42C178e14c618c81B8438043F27d9D38145f6]: https://bscscan.com/address/0x0ca42C178e14c618c81B8438043F27d9D38145f6
+[link-0x93e0b87A0aD0C991dc1B5176ddCD850c9a78aabb]: https://polygonscan.com/address/0x93e0b87A0aD0C991dc1B5176ddCD850c9a78aabb
+[link-0x4A77E797031257db72F7D2C3Ec08a4FAc5c8CfE9]: https://rinkeby-explorer.arbitrum.io/address/0x4A77E797031257db72F7D2C3Ec08a4FAc5c8CfE9
+[link-0x83D6b366f21e413f214EB077D5378478e71a5eD2]: https://explorer.arbitrum.io/address/0x83D6b366f21e413f214EB077D5378478e71a5eD2
+
+## Test report
+
+Unit test and performance(gas consumption) results, please see [test report](docs/test_report.txt).
