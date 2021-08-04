@@ -4,3 +4,7 @@ coverage/
 coverage.json
 .coverage_artifacts
 .coverage_contracts
+project.secret.js
+cache/
+artifacts/
+.openzeppelin/
