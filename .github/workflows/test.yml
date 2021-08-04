@@ -2,9 +2,9 @@ name: test
 
 on:
   push:
-    branches: [hardhat_support_dev]
+    branches: [master]
   pull_request:
-    branches: [hardhat_support_dev]
+    branches: [master]
 
 jobs:
   test:

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-## Overview
+This project(`RedPacket` smart contract) is a Dapplet based on the Mask browser extension. Inspired by [Red Packet](https://en.wikipedia.org/wiki/Red_envelope). It enables you to put cryptocurrency tokens into red packets and send them to your friends and family.
 
 ## Getting Started
 
@@ -51,3 +51,17 @@ npm run deploy:ropsten
 ## Test report
 
 Unit test and performance(gas consumption) results, please see [test report](docs/test_report.txt).
+
+## Version history
+
+Change, please see [Change log](docs/CHANGELOG.md) for changes.
+
+## Contribute
+
+Any contribution is welcomed to make it better.
+
+If you have any questions, please create an [issue](https://github.com/DimensionDev/RedPacket/issues).
+
+## License
+
+[MIT LICENSE](LICENSE)
