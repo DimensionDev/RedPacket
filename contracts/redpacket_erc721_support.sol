@@ -5,15 +5,13 @@
  * @contact         mengjie_chen@mask.io
  * @author_time     07/16/2021
  * @maintainer      Mengjie Chen
- * @maintain_time   07/16/2021
+ * @maintain_time   07/30/2021
 **/
 
 pragma solidity >= 0.8.0;
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-// import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-// import "@nomiclabs/buidler/console.sol";
 
 contract HappyRedPacket_ERC721 is Initializable {
 
@@ -21,7 +19,7 @@ contract HappyRedPacket_ERC721 is Initializable {
         Packed packed;
         mapping(address => uint256) claimed_list; 
         uint256[] erc721_list;
-        uint160 public_key;
+        address public_key;
         uint256 bit_status; //0 - available 1 - not available
     }
 
@@ -80,8 +78,8 @@ contract HappyRedPacket_ERC721 is Initializable {
         return is_your_token;
     }
 
-    // create a red packet with 256 tokens may need 6,825,308
-    function create_red_packet (uint160 _public_key, uint256 _number, uint256 _duration,
+
+    function create_red_packet (address _public_key, uint256 _number, uint256 _duration,
                                 bytes32 _seed, string memory _message, string memory _name,
                                 address _token_addr, uint256 _total_tokens, uint256[] memory _erc721_token_ids)
     external payable {
@@ -123,7 +121,7 @@ contract HappyRedPacket_ERC721 is Initializable {
         require (claimed_number < total_number, "Out of stock");
 
         // Permission Authentication
-        uint160 public_key = rp.public_key;
+        address public_key = rp.public_key;
         require(_verify(signedMsg, public_key), "verification failed");
 
         uint256 remaining_tokens = unbox(packed.packed1, 160, 96);
@@ -209,10 +207,10 @@ contract HappyRedPacket_ERC721 is Initializable {
 
 //------------------------------------------------------------------
     // as a workaround for "CompilerError: Stack too deep, try removing local variables"
-    function _verify(bytes memory signedMsg, uint160 public_key) private view returns (bool verified) {
+    function _verify(bytes memory signedMsg, address public_key) private view returns (bool verified) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n20";
         bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, msg.sender));
-        uint160 calculated_public_key = uint160(ECDSA.recover(prefixedHash, signedMsg));
+        address calculated_public_key = ECDSA.recover(prefixedHash, signedMsg);
         return (calculated_public_key == public_key);
     }
 
