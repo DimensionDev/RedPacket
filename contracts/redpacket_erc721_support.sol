@@ -84,7 +84,6 @@ contract HappyRedPacket_ERC721 is Initializable {
                                 address _token_addr, uint256 _total_tokens, uint256[] memory _erc721_token_ids)
     external payable {
         nonce ++;
-        // unsuccessful condition
         require(_total_tokens == _number, "require #tokens = #packets");
         require(_number > 0, "At least 1 recipient");
         require(_number <= 256, "At most 256 recipient");
@@ -114,13 +113,11 @@ contract HappyRedPacket_ERC721 is Initializable {
         Packed memory packed = rp.packed;
         uint256[] storage erc721_token_id_list = rp.erc721_list;
 
-        //Claim requirements
         require(unbox(packed.packed2, 194, 32) > block.timestamp, "Expired"); 
         uint256 claimed_number = unbox(packed.packed2, 226, 15);
         uint256 total_number = unbox(packed.packed2, 241, 15);
         require (claimed_number < total_number, "Out of stock");
 
-        // Permission Authentication
         address public_key = rp.public_key;
         require(_verify(signedMsg, public_key), "verification failed");
 
@@ -130,9 +127,10 @@ contract HappyRedPacket_ERC721 is Initializable {
         uint256 claimed_index;
         uint256 claimed_token_id;
         uint256 new_bit_status;
-        (claimed_index, claimed_token_id, new_bit_status, remaining_tokens) = _get_token_index(erc721_token_id_list, remaining_tokens, packed,
-                                                            rp.bit_status);
-        // update bitmap in rp
+        (claimed_index, claimed_token_id,
+         new_bit_status, remaining_tokens) = _get_token_index(erc721_token_id_list, remaining_tokens, packed,
+                                                                rp.bit_status);
+
         rp.bit_status  = new_bit_status | (1 << claimed_index);
         rp.packed.packed1 = rewriteBox(packed.packed1, 160, 96, remaining_tokens - 1);
 
@@ -202,7 +200,6 @@ contract HappyRedPacket_ERC721 is Initializable {
         rp.packed.packed1 = rewriteBox(packed.packed1, 160, 96, 0);
 
         emit RefundSuccess(id, token_addr, remaining_tokens, rp.erc721_list, rp.bit_status);
-        // Remember to setApprovedForAll(address(this),false)
     }
 
 //------------------------------------------------------------------
@@ -225,10 +222,8 @@ contract HappyRedPacket_ERC721 is Initializable {
         uint16 real_index = _get_exact_index(bit_status, claimed_index);
         claimed_token_id = erc721_token_id_list[real_index];
         while (IERC721(token_addr).ownerOf(claimed_token_id) != creator){
-            //update bit for new unavailable token
             bit_status = bit_status | (1 << real_index);
             remaining_tokens --;
-            // re-random
             require(remaining_tokens > 0, "No available token remain");
             claimed_index = random(seed, nonce) % (remaining_tokens);
             real_index = _get_exact_index(bit_status, claimed_index);
@@ -321,28 +316,18 @@ contract HappyRedPacket_ERC721 is Initializable {
 
     function wrap1 (uint256 _total_tokens) internal view returns (uint256 packed1) {
         uint256 _packed1 = 0;
-        _packed1 |= box(0, 160, uint160(msg.sender));         // creator address
-        _packed1 |= box(160, 96, _total_tokens);           // total tokens = 64 bits
+        _packed1 |= box(0, 160, uint160(msg.sender));
+        _packed1 |= box(160, 96, _total_tokens);
         return _packed1;
     }
 
     function wrap2 (address _token_addr,uint256 _duration, uint256 _number) internal view returns (uint256 packed2) {
         uint256 _packed2 = 0;
-        _packed2 |= box(34, 160, uint160(_token_addr));    // token_address = 160 bits
-        _packed2 |= box(194, 32, (block.timestamp + _duration));               // expire_time = 32 bits
-        _packed2 |= box(226, 15, 0);                       // claimed_number = 14 bits 16384
-        _packed2 |= box(241, 15, _number);                 // total_number = 14 bits 16384
+        _packed2 |= box(34, 160, uint160(_token_addr));
+        _packed2 |= box(194, 32, (block.timestamp + _duration));
+        _packed2 |= box(226, 15, 0); 
+        _packed2 |= box(241, 15, _number); 
         return _packed2;
     }
-
-    // for receiving ERC721 token
-    // function onERC721Received(
-    //     address operator,
-    //     address from,
-    //     uint256 tokenId,
-    //     bytes calldata data
-    // ) public override returns (bytes4) {
-    //     return this.onERC721Received.selector;
-    // }
 
 }
