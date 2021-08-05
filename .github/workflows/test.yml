@@ -2,9 +2,9 @@ name: test
 
 on:
   push:
-    branches: [hardhat_support_dev]
+    branches: [master]
   pull_request:
-    branches: [hardhat_support_dev]
+    branches: [master]
 
 jobs:
   test:
@@ -15,6 +15,7 @@ jobs:
         with:
           node-version: 15
       - run: npm ci
-      - run: npm install --no-save ganache-cli
-      - run: npx ganache-cli -a 100 &
-      - run: npm test
+      - run: npm run compile
+      - run: npm run test:erc721
+      - run: npx prettier --list-different ./test/*.js
+      - run: npx hardhat check
