@@ -159,7 +159,7 @@ contract HappyRedPacket_ERC721 is Initializable {
         RedPacket storage rp = redpacket_by_id[pkt_id];
         Packed memory packed = rp.packed;
         return (
-            address(uint160(unbox(packed.packed2, 0, 160))), 
+            address(uint160(unbox(packed.packed2, 34, 160))), 
             unbox(packed.packed1, 160, 96), 
             unbox(packed.packed2, 241, 15), 
             unbox(packed.packed2, 226, 15), 
