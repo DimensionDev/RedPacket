@@ -37,13 +37,11 @@ contract('HappyRedPacket_ERC721', accounts => {
     var input_token_ids = [0, 1, 2]
     creationParams = {
       public_key,
-      number: 3,
       duration: 1000,
       seed: web3.utils.sha3('lajsdklfjaskldfhaikl'),
       message: 'Hi',
       name: 'cache',
       token_addr: test_token_721.address,
-      total_tokens: 3,
       erc721_token_ids: input_token_ids,
     }
     await test_token_721.setApprovalForAll(redpacket_721.address, true)
@@ -63,18 +61,8 @@ contract('HappyRedPacket_ERC721', accounts => {
       ).to.be.rejectedWith(Error)
     })
 
-    it('should throw error when total_tokens != number', async () => {
-      creationParams.number = 7
-      await expect(
-        redpacket_721.create_red_packet.sendTransaction(...Object.values(creationParams), {
-          from: accounts[0],
-        }),
-      ).to.be.rejectedWith(getRevertMsg('require #tokens = #packets'))
-    })
-
-    it('should throw error when number is less than 1', async () => {
-      creationParams.number = 0
-      creationParams.total_tokens = 0
+    it('should throw error when token number is less than 1', async () => {
+      creationParams.erc721_token_ids = []
       await expect(
         redpacket_721.create_red_packet.sendTransaction(...Object.values(creationParams), {
           from: accounts[0],
@@ -82,23 +70,17 @@ contract('HappyRedPacket_ERC721', accounts => {
       ).to.be.rejectedWith(getRevertMsg('At least 1 recipient'))
     })
 
-    it('should throw error when number is more than 256', async () => {
-      creationParams.number = 257
-      creationParams.total_tokens = 257
+    it('should throw error when token number is more than 256', async () => {
+      token_ids = []
+      for (var i = 0; i < 258; i++) {
+        token_ids.push(i)
+      }
+      creationParams.erc721_token_ids = token_ids
       await expect(
         redpacket_721.create_red_packet.sendTransaction(...Object.values(creationParams), {
           from: accounts[0],
         }),
       ).to.be.rejectedWith(getRevertMsg('At most 256 recipient'))
-    })
-
-    it('should throw error no enough erc721_token_id is provided', async () => {
-      creationParams.erc721_token_ids = [0, 1, 2, 3]
-      await expect(
-        redpacket_721.create_red_packet.sendTransaction(...Object.values(creationParams), {
-          from: accounts[0],
-        }),
-      ).to.be.rejectedWith(getRevertMsg('No enough erc721_token_id provided'))
     })
 
     it('should throw error when the contract is not approved', async () => {
@@ -130,7 +112,7 @@ contract('HappyRedPacket_ERC721', accounts => {
       const result = await getRedPacketInfo()
       expect(result)
         .to.have.property('total_tokens')
-        .that.to.be.eq(creationParams.total_tokens.toString())
+        .that.to.be.eq(creationParams.erc721_token_ids.length.toString())
       expect(result).to.have.property('id').that.to.be.not.null
       expect(result)
         .to.have.property('name')
@@ -199,8 +181,6 @@ contract('HappyRedPacket_ERC721', accounts => {
   describe('claim() test', async () => {
     // This test case may take a long time, On my machine it takes 9484ms
     it('should throw error when the nft is transferred to others before claim ', async () => {
-      creationParams.number = 1
-      creationParams.total_tokens = 1
       await createRedPacket([6])
       const redPacketInfo = await getRedPacketInfo()
       const claimParams = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
@@ -214,6 +194,29 @@ contract('HappyRedPacket_ERC721', accounts => {
       ).to.be.rejectedWith(
         "VM Exception while processing transaction: reverted with reason string 'No available token remain'",
       )
+    })
+
+    it('should emit ClaimSuccess when part of the nft is transferred to others before claim ', async () => {
+      await createRedPacket([7, 8, 9])
+      const redPacketInfo = await getRedPacketInfo()
+      const claimParams = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
+      await test_token_721.safeTransferFrom(accounts[0], accounts[2], 7, {
+        from: accounts[0],
+      })
+      await test_token_721.safeTransferFrom(accounts[0], accounts[2], 8, {
+        from: accounts[0],
+      })
+
+      await redpacket_721.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+      const claimResults = await getClaimRedPacketInfo(0)
+      expect(claimResults[0]).to.have.property('id').that.to.be.not.null
+
+      var claimed_token_id = claimResults[0].claimed_token_id
+      expect(claimed_token_id).to.be.eq('9')
+      var current_owner = await test_token_721.ownerOf(claimed_token_id)
+      expect(current_owner).to.be.eq(accounts[1])
     })
 
     it('should emit ClaimSuccess when everything is ok', async () => {
@@ -253,8 +256,6 @@ contract('HappyRedPacket_ERC721', accounts => {
     })
 
     it('should throw error when out of stock', async () => {
-      creationParams.number = 1
-      creationParams.total_tokens = 1
       await createRedPacket([30])
       const redPacketInfo = await getRedPacketInfo()
       const claimParams = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
@@ -322,7 +323,7 @@ contract('HappyRedPacket_ERC721', accounts => {
       for (var i = 100; i < 200; i++) {
         erc_token_ids.push(i)
       }
-      const { results } = await testSuitCreateAndClaimManyRedPackets(erc_token_ids, 100, 100)
+      const { results } = await testSuitCreateAndClaimManyRedPackets(erc_token_ids, 100)
       var claimed_ids = []
       results.reduce((acc, cur) => claimed_ids.push(cur.claimed_token_id))
       claimed_ids.push(results[0].claimed_token_id)
@@ -354,8 +355,6 @@ contract('HappyRedPacket_ERC721', accounts => {
     })
 
     it("should throw error when there's no remaining", async () => {
-      creationParams.number = 1
-      creationParams.total_tokens = 1
       await createRedPacket([25])
       const redPacketInfo = await getRedPacketInfo()
       const claimParams = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
@@ -422,7 +421,7 @@ contract('HappyRedPacket_ERC721', accounts => {
       for (var i = 50; i < 100; i++) {
         erc_token_ids.push(i)
       }
-      const { results, redPacketInfo } = await testSuitCreateAndClaimManyRedPackets(erc_token_ids, 25, 50)
+      const { results, redPacketInfo } = await testSuitCreateAndClaimManyRedPackets(erc_token_ids, 25)
       var claimed_ids = []
       results.reduce((acc, cur) => claimed_ids.push(cur.claimed_token_id))
       claimed_ids.push(results[0].claimed_token_id)
@@ -545,9 +544,7 @@ contract('HappyRedPacket_ERC721', accounts => {
     })
   })
 
-  async function testSuitCreateAndClaimManyRedPackets(erc_token_ids, claimers, number) {
-    creationParams.total_tokens = number
-    creationParams.number = number
+  async function testSuitCreateAndClaimManyRedPackets(erc_token_ids, claimers) {
     creationParams.token_addr = test_token_721.address
 
     await createRedPacket(erc_token_ids)

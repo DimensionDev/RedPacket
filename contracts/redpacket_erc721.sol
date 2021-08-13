@@ -59,7 +59,6 @@ contract HappyRedPacket_ERC721 is Initializable {
     uint32 nonce;
     mapping(bytes32 => RedPacket) redpacket_by_id;
     bytes32 private seed;
-    uint256 constant MASK = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
     function initialize() public initializer {
         seed = keccak256(abi.encodePacked("Former NBA Commissioner David St", block.timestamp, msg.sender));
@@ -79,29 +78,27 @@ contract HappyRedPacket_ERC721 is Initializable {
     }
 
 
-    function create_red_packet (address _public_key, uint256 _number, uint256 _duration,
+    function create_red_packet (address _public_key, uint256 _duration,
                                 bytes32 _seed, string memory _message, string memory _name,
-                                address _token_addr, uint256 _total_tokens, uint256[] memory _erc721_token_ids)
+                                address _token_addr, uint256[] memory _erc721_token_ids)
     external payable {
         nonce ++;
-        require(_total_tokens == _number, "require #tokens = #packets");
-        require(_number > 0, "At least 1 recipient");
-        require(_number <= 256, "At most 256 recipient");
-        require(_total_tokens == _erc721_token_ids.length, "No enough erc721_token_id provided");
+        require(_erc721_token_ids.length > 0, "At least 1 recipient");
+        require(_erc721_token_ids.length <= 256, "At most 256 recipient");
         require(IERC721(_token_addr).isApprovedForAll(msg.sender, address(this)), "No approved yet");                                                                       
 
         bytes32 packet_id = keccak256(abi.encodePacked(msg.sender, block.timestamp, nonce, seed, _seed));
         {
             RedPacket storage rp = redpacket_by_id[packet_id];
-            rp.packed.packed1 = wrap1(_total_tokens);
-            rp.packed.packed2 = wrap2(_token_addr,_duration, _number);
+            rp.packed.packed1 = wrap1(_erc721_token_ids.length);
+            rp.packed.packed2 = wrap2(_token_addr,_duration, _erc721_token_ids.length);
             rp.erc721_list = _erc721_token_ids;
             rp.public_key = _public_key;
         }
         {
-            uint256 number = _number;
+            uint256 number = _erc721_token_ids.length;
             uint256 duration = _duration;
-            emit CreationSuccess (_total_tokens, packet_id, _name,
+            emit CreationSuccess (_erc721_token_ids.length, packet_id, _name,
                                  _message, msg.sender, block.timestamp, 
                                  _token_addr, number, duration, _erc721_token_ids);
         }

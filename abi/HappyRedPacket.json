@@ -288,11 +288,6 @@
 			},
 			{
 				"internalType": "uint256",
-				"name": "_number",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
 				"name": "_duration",
 				"type": "uint256"
 			},
@@ -315,11 +310,6 @@
 				"internalType": "address",
 				"name": "_token_addr",
 				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_total_tokens",
-				"type": "uint256"
 			},
 			{
 				"internalType": "uint256[]",
