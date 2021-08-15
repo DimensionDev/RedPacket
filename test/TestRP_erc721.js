@@ -52,14 +52,6 @@ contract('HappyRedPacket_ERC721', accounts => {
   })
 
   describe('create_red_packet() test', async () => {
-    it('should throw error when expiration_time is greater than 2106', async () => {
-      creationParams.duration = 2 ** 32
-      await expect(
-        redpacket_721.create_red_packet.sendTransaction(...Object.values(creationParams), {
-          from: accounts[0],
-        }),
-      ).to.be.rejectedWith(Error)
-    })
 
     it('should throw error when token number is less than 1', async () => {
       creationParams.erc721_token_ids = []
@@ -146,7 +138,6 @@ contract('HappyRedPacket_ERC721', accounts => {
       expect(BigNumber(availability.balance).toFixed()).to.be.eq('3')
       expect(BigNumber(availability.total_pkts).toFixed()).to.be.eq('3')
       expect(BigNumber(availability.claimed_id).toFixed()).to.be.eq('0')
-      expect(BigNumber(availability.claimed_pkts).toFixed()).to.be.eq('0')
       expect(BigNumber(availability.bit_status).toFixed()).to.be.eq('0')
     })
 
@@ -167,7 +158,6 @@ contract('HappyRedPacket_ERC721', accounts => {
       const availability = await redpacket_721.check_availability.call(redPacketInfo.id, { from: accounts[1] })
       expect(Number(availability.total_pkts)).to.be.eq(3)
       expect(Number(availability.balance)).to.be.eq(2)
-      expect(Number(availability.claimed_pkts)).to.be.eq(1)
       expect(Number(availability.claimed_id))
         .to.be.eq(Number(claimed))
         .and.to.be.eq(Number(claimed_id))
@@ -269,7 +259,7 @@ contract('HappyRedPacket_ERC721', accounts => {
         redpacket_721.claim.sendTransaction(...Object.values(anotherClaimParams), {
           from: accounts[2],
         }),
-      ).to.be.rejectedWith(getRevertMsg('Out of stock'))
+      ).to.be.rejectedWith(getRevertMsg('No available token remain'))
     })
 
     it('should throw error when password is wrong', async () => {
@@ -308,7 +298,6 @@ contract('HappyRedPacket_ERC721', accounts => {
       })
 
       const availability = await redpacket_721.check_availability.call(redPacketInfo.id, { from: accounts[1] })
-      expect(BigNumber(availability.claimed_pkts).toFixed()).not.to.be.eq('0')
 
       await expect(
         redpacket_721.claim.sendTransaction(...Object.values(claimParams), {
@@ -412,7 +401,6 @@ contract('HappyRedPacket_ERC721', accounts => {
       expect(erc_token_ids.length).to.be.eq(3)
       expect(Number(availability.total_pkts)).to.be.eq(3)
       expect(Number(availability.balance)).to.be.eq(0)
-      expect(Number(availability.claimed_pkts)).to.be.eq(1)
     })
 
     // Note: this test spends a long time, on my machine is 10570ms
