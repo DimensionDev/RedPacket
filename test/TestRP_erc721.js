@@ -52,7 +52,6 @@ contract('HappyRedPacket_ERC721', accounts => {
   })
 
   describe('create_red_packet() test', async () => {
-
     it('should throw error when token number is less than 1', async () => {
       creationParams.erc721_token_ids = []
       await expect(
@@ -567,7 +566,7 @@ contract('HappyRedPacket_ERC721', accounts => {
       address: redpacket_721.address,
       topic: [web3.utils.sha3(creation_success_encode)],
     })
-    return web3.eth.abi.decodeParameters(creation_success_types, logs[0].data)
+    return web3.eth.abi.decodeLog(creation_success_types, logs[0].data, logs[0].topics.slice(1))
   }
 
   async function createRedPacket(erc_token_list) {
@@ -585,7 +584,8 @@ contract('HappyRedPacket_ERC721', accounts => {
       fromBlock: latestBlock - fromBlock,
       toBlock: latestBlock,
     })
-    return logs.map(log => web3.eth.abi.decodeParameters(claim_success_types, log.data))
+    return logs.map(log => web3.eth.abi.decodeLog(claim_success_types, log.data, log.topics.slice(1)))
+    // return logs.map(log => web3.eth.abi.decodeParameters(claim_success_types, log.data))
   }
 
   async function getRefundRedPacketInfo() {
@@ -593,7 +593,8 @@ contract('HappyRedPacket_ERC721', accounts => {
       address: redpacket_721.address,
       topic: [web3.utils.sha3(refund_success_encode)],
     })
-    return web3.eth.abi.decodeParameters(refund_success_types, logs[0].data)
+    return web3.eth.abi.decodeLog(refund_success_types, logs[0].data, logs[0].topics.slice(1))
+    // return web3.eth.abi.decodeParameters(refund_success_types, logs[0].data)
   }
 
   function getRevertMsg(msg) {

@@ -28,10 +28,10 @@ contract HappyRedPacket_ERC721 is Initializable {
 
     event CreationSuccess (
         uint256 total_tokens,
-        bytes32 id,
+        bytes32 indexed id,
         string name,
         string message,
-        address creator,
+        address indexed creator,
         uint256 creation_time,
         address token_address,
         uint256 packet_number,
@@ -40,15 +40,15 @@ contract HappyRedPacket_ERC721 is Initializable {
     );
 
     event ClaimSuccess(
-        bytes32 id,
-        address claimer,
+        bytes32 indexed id,
+        address indexed claimer,
         uint256 claimed_token_id,
         address token_address
     );
 
     event RefundSuccess(
-        bytes32 id,
-        address token_address,
+        bytes32 indexed id,
+        address indexed token_address,
         uint256 remaining_balance,
         uint256[] remaining_token_ids,
         uint256 bit_status
@@ -63,7 +63,11 @@ contract HappyRedPacket_ERC721 is Initializable {
     }
 
     // Remember to call check_ownership() before create_red_packet()
-    function check_ownership(uint256[] memory erc721_token_id_list, address token_addr) external view returns(bool is_your_token){
+    function check_ownership(uint256[] memory erc721_token_id_list, address token_addr) 
+        external 
+        view 
+        returns(bool is_your_token)
+    {
         is_your_token = true;
         for (uint256 i= 0; i < erc721_token_id_list.length; i ++){
             address owner = IERC721(token_addr).ownerOf(erc721_token_id_list[i]);
@@ -105,14 +109,24 @@ contract HappyRedPacket_ERC721 is Initializable {
         {
             uint256 number = _erc721_token_ids.length;
             uint256 duration = _duration;
-            emit CreationSuccess (_erc721_token_ids.length, packet_id, _name,
-                                 _message, msg.sender, block.timestamp, 
-                                 _token_addr, number, duration, _erc721_token_ids);
+            emit CreationSuccess (
+                _erc721_token_ids.length, 
+                packet_id, 
+                _name,
+                _message, 
+                msg.sender, 
+                block.timestamp, 
+                _token_addr, 
+                number, 
+                duration, 
+                _erc721_token_ids);
         }
     }
 
     function claim(bytes32 pkt_id, bytes memory signedMsg, address payable recipient)
-    external returns (uint256 claimed){
+        external 
+        returns (uint256 claimed)
+    {
         RedPacket storage rp = redpacket_by_id[pkt_id];
         uint256[] storage erc721_token_id_list = rp.erc721_list;
         require(rp.end_time > block.timestamp, "Expired"); 
@@ -123,9 +137,18 @@ contract HappyRedPacket_ERC721 is Initializable {
         uint256 claimed_index;
         uint256 claimed_token_id;
         uint256 new_bit_status;
-        (claimed_index, claimed_token_id,
-         new_bit_status, remaining_tokens) = _get_token_index(erc721_token_id_list, remaining_tokens, rp.token_addr, rp.creator,
-                                                                rp.bit_status);
+        (
+            claimed_index, 
+            claimed_token_id,
+            new_bit_status, 
+            remaining_tokens
+        ) = _get_token_index(
+            erc721_token_id_list, 
+            remaining_tokens, 
+            rp.token_addr, 
+            rp.creator,
+            rp.bit_status
+        );
 
         rp.bit_status  = new_bit_status | (1 << claimed_index);
         rp.remaining_tokens = rp.remaining_tokens - 1;
@@ -164,7 +187,9 @@ contract HappyRedPacket_ERC721 is Initializable {
     }
 
     function check_claimed_id(bytes32 id) 
-             external view returns(uint256 claimed_token_id)
+        external 
+        view 
+        returns(uint256 claimed_token_id)
     {
         RedPacket storage rp = redpacket_by_id[id];
         claimed_token_id = rp.claimed_list[msg.sender];
@@ -172,7 +197,8 @@ contract HappyRedPacket_ERC721 is Initializable {
     }
 
     function check_erc721_remain_ids(bytes32 id)
-             external view returns(uint256 bit_status, uint256[] memory erc721_token_ids)
+        external 
+        view returns(uint256 bit_status, uint256[] memory erc721_token_ids)
     {
         RedPacket storage rp = redpacket_by_id[id];
         erc721_token_ids = rp.erc721_list;
@@ -230,7 +256,11 @@ contract HappyRedPacket_ERC721 is Initializable {
         return(real_index, claimed_token_id, bit_status, remaining_tokens);
     }
 
-    function _get_exact_index(uint256 bit_status, uint256 claimed_index) private pure returns (uint16 real_index){
+    function _get_exact_index(uint256 bit_status, uint256 claimed_index) 
+        private 
+        pure 
+        returns (uint16 real_index)
+    {
         uint16 real_count = 0;
         uint16 count = uint16(claimed_index + 1);
         while (count > 0){
@@ -242,69 +272,6 @@ contract HappyRedPacket_ERC721 is Initializable {
         }
         
         return real_count - 1;
-    }
-
-    /**
-     * position      position in a memory block
-     * size          data size
-     * data          data
-     * box() inserts the data in a 256bit word with the given position and returns it
-     * data is checked by validRange() to make sure it is not over size 
-    **/
-
-    function box (uint16 position, uint16 size, uint256 data) internal pure returns (uint256 boxed) {
-        require(validRange(size, data), "Value out of range BOX");
-        assembly {
-            // data << position
-            boxed := shl(position, data)
-        }
-    }
-
-    /**
-     * position      position in a memory block
-     * size          data size
-     * base          base data
-     * unbox() extracts the data out of a 256bit word with the given position and returns it
-     * base is checked by validRange() to make sure it is not over size 
-    **/
-
-    function unbox (uint256 base, uint16 position, uint16 size) internal pure returns (uint256 unboxed) {
-        require(validRange(256, base), "Value out of range UNBOX");
-        assembly {
-            // (((1 << size) - 1) & base >> position)
-            unboxed := and(sub(shl(size, 1), 1), shr(position, base))
-
-        }
-    }
-
-    /**
-     * size          data size
-     * data          data
-     * validRange()  checks if the given data is over the specified data size
-    **/
-
-    function validRange (uint16 size, uint256 data) internal pure returns(bool ifValid) { 
-        assembly {
-            // 2^size > data or size ==256
-            ifValid := or(eq(size, 256), gt(shl(size, 1), data))
-        }
-    }
-
-    /**
-     * _box          32byte data to be modified
-     * position      position in a memory block
-     * size          data size
-     * data          data to be inserted
-     * rewriteBox() updates a 32byte word with a data at the given position with the specified size
-    **/
-
-    function rewriteBox (uint256 _box, uint16 position, uint16 size, uint256 data) 
-                        internal pure returns (uint256 boxed) {
-        assembly {
-            // mask = ~((1 << size - 1) << position)
-            // _box = (mask & _box) | ()data << position)
-            boxed := or( and(_box, not(shl(position, sub(shl(size, 1), 1)))), shl(position, data))
-        }
     }
 
     // A boring wrapper

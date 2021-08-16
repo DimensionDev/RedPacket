@@ -3,13 +3,13 @@
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "bytes32",
 				"name": "id",
 				"type": "bytes32"
 			},
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "address",
 				"name": "claimer",
 				"type": "address"
@@ -40,7 +40,7 @@
 				"type": "uint256"
 			},
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "bytes32",
 				"name": "id",
 				"type": "bytes32"
@@ -58,7 +58,7 @@
 				"type": "string"
 			},
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "address",
 				"name": "creator",
 				"type": "address"
@@ -101,13 +101,13 @@
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "bytes32",
 				"name": "id",
 				"type": "bytes32"
 			},
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "address",
 				"name": "token_address",
 				"type": "address"
@@ -157,11 +157,6 @@
 			{
 				"internalType": "uint256",
 				"name": "total_pkts",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "claimed_pkts",
 				"type": "uint256"
 			},
 			{
@@ -287,9 +282,9 @@
 				"type": "address"
 			},
 			{
-				"internalType": "uint256",
+				"internalType": "uint64",
 				"name": "_duration",
-				"type": "uint256"
+				"type": "uint64"
 			},
 			{
 				"internalType": "bytes32",
@@ -319,7 +314,7 @@
 		],
 		"name": "create_red_packet",
 		"outputs": [],
-		"stateMutability": "payable",
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
