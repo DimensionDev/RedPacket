@@ -119,7 +119,8 @@ contract HappyRedPacket_ERC721 is Initializable {
                 _token_addr, 
                 number, 
                 duration, 
-                _erc721_token_ids);
+                _erc721_token_ids
+            );
         }
     }
 
@@ -131,17 +132,18 @@ contract HappyRedPacket_ERC721 is Initializable {
         uint256[] storage erc721_token_id_list = rp.erc721_list;
         require(rp.end_time > block.timestamp, "Expired"); 
         require(_verify(signedMsg, rp.public_key), "verification failed");
-        uint256 remaining_tokens = rp.remaining_tokens;
+        uint16 remaining_tokens = rp.remaining_tokens;
         require(remaining_tokens > 0, "No available token remain");
 
         uint256 claimed_index;
         uint256 claimed_token_id;
         uint256 new_bit_status;
+        uint16 new_remaining_tokens;
         (
             claimed_index, 
             claimed_token_id,
             new_bit_status, 
-            remaining_tokens
+            new_remaining_tokens
         ) = _get_token_index(
             erc721_token_id_list, 
             remaining_tokens, 
@@ -151,7 +153,7 @@ contract HappyRedPacket_ERC721 is Initializable {
         );
 
         rp.bit_status  = new_bit_status | (1 << claimed_index);
-        rp.remaining_tokens = rp.remaining_tokens - 1;
+        rp.remaining_tokens = new_remaining_tokens - 1;
 
         // Penalize greedy attackers by placing duplication check at the very last
         require(rp.claimed_list[msg.sender] == 0, "Already claimed");
@@ -168,8 +170,8 @@ contract HappyRedPacket_ERC721 is Initializable {
         view
         returns (
             address token_address,
-            uint balance, 
-            uint total_pkts,
+            uint256 balance, 
+            uint256 total_pkts,
             bool expired, 
             uint256 claimed_id,
             uint256 bit_status
@@ -210,7 +212,7 @@ contract HappyRedPacket_ERC721 is Initializable {
         RedPacket storage rp = redpacket_by_id[id];
         require(msg.sender == rp.creator, "Creator Only");
         require(rp.end_time <= block.timestamp, "Not expired yet");
-        uint16 remaining_tokens = rp.remaining_tokens;
+        uint256 remaining_tokens = rp.remaining_tokens;
         require(remaining_tokens != 0, "None left in the red packet");
         rp.remaining_tokens = 0;
         emit RefundSuccess(id, rp.token_addr, remaining_tokens, rp.erc721_list, rp.bit_status);
@@ -227,7 +229,7 @@ contract HappyRedPacket_ERC721 is Initializable {
 
     function _get_token_index(
         uint256[] storage erc721_token_id_list,
-        uint256 remaining_tokens,
+        uint16 remaining_tokens,
         address token_addr,
         address creator,
         uint256 bit_status
@@ -238,13 +240,12 @@ contract HappyRedPacket_ERC721 is Initializable {
             uint256 index,
             uint256 claimed_token_id,
             uint256 new_bit_status,
-            uint256 new_remaining_tokens
+            uint16 new_remaining_tokens
         )
     {
         uint256 claimed_index = random(seed, nonce) % (remaining_tokens);
         uint16 real_index = _get_exact_index(bit_status, claimed_index);
         claimed_token_id = erc721_token_id_list[real_index];
-        // TODO: Improve code, fail as early as possible, might cause 'out of gas'
         while (IERC721(token_addr).ownerOf(claimed_token_id) != creator){
             bit_status = bit_status | (1 << real_index);
             remaining_tokens --;

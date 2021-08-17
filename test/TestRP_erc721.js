@@ -120,6 +120,32 @@ contract('HappyRedPacket_ERC721', accounts => {
     })
   })
 
+  describe('check_ownership() test', async () => {
+    it('should return false when all of input token ids do not belong to caller', async () => {
+      await test_token_721.safeTransferFrom(accounts[0], accounts[2], 11, {
+        from: accounts[0],
+      })
+      await test_token_721.safeTransferFrom(accounts[0], accounts[2], 10, {
+        from: accounts[0],
+      })
+      const ownership = await redpacket_721.check_ownership.call([10,11], test_token_721.address, { from: accounts[0] })
+      expect(ownership).to.be.eq(false)
+    })
+
+    it('should return false when part of input token ids do not belong to caller', async () => {
+      await test_token_721.safeTransferFrom(accounts[0], accounts[2], 43, {
+        from: accounts[0],
+      })
+      const ownership = await redpacket_721.check_ownership.call([43,44], test_token_721.address, { from: accounts[0] })
+      expect(ownership).to.be.eq(false)
+    })
+
+    it('should return true when all of input token ids belong to caller', async () => {
+      const ownership = await redpacket_721.check_ownership.call([45,46], test_token_721.address, { from: accounts[0] })
+      expect(ownership).to.be.eq(true)
+    })
+  })
+
   describe('check_availability() test', async () => {
     it('should throw error when red packet does not exist', async () => {
       await expect(redpacket_721.check_availability.call('id not exist', { from: accounts[1] })).to.be.rejectedWith(
@@ -206,6 +232,10 @@ contract('HappyRedPacket_ERC721', accounts => {
       expect(claimed_token_id).to.be.eq('9')
       var current_owner = await test_token_721.ownerOf(claimed_token_id)
       expect(current_owner).to.be.eq(accounts[1])
+
+      const availability = await redpacket_721.check_availability.call(redPacketInfo.id, { from: accounts[1] })
+      const calculated_claim_number = countSetBits(Number(availability.bit_status))
+      expect(Number(availability.balance)).to.be.eq(3 - calculated_claim_number)
     })
 
     it('should emit ClaimSuccess when everything is ok', async () => {
@@ -221,6 +251,9 @@ contract('HappyRedPacket_ERC721', accounts => {
       var claimed_token_id = claimResults[0].claimed_token_id
       var current_owner = await test_token_721.ownerOf(claimed_token_id)
       expect(current_owner).to.be.eq(accounts[1])
+
+      const availability = await redpacket_721.check_availability.call(redPacketInfo.id, { from: accounts[1] })
+      expect(Number(availability.balance)).to.be.eq(2)
     })
 
     it('should throw error when redpacket id does not exist', async () => {
