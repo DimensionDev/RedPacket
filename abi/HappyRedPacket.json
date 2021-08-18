@@ -114,9 +114,9 @@
 			},
 			{
 				"indexed": false,
-				"internalType": "uint256",
+				"internalType": "uint16",
 				"name": "remaining_balance",
-				"type": "uint256"
+				"type": "uint16"
 			},
 			{
 				"indexed": false,
@@ -150,9 +150,9 @@
 				"type": "address"
 			},
 			{
-				"internalType": "uint256",
+				"internalType": "uint16",
 				"name": "balance",
-				"type": "uint256"
+				"type": "uint16"
 			},
 			{
 				"internalType": "uint256",
