@@ -8,10 +8,10 @@ const creation_success_encode =
   'CreationSuccess(uint256,bytes32,string,string,address,uint256,address,uint256,uint256,uint256[])'
 const creation_success_types = [
   { type: 'uint256', name: 'total_tokens' },
-  { type: 'bytes32', name: 'id' },
+  { type: 'bytes32', name: 'id', indexed: true },
   { type: 'string', name: 'name' },
   { type: 'string', name: 'message' },
-  { type: 'address', name: 'creator' },
+  { type: 'address', name: 'creator', indexed: true },
   { type: 'uint256', name: 'creation_time' },
   { type: 'address', name: 'token_address' },
   { type: 'uint256', name: 'packet_number' },
@@ -21,16 +21,16 @@ const creation_success_types = [
 
 const claim_success_encode = 'ClaimSuccess(bytes32,address,uint256,address)'
 const claim_success_types = [
-  { type: 'bytes32', name: 'id' },
-  { type: 'address', name: 'claimer' },
+  { type: 'bytes32', name: 'id', indexed: true },
+  { type: 'address', name: 'claimer', indexed: true },
   { type: 'uint256', name: 'claimed_token_id' },
   { type: 'address', name: 'token_address' },
 ]
 
 const refund_success_encode = 'RefundSuccess(bytes32,address,uint256,uint256[])'
 const refund_success_types = [
-  { type: 'bytes32', name: 'id' },
-  { type: 'address', name: 'token_address' },
+  { type: 'bytes32', name: 'id', indexed: true },
+  { type: 'address', name: 'token_address', indexed: true },
   { type: 'uint256', name: 'remaining_balance' },
   { type: 'uint256[]', name: 'remaining_token_ids' },
 ]
