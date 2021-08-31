@@ -98,43 +98,6 @@
 		"type": "event"
 	},
 	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "bytes32",
-				"name": "id",
-				"type": "bytes32"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "token_address",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint16",
-				"name": "remaining_balance",
-				"type": "uint16"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256[]",
-				"name": "remaining_token_ids",
-				"type": "uint256[]"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "bit_status",
-				"type": "uint256"
-			}
-		],
-		"name": "RefundSuccess",
-		"type": "event"
-	},
-	{
 		"inputs": [
 			{
 				"internalType": "bytes32",
@@ -320,19 +283,6 @@
 	{
 		"inputs": [],
 		"name": "initialize",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "id",
-				"type": "bytes32"
-			}
-		],
-		"name": "refund",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"

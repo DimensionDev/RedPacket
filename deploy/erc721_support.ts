@@ -5,7 +5,7 @@ import { ethers, upgrades } from 'hardhat'
 type MyMapLikeType = Record<string, string>
 const deployedContracts: MyMapLikeType = {
   mainnet: '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  ropsten: '0xa1CFdE922df9A950875545F0055b389d09f53263',
+  ropsten: '0xcA6589d246355EaFBE424De335fd937Dcbd619A2',
   rinkeby: '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
   bsc_test: '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
   bsc_mainnet: '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',

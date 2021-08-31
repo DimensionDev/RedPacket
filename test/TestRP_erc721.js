@@ -8,8 +8,6 @@ const {
   creation_success_types,
   claim_success_encode,
   claim_success_types,
-  refund_success_encode,
-  refund_success_types,
   public_key,
   private_key,
 } = require('./erc721_test_constants')
@@ -354,114 +352,6 @@ contract('HappyRedPacket_ERC721', accounts => {
     })
   })
 
-  describe('refund() test', async () => {
-    it('should throw error when the refunder is not creator', async () => {
-      await createRedPacket(creationParams.erc721_token_ids)
-      const redPacketInfo = await getRedPacketInfo()
-      await expect(
-        redpacket_721.refund.sendTransaction(redPacketInfo.id, {
-          from: accounts[1],
-        }),
-      ).to.be.rejectedWith(getRevertMsg('Creator Only'))
-    })
-
-    it('should throw error before expiry', async () => {
-      await createRedPacket(creationParams.erc721_token_ids)
-      const redPacketInfo = await getRedPacketInfo()
-      await expect(
-        redpacket_721.refund.sendTransaction(redPacketInfo.id, {
-          from: accounts[0],
-        }),
-      ).to.be.rejectedWith(getRevertMsg('Not expired yet'))
-    })
-
-    it("should throw error when there's no remaining", async () => {
-      await createRedPacket([25])
-      const redPacketInfo = await getRedPacketInfo()
-      const claimParams = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
-      await redpacket_721.claim.sendTransaction(...Object.values(claimParams), {
-        from: accounts[1],
-      })
-      const availability = await redpacket_721.check_availability.call(redPacketInfo.id, { from: accounts[2] })
-      expect(Number(availability.balance)).to.be.eq(0)
-
-      await helper.advanceTimeAndBlock(2000)
-      await expect(
-        redpacket_721.refund.sendTransaction(redPacketInfo.id, {
-          from: accounts[0],
-        }),
-      ).to.be.rejectedWith(getRevertMsg('None left in the red packet'))
-    })
-
-    it('should throw error when already refunded', async () => {
-      await createRedPacket([26, 27, 28])
-      const redPacketInfo = await getRedPacketInfo()
-      const claimParams = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
-      await redpacket_721.claim.sendTransaction(...Object.values(claimParams), {
-        from: accounts[1],
-      })
-
-      await helper.advanceTimeAndBlock(2000)
-
-      await redpacket_721.refund.sendTransaction(redPacketInfo.id, {
-        from: accounts[0],
-      })
-
-      await expect(
-        redpacket_721.refund.sendTransaction(redPacketInfo.id, {
-          from: accounts[0],
-        }),
-      ).to.be.rejectedWith(getRevertMsg('None left in the red packet'))
-    })
-
-    it('should refund successfully', async () => {
-      await createRedPacket([29, 31, 32])
-      const redPacketInfo = await getRedPacketInfo()
-      const claimParams = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
-      await redpacket_721.claim.sendTransaction(...Object.values(claimParams), {
-        from: accounts[1],
-      })
-
-      await helper.advanceTimeAndBlock(2000)
-
-      await redpacket_721.refund.sendTransaction(redPacketInfo.id, {
-        from: accounts[0],
-      })
-      const remaining = await redpacket_721.check_erc721_remain_ids.call(redPacketInfo.id, { from: accounts[1] })
-      var erc_token_ids = remaining.erc721_token_ids
-      const availability = await redpacket_721.check_availability.call(redPacketInfo.id, { from: accounts[1] })
-      expect(erc_token_ids.length).to.be.eq(3)
-      expect(Number(availability.total_pkts)).to.be.eq(3)
-      expect(Number(availability.balance)).to.be.eq(0)
-    })
-
-    // Note: this test spends a long time, on my machine is 10570ms
-    it("should refund successfully when there're 50 red packets and 25 claimers", async () => {
-      var erc_token_ids = []
-      for (var i = 50; i < 100; i++) {
-        erc_token_ids.push(i)
-      }
-      const { results, redPacketInfo } = await testSuitCreateAndClaimManyRedPackets(erc_token_ids, 25)
-      var claimed_ids = []
-      results.reduce((acc, cur) => claimed_ids.push(cur.claimed_token_id))
-      claimed_ids.push(results[0].claimed_token_id)
-
-      await helper.advanceTimeAndBlock(2000)
-      await redpacket_721.refund.sendTransaction(redPacketInfo.id, {
-        from: accounts[0],
-      })
-      const result = await getRefundRedPacketInfo()
-      var get_ids_from_event = result.remaining_token_ids
-      var remained = get_ids_from_event.slice(0, result.remaining_balance)
-      var claimed_ids_set = new Set(claimed_ids)
-      var remained_set = new Set(remained)
-      expect(claimed_ids_set.size + remained_set.size).to.be.eq(50)
-      expect(result)
-        .to.have.property('token_address')
-        .that.to.be.eq(test_token_721.address)
-    })
-  })
-
   describe('check_claimed_id() test', async () => {
     it('should throw error when red packet does not exist', async () => {
       await expect(redpacket_721.check_claimed_id.call('id not exist', { from: accounts[1] })).to.be.rejectedWith(Error)
@@ -618,17 +508,8 @@ contract('HappyRedPacket_ERC721', accounts => {
       toBlock: latestBlock,
     })
     return logs.map(log => web3.eth.abi.decodeLog(claim_success_types, log.data, log.topics.slice(1)))
-    // return logs.map(log => web3.eth.abi.decodeParameters(claim_success_types, log.data))
   }
 
-  async function getRefundRedPacketInfo() {
-    const logs = await web3.eth.getPastLogs({
-      address: redpacket_721.address,
-      topic: [web3.utils.sha3(refund_success_encode)],
-    })
-    return web3.eth.abi.decodeLog(refund_success_types, logs[0].data, logs[0].topics.slice(1))
-    // return web3.eth.abi.decodeParameters(refund_success_types, logs[0].data)
-  }
 
   function getRevertMsg(msg) {
     return `VM Exception while processing transaction: reverted with reason string '${msg}'`

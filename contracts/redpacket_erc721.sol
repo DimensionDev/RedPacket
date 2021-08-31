@@ -46,14 +46,6 @@ contract HappyRedPacket_ERC721 is Initializable {
         address token_address
     );
 
-    event RefundSuccess(
-        bytes32 indexed id,
-        address indexed token_address,
-        uint16 remaining_balance,
-        uint256[] remaining_token_ids,
-        uint256 bit_status
-    );
-
     uint32 nonce;
     mapping(bytes32 => RedPacket) redpacket_by_id;
     bytes32 private seed;
@@ -206,16 +198,6 @@ contract HappyRedPacket_ERC721 is Initializable {
         erc721_token_ids = rp.erc721_list;
         // use bit_status to get remained token id in erc_721_token_ids
         return(rp.bit_status, erc721_token_ids);
-    }
-
-    function refund(bytes32 id) external {
-        RedPacket storage rp = redpacket_by_id[id];
-        require(msg.sender == rp.creator, "Creator Only");
-        require(rp.end_time <= block.timestamp, "Not expired yet");
-        uint16 remaining_tokens = rp.remaining_tokens;
-        require(remaining_tokens != 0, "None left in the red packet");
-        rp.remaining_tokens = 0;
-        emit RefundSuccess(id, rp.token_addr, remaining_tokens, rp.erc721_list, rp.bit_status);
     }
 
 //------------------------------------------------------------------

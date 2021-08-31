@@ -27,21 +27,11 @@ const claim_success_types = [
   { type: 'address', name: 'token_address' },
 ]
 
-const refund_success_encode = 'RefundSuccess(bytes32,address,uint256,uint256[])'
-const refund_success_types = [
-  { type: 'bytes32', name: 'id', indexed: true },
-  { type: 'address', name: 'token_address', indexed: true },
-  { type: 'uint256', name: 'remaining_balance' },
-  { type: 'uint256[]', name: 'remaining_token_ids' },
-]
-
 module.exports = {
   creation_success_encode,
   creation_success_types,
   claim_success_encode,
   claim_success_types,
-  refund_success_encode,
-  refund_success_types,
   public_key,
   private_key,
 }
