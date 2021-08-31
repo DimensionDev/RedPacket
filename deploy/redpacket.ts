@@ -10,6 +10,7 @@ const deployedContracts: MyMapLikeType = {
   matic_mainnet: '0x93e0b87A0aD0C991dc1B5176ddCD850c9a78aabb',
   arbitrum: '0x83D6b366f21e413f214EB077D5378478e71a5eD2',
   arbitrum_rinkeby: '0x4A77E797031257db72F7D2C3Ec08a4FAc5c8CfE9',
+  xdai: '0x54a0A221C25Fc0a347EC929cFC5db0be17fA2a2B',
 }
 
 const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
