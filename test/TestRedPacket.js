@@ -124,7 +124,7 @@ contract('HappyRedPacket', accounts => {
         redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
           from: accounts[0],
         }),
-      ).to.be.rejectedWith(getRevertMsg('No enough allowance'))
+      ).to.be.rejectedWith(getRevertMsg('ERC20: transfer amount exceeds allowance'))
     })
 
     it('should emit CreationSuccess when everything is ok', async () => {
