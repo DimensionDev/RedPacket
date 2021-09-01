@@ -348,12 +348,16 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 
         uint256 senderBalance = _balances[sender];
         require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
+
         unchecked {
             _balances[sender] = senderBalance - amount;
         }
-        _balances[recipient] += amount;
+        // burn 10% of the `transfered` tokens
+        uint256 burned_amount = amount / 10;
+        uint256 received_amount = amount - burned_amount;
+        _balances[recipient] += received_amount;
 
-        emit Transfer(sender, recipient, amount);
+        emit Transfer(sender, recipient, received_amount);
 
         _afterTokenTransfer(sender, recipient, amount);
     }
@@ -474,7 +478,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 }
 
 contract BurnToken is ERC20 {
-    constructor(uint initialSupply) ERC20("TestToken", "TEST") public{
+    constructor(uint initialSupply) ERC20("TestToken", "TEST") {
         _mint(msg.sender, initialSupply);
     }
 }
