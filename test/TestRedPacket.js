@@ -17,12 +17,14 @@ const {
 } = require('./constants')
 
 const TestToken = artifacts.require('TestToken');
+const BurnToken = artifacts.require('BurnToken');
 const HappyRedPacket = artifacts.require('HappyRedPacket')
 
 contract('HappyRedPacket', accounts => {
   let snapShot
   let snapshotId
   let testtoken
+  let burntoken
   let redpacket
   let creationParams
 
@@ -30,6 +32,7 @@ contract('HappyRedPacket', accounts => {
     snapShot = await helper.takeSnapshot()
     snapshotId = snapShot['result']
     testtoken = await TestToken.deployed()
+    burntoken = await BurnToken.deployed()
     redpacket = await HappyRedPacket.deployed()
   })
 
@@ -392,6 +395,58 @@ contract('HappyRedPacket', accounts => {
       expect(claimResults[0]).to.have.property('id').that.to.be.not.null
     })
 
+    it('should claim BurnToken work', async () => {
+      const redpacket_amount = new BigNumber(1e18);
+      // Set Param 
+      creationParams.total_tokens = redpacket_amount.toFixed()
+      creationParams.number = 4
+      creationParams.token_type = 1
+      creationParams.token_addr = burntoken.address
+
+      // create red packet, transfer more tokens, because of the `burn` during `transfer`
+      await burntoken.transfer(accounts[0], redpacket_amount.plus(redpacket_amount))
+
+      await burntoken.approve.sendTransaction(redpacket.address, creationParams.total_tokens, { from: accounts[0] })
+      await redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
+        from: accounts[0],
+      })
+      const redPacketInfo = await getRedPacketInfo()
+
+      // claim
+      const claimParams1 = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
+      const claimParams2 = createClaimParams(redPacketInfo.id, accounts[2], accounts[2])
+      const claimParams3 = createClaimParams(redPacketInfo.id, accounts[3], accounts[3])
+      const claimParams4 = createClaimParams(redPacketInfo.id, accounts[4], accounts[4])
+
+      await redpacket.claim.sendTransaction(...Object.values(claimParams1), {
+        from: accounts[1],
+      })
+      await redpacket.claim.sendTransaction(...Object.values(claimParams2), {
+        from: accounts[2],
+      })
+      await redpacket.claim.sendTransaction(...Object.values(claimParams3), {
+        from: accounts[3],
+      })
+      await redpacket.claim.sendTransaction(...Object.values(claimParams4), {
+        from: accounts[4],
+      })
+
+      const results = await getClaimRedPacketInfo(3)
+      const v1 = BigNumber(results[0].claimed_value)
+      const v2 = BigNumber(results[1].claimed_value)
+      const v3 = BigNumber(results[2].claimed_value)
+      const v4 = BigNumber(results[3].claimed_value)
+      expect([v1, v2, v3].every(v => v.toFixed() === v4.toFixed())).to.be.false
+      expect(
+          v1
+          .plus(v2)
+          .plus(v3)
+          .plus(v4)
+          .toFixed(),
+      ).to.be.eq(BigNumber(creationParams.total_tokens).toFixed())
+       .and.to.be.eq(BigNumber(1e18).toFixed())
+    })
+
     it('should claim random amount if set random', async () => {
       // Set Param 
       creationParams.total_tokens = BigNumber(1e18).toFixed()
@@ -433,7 +488,7 @@ contract('HappyRedPacket', accounts => {
       const v4 = BigNumber(results[3].claimed_value)
       expect([v1, v2, v3].every(v => v.toFixed() === v4.toFixed())).to.be.false
       expect(
-        v1
+          v1
           .plus(v2)
           .plus(v3)
           .plus(v4)
