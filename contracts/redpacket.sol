@@ -80,7 +80,6 @@ contract HappyRedPacket is Initializable {
         if (_token_type == 0)
             require(msg.value >= _total_tokens, "No enough ETH");
         else if (_token_type == 1) {
-            require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "No enough allowance");
             IERC20(_token_addr).safeTransferFrom(msg.sender, address(this), _total_tokens);
         }
 
