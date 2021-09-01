@@ -16,6 +16,7 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract HappyRedPacket is Initializable {
+    using SafeMath for uint256;
 
     struct RedPacket {
         Packed packed;
@@ -77,17 +78,23 @@ contract HappyRedPacket is Initializable {
         require(_number < 256, "At most 255 recipients");
         require(_token_type == 0 || _token_type == 1, "Unrecognizable token type");
 
+        uint256 received_amount = _total_tokens;
         if (_token_type == 0)
             require(msg.value >= _total_tokens, "No enough ETH");
         else if (_token_type == 1) {
+            // https://github.com/DimensionDev/Maskbook/issues/4168
+            // `received_amount` is not necessarily equal to `_total_tokens`
+            uint256 balance_before_transfer = IERC20(_token_addr).balanceOf(address(this));
             IERC20(_token_addr).safeTransferFrom(msg.sender, address(this), _total_tokens);
+            uint256 balance_after_transfer = IERC20(_token_addr).balanceOf(address(this));
+            received_amount = balance_after_transfer.sub(balance_before_transfer);
         }
 
         bytes32 _id = keccak256(abi.encodePacked(msg.sender, block.timestamp, nonce, seed, _seed));
         {
             uint _random_type = _ifrandom ? 1 : 0;
             RedPacket storage redp = redpacket_by_id[_id];
-            redp.packed.packed1 = wrap1(_total_tokens, _duration);
+            redp.packed.packed1 = wrap1(received_amount, _duration);
             redp.packed.packed2 = wrap2(_token_addr, _number, _token_type, _random_type);
             redp.public_key = _public_key;
             redp.creator = msg.sender;
@@ -97,7 +104,7 @@ contract HappyRedPacket is Initializable {
             uint number = _number;
             bool ifrandom = _ifrandom;
             uint duration = _duration;
-            emit CreationSuccess(_total_tokens, _id, _name, _message, msg.sender, block.timestamp, _token_addr, number, ifrandom, duration);
+            emit CreationSuccess(received_amount, _id, _name, _message, msg.sender, block.timestamp, _token_addr, number, ifrandom, duration);
         }
     }
 

@@ -437,14 +437,7 @@ contract('HappyRedPacket', accounts => {
       const v3 = BigNumber(results[2].claimed_value)
       const v4 = BigNumber(results[3].claimed_value)
       expect([v1, v2, v3].every(v => v.toFixed() === v4.toFixed())).to.be.false
-      expect(
-          v1
-          .plus(v2)
-          .plus(v3)
-          .plus(v4)
-          .toFixed(),
-      ).to.be.eq(BigNumber(creationParams.total_tokens).toFixed())
-       .and.to.be.eq(BigNumber(1e18).toFixed())
+      expect(BigNumber(creationParams.total_tokens).gt(v1.plus(v2).plus(v3).plus(v4))).to.be.true;
     })
 
     it('should claim random amount if set random', async () => {
