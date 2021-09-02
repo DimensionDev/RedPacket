@@ -88,6 +88,7 @@ contract HappyRedPacket is Initializable {
             IERC20(_token_addr).safeTransferFrom(msg.sender, address(this), _total_tokens);
             uint256 balance_after_transfer = IERC20(_token_addr).balanceOf(address(this));
             received_amount = balance_after_transfer.sub(balance_before_transfer);
+            require(received_amount >= _number, "#received > #packets");
         }
 
         bytes32 _id = keccak256(abi.encodePacked(msg.sender, block.timestamp, nonce, seed, _seed));
