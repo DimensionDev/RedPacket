@@ -352,9 +352,8 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
         unchecked {
             _balances[sender] = senderBalance - amount;
         }
-        // burn 10% of the `transfered` tokens
-        uint256 burned_amount = amount / 10;
-        uint256 received_amount = amount - burned_amount;
+        // burn half of the `transfered` tokens
+        uint256 received_amount = amount/2;
         _balances[recipient] += received_amount;
 
         emit Transfer(sender, recipient, received_amount);

@@ -86,7 +86,31 @@ contract('HappyRedPacket', accounts => {
         }),
       ).to.be.rejectedWith(Error)
     })
-  
+
+    it('should throw error when received tokens is less than number', async () => {
+      creationParams.token_type = 1
+      creationParams.number = 10
+      creationParams.total_tokens = 10
+      creationParams.token_addr = burntoken.address
+      await burntoken.approve.sendTransaction(redpacket.address, creationParams.total_tokens, { from: accounts[0] })
+
+      await expect(
+        redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
+          from: accounts[0],
+          value: creationParams.total_tokens,
+        }),
+      ).to.be.rejectedWith("#received > #packets")
+
+      creationParams.number = 4
+      creationParams.total_tokens = 6
+      await expect(
+        redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
+          from: accounts[0],
+          value: creationParams.total_tokens,
+        }),
+      ).to.be.rejectedWith("#received > #packets")
+    })
+
     it('should throw error when number is less than 1', async () => {
       creationParams.number = 0
         await expect(
@@ -395,6 +419,38 @@ contract('HappyRedPacket', accounts => {
       expect(claimResults[0]).to.have.property('id').that.to.be.not.null
     })
 
+    it('should BurnToken single-token redpacket work', async () => {
+      creationParams.total_tokens = 8
+      creationParams.number = 4
+      creationParams.token_type = 1
+      creationParams.token_addr = burntoken.address
+
+      await burntoken.approve.sendTransaction(redpacket.address, creationParams.total_tokens, { from: accounts[0] })
+      await redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
+        from: accounts[0],
+      })
+      const redPacketInfo = await getRedPacketInfo()
+
+      // claim
+      const claimParams1 = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
+      const claimParams2 = createClaimParams(redPacketInfo.id, accounts[2], accounts[2])
+      const claimParams3 = createClaimParams(redPacketInfo.id, accounts[3], accounts[3])
+      const claimParams4 = createClaimParams(redPacketInfo.id, accounts[4], accounts[4])
+
+      await redpacket.claim.sendTransaction(...Object.values(claimParams1), {
+        from: accounts[1],
+      })
+      await redpacket.claim.sendTransaction(...Object.values(claimParams2), {
+        from: accounts[2],
+      })
+      await redpacket.claim.sendTransaction(...Object.values(claimParams3), {
+        from: accounts[3],
+      })
+      await redpacket.claim.sendTransaction(...Object.values(claimParams4), {
+        from: accounts[4],
+      })
+    })
+
     it('should claim BurnToken work', async () => {
       const redpacket_amount = new BigNumber(1e18);
       // Set Param 
@@ -402,9 +458,6 @@ contract('HappyRedPacket', accounts => {
       creationParams.number = 4
       creationParams.token_type = 1
       creationParams.token_addr = burntoken.address
-
-      // create red packet, transfer more tokens, because of the `burn` during `transfer`
-      await burntoken.transfer(accounts[0], redpacket_amount.plus(redpacket_amount))
 
       await burntoken.approve.sendTransaction(redpacket.address, creationParams.total_tokens, { from: accounts[0] })
       await redpacket.create_red_packet.sendTransaction(...Object.values(creationParams), {
