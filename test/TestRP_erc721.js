@@ -14,6 +14,11 @@ const {
 
 const TestToken_721 = artifacts.require('TestToken_721')
 const HappyRedPacket_ERC721 = artifacts.require('HappyRedPacket_ERC721')
+/** 
+ * Sometimes the gas estimated is not precise due to randomness. So we have a gasLimit_multiplying_factor to increase the gasLimit. 
+ * Metamask gasLimit is also using this factor
+*/
+const gasLimit_multiplying_factor = 1.5 
 
 contract('HappyRedPacket_ERC721', accounts => {
   let snapShot
@@ -613,7 +618,7 @@ contract('HappyRedPacket_ERC721 worst case test', accounts => {
       var estimatedGas = await redpacket_721.claim.estimateGas(...Object.values(claimParams), {
         from: accounts[1],
       })
-      var final_estimatedGas = Math.round(estimatedGas * 1.5)
+      var final_estimatedGas = Math.round(estimatedGas * gasLimit_multiplying_factor)
       await redpacket_721.claim.sendTransaction(...Object.values(claimParams), {
         from: accounts[1],
         gasLimit: final_estimatedGas
@@ -629,7 +634,7 @@ contract('HappyRedPacket_ERC721 worst case test', accounts => {
       var estimatedGas_2 = await redpacket_721.claim.estimateGas(...Object.values(claimParams_2), {
         from: accounts[3],
       })
-      var final_estimatedGas_2 = Math.round(estimatedGas_2 * 1.5)
+      var final_estimatedGas_2 = Math.round(estimatedGas_2 * gasLimit_multiplying_factor)
       await redpacket_721.claim.sendTransaction(...Object.values(claimParams_2), {
         from: accounts[3],
         gasLimit: final_estimatedGas_2
