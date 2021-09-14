@@ -542,3 +542,256 @@ contract('HappyRedPacket_ERC721', accounts => {
     }
   }
 })
+
+contract('HappyRedPacket_ERC721 worst case test', accounts => {
+  let snapShot
+  let snapshotId
+  let test_token_721
+  let redpacket_721
+  let creationParams
+  let SignedMsgs
+
+  before(async () => {
+    snapShot = await helper.takeSnapshot()
+    snapshotId = snapShot['result']
+    redpacket_721 = await HappyRedPacket_ERC721.deployed()
+    test_token_721 = await TestToken_721.deployed()
+    SignedMsgs = getSignedMsgs(accounts)
+  })
+
+  beforeEach(async () => {
+    var input_token_ids = [0, 1, 2]
+    creationParams = {
+      public_key,
+      duration: 1000,
+      seed: web3.utils.sha3('lajsdklfjaskldfhaikl'),
+      message: 'Hi',
+      name: 'cache',
+      token_addr: test_token_721.address,
+      erc721_token_ids: input_token_ids,
+    }
+    await test_token_721.setApprovalForAll(redpacket_721.address, true)
+  })
+
+  afterEach(async () => {
+    await helper.revertToSnapShot(snapshotId)
+  })
+
+  // Others test cases removed for testing
+  describe('claim() worst case test', async () => {
+    it('should claim NFT success if there exists available nft', async () => {
+      const token_list = [];
+      for (let i = 0; i < 256; i++) {
+        token_list.push(i);
+      }
+      await createRedPacket(token_list)
+      const redPacketInfo = await getRedPacketInfo()
+
+      // random pick two nfts as the available nfts
+      var random_left_nft = Math.floor(Math.random() * 256);
+      var random_left_nft_2 = Math.floor(Math.random() * 256);
+      while (random_left_nft_2 == random_left_nft){
+        random_left_nft_2 = Math.floor(Math.random() * 256);
+      }
+      const claimParams = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
+      const claimParams_2 = createClaimParams(redPacketInfo.id, accounts[3], accounts[3])
+      for (let i = 0; i < 256; i++) {
+        if (i != random_left_nft && i != random_left_nft_2){
+          await test_token_721.safeTransferFrom(accounts[0], accounts[2], i, {
+            from: accounts[0],
+          })
+        }
+      }
+
+      // for (let i = 0; i < 255; i++) {
+      //   await test_token_721.safeTransferFrom(accounts[0], accounts[2], i, {
+      //     from: accounts[0],
+      //   })
+      // }
+
+
+      var estimatedGas = await redpacket_721.claim.estimateGas(...Object.values(claimParams), {
+        from: accounts[1],
+      })
+      var final_estimatedGas = Math.round(estimatedGas * 1.5)
+      await redpacket_721.claim.sendTransaction(...Object.values(claimParams), {
+        from: accounts[1],
+        gasLimit: final_estimatedGas
+      });
+      const claimResults = await getClaimRedPacketInfo(0)
+      expect(claimResults[0]).to.have.property('id').that.to.be.not.null
+
+      var claimed_token_id = claimResults[0].claimed_token_id
+      // expect(claimed_token_id).to.be.eq('255')
+      const oneOf = (claimed_token_id == random_left_nft.toString()) || (claimed_token_id == random_left_nft_2.toString())
+      expect(oneOf).to.be.eq(true)
+
+      var estimatedGas_2 = await redpacket_721.claim.estimateGas(...Object.values(claimParams_2), {
+        from: accounts[3],
+      })
+      var final_estimatedGas_2 = Math.round(estimatedGas_2 * 1.5)
+      await redpacket_721.claim.sendTransaction(...Object.values(claimParams_2), {
+        from: accounts[3],
+        gasLimit: final_estimatedGas_2
+      });
+      const claimResults_2 = await getClaimRedPacketInfo(0)
+      expect(claimResults_2[0]).to.have.property('id').that.to.be.not.null
+
+      var claimed_token_id_2 = claimResults_2[0].claimed_token_id
+      const oneOf_2 = (claimed_token_id_2 == random_left_nft.toString()) || (claimed_token_id_2 == random_left_nft_2.toString())
+      expect(oneOf_2).to.be.eq(true)
+      expect(claimed_token_id_2).to.be.not.eq(claimed_token_id)
+    })
+  })
+
+  async function getRedPacketInfo() {
+    const logs = await web3.eth.getPastLogs({
+      address: redpacket_721.address,
+      topic: [web3.utils.sha3(creation_success_encode)],
+    })
+    return web3.eth.abi.decodeLog(creation_success_types, logs[0].data, logs[0].topics.slice(1))
+  }
+
+  async function createRedPacket(erc_token_list) {
+    creationParams.erc721_token_ids = erc_token_list
+    await redpacket_721.create_red_packet.sendTransaction(...Object.values(creationParams), {
+      from: accounts[0],
+    })
+  }
+
+  async function getClaimRedPacketInfo(fromBlock = 1) {
+    const latestBlock = await web3.eth.getBlockNumber()
+    const logs = await web3.eth.getPastLogs({
+      address: redpacket_721.address,
+      topic: [web3.utils.sha3(claim_success_encode)],
+      fromBlock: latestBlock - fromBlock,
+      toBlock: latestBlock,
+    })
+    return logs.map(log => web3.eth.abi.decodeLog(claim_success_types, log.data, log.topics.slice(1)))
+  }
+
+
+  function getSignedMsgs(sender_addrs) {
+    var signedMsgs = {}
+    for (var i = 0; i < sender_addrs.length; i++) {
+      var signedMsg = web3.eth.accounts.sign(sender_addrs[i], private_key).signature
+      signedMsgs[sender_addrs[i]] = signedMsg
+    }
+    return signedMsgs
+  }
+
+
+  function createClaimParams(id, recipient, caller) {
+    var signedMsg = web3.eth.accounts.sign(caller, private_key).signature
+    return {
+      id,
+      signedMsg,
+      recipient,
+    }
+  }
+})
+
+contract('HappyRedPacket_ERC721 no available token test', accounts => {
+  let snapShot
+  let snapshotId
+  let test_token_721
+  let redpacket_721
+  let creationParams
+  let SignedMsgs
+
+  before(async () => {
+    snapShot = await helper.takeSnapshot()
+    snapshotId = snapShot['result']
+    redpacket_721 = await HappyRedPacket_ERC721.deployed()
+    test_token_721 = await TestToken_721.deployed()
+    SignedMsgs = getSignedMsgs(accounts)
+  })
+
+  beforeEach(async () => {
+    var input_token_ids = [0, 1, 2]
+    creationParams = {
+      public_key,
+      duration: 1000,
+      seed: web3.utils.sha3('lajsdklfjaskldfhaikl'),
+      message: 'Hi',
+      name: 'cache',
+      token_addr: test_token_721.address,
+      erc721_token_ids: input_token_ids,
+    }
+    await test_token_721.setApprovalForAll(redpacket_721.address, true)
+  })
+
+  afterEach(async () => {
+    await helper.revertToSnapShot(snapshotId)
+  })
+
+  // Others test cases removed for testing
+  describe('claim() test', async () => {
+    // This test case may take a long time, On my machine it takes 9484ms
+    it('should throw erro if all NFTs transfered', async () => {
+      const token_list = [];
+      for (let i = 0; i < 256; i++) {
+        token_list.push(i);
+      }
+      await createRedPacket(token_list)
+      const redPacketInfo = await getRedPacketInfo()
+      const claimParams = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
+      for (let i = 0; i < 256; i++) {
+        await test_token_721.safeTransferFrom(accounts[0], accounts[2], i, {
+          from: accounts[0],
+        })
+      }
+
+      await expect(
+        redpacket_721.claim.sendTransaction(...Object.values(claimParams), {
+          from: accounts[1],
+        }),
+      ).to.be.rejectedWith(
+        "VM Exception while processing transaction: reverted with reason string 'No available token remain'",
+      )
+    })
+  })
+
+
+  async function getRedPacketInfo() {
+    const logs = await web3.eth.getPastLogs({
+      address: redpacket_721.address,
+      topic: [web3.utils.sha3(creation_success_encode)],
+    })
+    return web3.eth.abi.decodeLog(creation_success_types, logs[0].data, logs[0].topics.slice(1))
+  }
+
+  async function createRedPacket(erc_token_list) {
+    creationParams.erc721_token_ids = erc_token_list
+    await redpacket_721.create_red_packet.sendTransaction(...Object.values(creationParams), {
+      from: accounts[0],
+    })
+  }
+
+  function getSignedMsgs(sender_addrs) {
+    var signedMsgs = {}
+    for (var i = 0; i < sender_addrs.length; i++) {
+      var signedMsg = web3.eth.accounts.sign(sender_addrs[i], private_key).signature
+      signedMsgs[sender_addrs[i]] = signedMsg
+    }
+    return signedMsgs
+  }
+
+  function countSetBits(n) {
+    var count = 0
+    while (n) {
+      count += n & 1
+      n >>= 1
+    }
+    return count
+  }
+
+  function createClaimParams(id, recipient, caller) {
+    var signedMsg = web3.eth.accounts.sign(caller, private_key).signature
+    return {
+      id,
+      signedMsg,
+      recipient,
+    }
+  }
+})

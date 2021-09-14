@@ -228,13 +228,23 @@ contract HappyRedPacket_ERC721 is Initializable {
         uint256 claimed_index = random(seed, nonce) % (remaining_tokens);
         uint16 real_index = _get_exact_index(bit_status, claimed_index);
         claimed_token_id = erc721_token_id_list[real_index];
-        while (IERC721(token_addr).ownerOf(claimed_token_id) != creator){
-            bit_status = bit_status | (1 << real_index);
-            remaining_tokens --;
-            require(remaining_tokens > 0, "No available token remain");
-            claimed_index = random(seed, nonce) % (remaining_tokens);
-            real_index = _get_exact_index(bit_status, claimed_index);
-            claimed_token_id = erc721_token_id_list[real_index];
+        if(IERC721(token_addr).ownerOf(claimed_token_id) != creator){
+            for (uint16 i = 0; i < erc721_token_id_list.length; i++) {
+                if ((bit_status & (1 << i)) != 0) {
+                    continue;
+                }
+                if (IERC721(token_addr).ownerOf(erc721_token_id_list[i]) != creator) {
+                    // update bit map
+                    bit_status = bit_status | (1 << i);
+                    remaining_tokens--;
+                    require(remaining_tokens > 0, "No available token remain");
+                    continue;
+                }else{
+                    claimed_token_id = erc721_token_id_list[i];
+                    real_index = i;
+                    break;
+                }
+            }
         }
         return(real_index, claimed_token_id, bit_status, remaining_tokens);
     }
