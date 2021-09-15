@@ -9,7 +9,7 @@ const deployedContracts: MyMapLikeType = {
   rinkeby: '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
   bsc_test: '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
   bsc_mainnet: '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  matic_mumbai_test: '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  matic_mumbai_test: '0xF8a45d2F1a4d13Cd82ffeDd8c7747a15D0309571',
   matic_mainnet: '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
   arbitrum: '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
   arbitrum_rinkeby: '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',

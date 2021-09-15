@@ -131,7 +131,7 @@ contract('HappyRedPacket_ERC721', accounts => {
       await test_token_721.safeTransferFrom(accounts[0], accounts[2], 10, {
         from: accounts[0],
       })
-      const ownership = await redpacket_721.check_ownership.call([10,11], test_token_721.address, { from: accounts[0] })
+      const ownership = await redpacket_721.check_ownership.call([10, 11], test_token_721.address, { from: accounts[0] })
       expect(ownership).to.be.eq(false)
     })
 
@@ -139,12 +139,12 @@ contract('HappyRedPacket_ERC721', accounts => {
       await test_token_721.safeTransferFrom(accounts[0], accounts[2], 43, {
         from: accounts[0],
       })
-      const ownership = await redpacket_721.check_ownership.call([43,44], test_token_721.address, { from: accounts[0] })
+      const ownership = await redpacket_721.check_ownership.call([43, 44], test_token_721.address, { from: accounts[0] })
       expect(ownership).to.be.eq(false)
     })
 
     it('should return true when all of input token ids belong to caller', async () => {
-      const ownership = await redpacket_721.check_ownership.call([45,46], test_token_721.address, { from: accounts[0] })
+      const ownership = await redpacket_721.check_ownership.call([45, 46], test_token_721.address, { from: accounts[0] })
       expect(ownership).to.be.eq(true)
     })
   })
@@ -554,14 +554,12 @@ contract('HappyRedPacket_ERC721 worst case test', accounts => {
   let test_token_721
   let redpacket_721
   let creationParams
-  let SignedMsgs
 
   before(async () => {
     snapShot = await helper.takeSnapshot()
     snapshotId = snapShot['result']
     redpacket_721 = await HappyRedPacket_ERC721.deployed()
     test_token_721 = await TestToken_721.deployed()
-    SignedMsgs = getSignedMsgs(accounts)
   })
 
   beforeEach(async () => {
@@ -595,13 +593,13 @@ contract('HappyRedPacket_ERC721 worst case test', accounts => {
       // random pick two nfts as the available nfts
       var random_left_nft = Math.floor(Math.random() * 256);
       var random_left_nft_2 = Math.floor(Math.random() * 256);
-      while (random_left_nft_2 == random_left_nft){
+      while (random_left_nft_2 == random_left_nft) {
         random_left_nft_2 = Math.floor(Math.random() * 256);
       }
       const claimParams = createClaimParams(redPacketInfo.id, accounts[1], accounts[1])
       const claimParams_2 = createClaimParams(redPacketInfo.id, accounts[3], accounts[3])
       for (let i = 0; i < 256; i++) {
-        if (i != random_left_nft && i != random_left_nft_2){
+        if (i != random_left_nft && i != random_left_nft_2) {
           await test_token_721.safeTransferFrom(accounts[0], accounts[2], i, {
             from: accounts[0],
           })
@@ -676,16 +674,6 @@ contract('HappyRedPacket_ERC721 worst case test', accounts => {
   }
 
 
-  function getSignedMsgs(sender_addrs) {
-    var signedMsgs = {}
-    for (var i = 0; i < sender_addrs.length; i++) {
-      var signedMsg = web3.eth.accounts.sign(sender_addrs[i], private_key).signature
-      signedMsgs[sender_addrs[i]] = signedMsg
-    }
-    return signedMsgs
-  }
-
-
   function createClaimParams(id, recipient, caller) {
     var signedMsg = web3.eth.accounts.sign(caller, private_key).signature
     return {
@@ -702,14 +690,12 @@ contract('HappyRedPacket_ERC721 no available token test', accounts => {
   let test_token_721
   let redpacket_721
   let creationParams
-  let SignedMsgs
 
   before(async () => {
     snapShot = await helper.takeSnapshot()
     snapshotId = snapShot['result']
     redpacket_721 = await HappyRedPacket_ERC721.deployed()
     test_token_721 = await TestToken_721.deployed()
-    SignedMsgs = getSignedMsgs(accounts)
   })
 
   beforeEach(async () => {
@@ -771,24 +757,6 @@ contract('HappyRedPacket_ERC721 no available token test', accounts => {
     await redpacket_721.create_red_packet.sendTransaction(...Object.values(creationParams), {
       from: accounts[0],
     })
-  }
-
-  function getSignedMsgs(sender_addrs) {
-    var signedMsgs = {}
-    for (var i = 0; i < sender_addrs.length; i++) {
-      var signedMsg = web3.eth.accounts.sign(sender_addrs[i], private_key).signature
-      signedMsgs[sender_addrs[i]] = signedMsg
-    }
-    return signedMsgs
-  }
-
-  function countSetBits(n) {
-    var count = 0
-    while (n) {
-      count += n & 1
-      n >>= 1
-    }
-    return count
   }
 
   function createClaimParams(id, recipient, caller) {
