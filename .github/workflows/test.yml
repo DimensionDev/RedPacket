@@ -21,3 +21,4 @@ jobs:
       # - run: npm install --no-save ganache-cli
       # - run: npx ganache-cli -a 100 &
       - run: npm run test:normal
+      - run: npm run test:erc721

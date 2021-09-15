@@ -18,9 +18,9 @@ module.exports = async () => {
   Redpacket.setAsDeployed(redpacket);
 
   // for erc721 redpacket test
-  // const test_token_721 = await TestToken_721.new(260)
-  // TestToken_721.setAsDeployed(test_token_721)
+  const test_token_721 = await TestToken_721.new(260)
+  TestToken_721.setAsDeployed(test_token_721)
 
-  // const redpacket_721 = await RedPacket_721.new()
-  // RedPacket_721.setAsDeployed(redpacket_721)
+  const redpacket_721 = await RedPacket_721.new()
+  RedPacket_721.setAsDeployed(redpacket_721)
 };
