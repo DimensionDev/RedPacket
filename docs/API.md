@@ -1,6 +1,4 @@
 # RedPacket Smart Contract 
-## Workflow in RedPacket_erc721
-![Workflow](Workflow.png)
 
 ## Function Briefing in RedPacket_erc721
 ### General Description
@@ -90,13 +88,14 @@ Users can claim an ERC721 from the red packet
   - Events:
 
 	```solidity
-  	event ClaimSuccess(
-  		bytes32 indexed id,
-  		address indexed claimer,
-  		uint256 claimed_token_id,
-  		address token_address
-  	);
-  ```
+        event ClaimSuccess(
+            bytes32 indexed id,
+            address indexed claimer,
+            uint256 claimed_token_id,
+            address token_address
+        );
+    ```
+
 ### check_ownership
 Used to check whether all input tokens belong to `msg.sender`.
 
@@ -214,3 +213,5 @@ Get the current availability status of all tokens in a red packet.
 - Events:
   - N/A
 
+## Workflow in RedPacket_erc721
+![Workflow](Workflow.png)
