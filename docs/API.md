@@ -1,43 +1,6 @@
 # RedPacket Smart Contract 
 ## Workflow in RedPacket_erc721
-```flow
-st=>start: Start
-inputTokenId=>inputoutput: Input Token IDs
-checkOwnership=>operation: Check Ownership of All Input Token
-op1=>operation: Create Red Packet
-cond=>condition: Right Params?
-revert1=>operation: Revert with Error
-revert2=>operation: Revert with Error
-condApprove=>condition: Approved token?
-claimP=>operation: Claim Period
-claim=>operation: Claim
-condTransefer=>condition: Token NOT Transferred to Others?
-condSatisfy=>condition: If Satisfy Claim Condition?
-condAvailable=>condition: Any Available Token Remain?
-condAvailable2=>condition: Any Available Token Remain?
-selectToken=>operation: Random Pick Token
-findAvailable=>operation: Find First Available Token in Order
-claimAvailable=>operation: Claim First Available Token
-claimSuccess=>operation: Transfer Claimed Token to User
-claimSuccess2=>operation: Transfer Claimed Token to User
-inputTokenId->checkOwnership->op1->cond
-cond(yes)->condApprove
-cond(no)->revert1
-condApprove(yes)->claim
-condApprove(no)->revert1
-claim->condSatisfy
-condSatisfy(yes)->condAvailable
-condSatisfy(no)->revert2
-condAvailable(yes)->selectToken
-condAvailable(no)->revert2
-selectToken->condTransefer
-condTransefer(no)->findAvailable
-condTransefer(yes)->claimSuccess
-findAvailable->condAvailable2
-condAvailable2(yes)->claimAvailable
-condAvailable2(no)->revert2
-claimAvailable->claimSuccess2
-```
+![Workflow](Workflow.png)
 
 ## Function Briefing in RedPacket_erc721
 ### General Description
