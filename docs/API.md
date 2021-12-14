@@ -1,4 +1,15 @@
 # RedPacket Smart Contract 
+## Content Overview
+- [Function Briefing in RedPacket_erc721](#function-briefing-in-redpacket_erc721)
+  - [General Description](#general-description)
+  - [create_red_packet](#create_red_packet)
+  - [claim](#claim)
+  - [check_ownership](#check_ownership)
+  - [check_availability](#check_availability)
+  - [check_claimed_id](#check_claimed_id)
+  - [check_erc721_remain_ids](#check_erc721_remain_ids)
+- [Workflow in RedPacket_erc721](#workflow-in-redpacket_erc721)
+
 
 ## Function Briefing in RedPacket_erc721
 ### General Description
@@ -215,3 +226,10 @@ Get the current availability status of all tokens in a red packet.
 
 ## Workflow in RedPacket_erc721
 ![Workflow](Workflow.png)
+
+## Function Briefing in RedPacket
+### General Description
+Generally, users can
+
+
+### create_red_packet
