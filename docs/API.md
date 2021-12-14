@@ -307,8 +307,8 @@ Users can claim random(or average) amount of token from the red packet.
 ```solidity
   function claim(
     bytes32 id,
-		bytes memory signedMsg,
-		address payable recipient
+    bytes memory signedMsg,
+    address payable recipient
   )
     public
     returns(
