@@ -8,3 +8,4 @@ project.secret.js
 cache/
 artifacts/
 .openzeppelin/
+.env
