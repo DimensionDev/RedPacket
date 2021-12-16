@@ -2,23 +2,44 @@
 ## Content Overview
 - [Function Briefing in RedPacket_erc721](#function-briefing-in-redpacket_erc721)
   - [General Description](#general-description)
+  - [Workflow in RedPacket_erc721](#workflow-in-redpacket_erc721)
   - [create_red_packet](#create_red_packet)
   - [claim](#claim)
   - [check_ownership](#check_ownership)
   - [check_availability](#check_availability)
   - [check_claimed_id](#check_claimed_id)
   - [check_erc721_remain_ids](#check_erc721_remain_ids)
-- [Workflow in RedPacket_erc721](#workflow-in-redpacket_erc721)
 - [Function Briefing in Fungible Token Red Packet](#function-briefing-in-fungible-token-red-packet)
   - [General Description for Red Packet](#general-description-for-red-packet)
+  - [Workflow in Red Packet](#workflow-in-red-packet)
   - [create_red_packet](#create-red-packet)
   - [claim](#claim-packet)
   - [check_availability](#check-red-packet-availability)
   - [refund](#refund)
+- [Verification Design](#verification-design)
 
 ## Function Briefing in RedPacket_erc721
 ### General Description
 Generally, users can specify a list of ERC721 token ID to create an ERC721 red packet with RedPacket_ERC721. Then, users are able to randomly claim one NFT from the red packet.
+
+### Workflow in RedPacket_erc721
+![Workflow](Workflow.png)
+
+1. Users need to call `setApprovalForAll()` in advance to approve of our red packet operating users' asset.
+
+2. Users call `create_red_packet()` in our red packet contract. At this step, users need to specify a list of the NFT tokenID to put in red packet. During creation, the specified NFTs are **NOT** transferred to our red packet since it requires plenty of gas if we transfer these NFTs one by one. At this stage, red packet contract only has the grant to operate the NFTs rather than **own** these NFTs. Thus, we need to design a mechanism to handle the situation where an NFT has already been transferred to another address when a user tries to claim it.
+
+3. Users can call `claim()` to claim an NFT from the red packet contract. 
+    - At the beginning, the NFT will be picked randomly. 
+    - If the picked NFT is still in red packet creators's account, then the user can claim the NFT directly.
+    - If the user meets the situation where an NFT has already been transferred to another address, then red packet contract needs to reselect an available NFT:
+        -We use a `uint256` variable `bit_status` to record the status of each NFT in red packet. (Therefore, we currently only allow 256 NFTs to be put in red packet at most.)
+        - Firstly, we check if the NFT still belongs to the red packet creator. If no, that means the NFT has already been transferred to another address.
+        - Secondly, we start to scan `bit_status` from the first bit. If the bit is 1, we skip it; If the bit is 0, we check if the NFT still belongs to the red packet creator.
+        - If yes, we pick this NFT.
+        - If no, we update the corresponding bit in `bit_status` to 1 and continue to scan `bit_status`. 
+        - Then we repeat the above steps until we find an available NFT or there is no NFT remain(Will be revert with error).
+
 
 ### create_red_packet
 Specify a list of token ID and create a red packet with expiration time.
@@ -38,7 +59,7 @@ Specify a list of token ID and create a red packet with expiration time.
 ```
 
 - Parameters:
-	- `_public_key`: Generated at Front-end. Used for verification in claim period. 
+	- `_public_key`: Generated at Front-end. Used for verification in claim period. Check detail at [Verification Design](#verification-design)
 	- `_duration`: Red packet valid duration. (Unit: s) Used to calculate red packet expire time.
 	- `_seed`: Used to generate packet_id.
 	- `_message`: Additional message in this red packet.
@@ -90,7 +111,7 @@ Users can claim an ERC721 token from the red packet.
 
 - Parameters:
   - `pkt_id`: Use id to specify the target red packet.
-  - `signedMsg`: Result of signing the `msg.sender` with a private key (corresponding to the public key passed in `create_red_packet`)
+  - `signedMsg`: Result of signing the `msg.sender` with a private key (corresponding to the public key passed in `create_red_packet`). Check detail at [Verification Design](#verification-design)
   - `recipient`: NFT recipient.
   
 - Requirements:
@@ -235,12 +256,21 @@ Get the current availability status of all tokens in a red packet.
 - Events:
   - N/A
 
-## Workflow in RedPacket_erc721
-![Workflow](Workflow.png)
-
 ## Function Briefing in Fungible Token Red Packet
 ### General Description for Red Packet
 Generally, users can specify a list of ERC721 token ID to create an ERC721 red packet with RedPacket_ERC721. Then, users are able to randomly claim one NFT from the red packet.
+
+### Workflow in Red Packet
+1. Users need to call `approve()` to approve of our red packet contract operating enough amount of users' token.
+
+2. Users call `create_red_packet()` in our red packet contract. At this step, creators are able to choose the claim method: avarage or random. **Notice**: Different from the design in RedPacket_ERC721, tokens to be put in red packet will be transferred to red packet contract during creation period in fungible token red packet.
+
+3. Users can call `claim()` to claim tokens from the red packet contract.
+    1. If the claimer is claiming the last packet, the claimer will get all of the remaining token directly.
+    2. Otherwise, if the red packet is set as random, the claimer will get random amount of tokens. If the red packet is set as average, the claimer will get average amount of tokens.
+
+4. After the red packet expired, if there are remain tokens in this red packet, the red packet creator is able to withdraw the remain tokens.
+
 
 ### create red packet 
 Specify a list of token ID and create a red packet with expiration time.
@@ -264,7 +294,7 @@ Specify a list of token ID and create a red packet with expiration time.
 ```
 
 - Parameters:
-  - `_public_key`: Generated at Front-end. Used for verification in claim period. 
+  - `_public_key`: Generated at Front-end. Used for verification in claim period. Check detail at [Verification Design](#verification-design)
   - `_number`: The amount of packets in red packet.
   - `_ifrandom`: The claim method for this red packet. If true, claimer will claim random number of token. Otherwise, claimer will claim average number of token.
   - `_duration`: The valid period time for this red packet. This can determine the expire time of a red packet.
@@ -319,7 +349,7 @@ Users can claim random(or average) amount of token from the red packet.
 
 - Parameters:
   - `pkt_id`: Use id to specify the target red packet.
-  - `signedMsg`: Result of signing the `msg.sender` with a private key (corresponding to the public key passed in `create_red_packet`)
+  - `signedMsg`: Result of signing the `msg.sender` with a private key (corresponding to the public key passed in `create_red_packet`). Check detail at [Verification Design](#verification-design)
   - `recipient`: Token recipient.
 
 - Requirements:
@@ -375,7 +405,7 @@ Check red packet info.
   - N/A
 
 ### refund
-After the redpacket expired, the redpacket creator is able to withdraw the remaining token.
+After the redpacket expired, the red packet creator is able to withdraw the remaining token.
 
 ```solidity
   function refund(bytes32 id) public {}
@@ -400,3 +430,18 @@ After the redpacket expired, the redpacket creator is able to withdraw the remai
       uint remaining_balance
     );
   ```
+
+## Verification Design
+Both red packet smart contracts contains a verification mechanism which is used to ensure the claimer is claiming red packet through our Mask externsion.
+
+Verification mechanism:
+1. Front-end randomly generates an Ethereum account A (the account address is the public key) with its private key. While creating the red packet, we need to pass the public key to redpacket smart contract as a parameter.
+2. Smart contract will store the public key and front-end will keep the private key.
+3. When a user tries to claim the red packet, front-end will sign a message with the private key of account A. The content of this message is the address of account B who calls the `claim()` function (i.e. `msg.sender`).
+4. The signature will be passed to smart contract as a parameter while calling `claim()`. 
+5. With the signature and the hash of `msg.sender`, redpacket smart contract is able to calculate the address of account who signs the message.
+6. By comparing the public key stored during red packet creation period with the account address we calculated, we are able to distinguish if the function caller carries the signature signed with the right private key kept in front-end.
+
+With this mechanism:
+- Users who don't have the private key, they cannot generate a right signature. So they will be rejected while calling `claim()`.
+- If they listen to Ethereum network, and catch the transaction payload which claimed successfully. They will try to claim with the same payload. They'll still get rejected since our contract will calculate the hash of message with `msg.sender` which cannot be the same with the successful claim case.
