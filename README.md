@@ -61,6 +61,8 @@ npm run deploy:ropsten
 | Fuse             | [0x561c5f3a](https://explorer.fuse.io/address/0x561c5f3a19871ecb1273D6D8eCc276BeEDa5c8b4/transactions)            |
 | Boba             | [0x578a7Fee](https://blockexplorer.boba.network/address/0x578a7Fee5f0D8CEc7d00578Bf37374C5b95C4b98/transactions)  |
 | Moonriver        | [0x578a7Fee](https://moonriver.moonscan.io/address/0x578a7Fee5f0D8CEc7d00578Bf37374C5b95C4b98)                    |
+| CFX eSpace       | [0x96c7d011](https://evm.confluxscan.io/address/0x96c7d011cdfd467f551605f0f5fce279f86f4186)                       |
+| CFX eSpace-test  | [0x913975af](https://evmtestnet.confluxscan.io/address/0x913975af2bb8a6be4100d7dc5e9765b77f6a5d6c)                |
 
 ### HappyRedPacket_ERC721
 
@@ -82,6 +84,8 @@ npm run deploy:ropsten
 | Fuse             | [0x066804d9](https://explorer.fuse.io/address/0x066804d9123bF2609Ed4A4a40b1177a9c5a9Ed51/transactions)            |
 | Boba             | [0xF9F7C149](https://blockexplorer.boba.network/address/0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0/transactions)  |
 | Moonriver        | [0xF9F7C149](https://moonriver.moonscan.io/address/0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0)                    |
+| CFX eSpace       | [0x5b966f3a](https://evm.confluxscan.io/address/0x5b966f3a32db9c180843bcb40267a66b73e4f022)                       |
+| CFX eSpace-test  | [0x71834a3f](https://evmtestnet.confluxscan.io/address/0x71834a3fdea3e70f14a93ed85c6be70925d0cad9)                |
 
 ## Test report
 
