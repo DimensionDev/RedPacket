@@ -20,6 +20,9 @@ const deployedContracts: MyMapLikeType = {
   fuse: '0x066804d9123bF2609Ed4A4a40b1177a9c5a9Ed51',
   boba: '0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0',
   moonriver: '0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0',
+  conflux_eSpace: '0x5b966f3a32db9c180843bcb40267a66b73e4f022',
+  conflux_eSpace_test: '0x71834a3fdea3e70f14a93ed85c6be70925d0cad9',
+  harmony: '0x83d6b366f21e413f214eb077d5378478e71a5ed2',
 }
 
 const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
