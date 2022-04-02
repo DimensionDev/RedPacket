@@ -65,6 +65,8 @@ npm run deploy:ropsten
 | CFX eSpace-test  | [0x913975af](https://evmtestnet.confluxscan.io/address/0x913975af2bb8a6be4100d7dc5e9765b77f6a5d6c)                |
 | Harmony          | [0xAb7B1bE4](https://explorer.harmony.one/address/0xab7b1be4233a04e5c43a810e75657eced8e5463b)                     |
 | Harmony-test     | [0x96c7D011](https://explorer.pops.one/address/0x96c7d011cdfd467f551605f0f5fce279f86f4186)                        |
+| Metis            | [0x2cf91AD8](https://andromeda-explorer.metis.io/address/0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77/transactions) |
+| Metis-test       | [0xAb7B1bE4](https://stardust-explorer.metis.io/address/0xAb7B1bE4233A04e5C43a810E75657ECED8E5463B/transactions)  |
 
 ### HappyRedPacket_ERC721
 
@@ -90,6 +92,8 @@ npm run deploy:ropsten
 | CFX eSpace-test  | [0x71834a3f](https://evmtestnet.confluxscan.io/address/0x71834a3fdea3e70f14a93ed85c6be70925d0cad9)                |
 | Harmony          | [0x83D6b366](https://explorer.harmony.one/address/0x83d6b366f21e413f214eb077d5378478e71a5ed2)                     |
 | Harmony-test     | [0x981be454](https://explorer.pops.one/address/0x981be454a930479d92c91a0092d204b64845a5d6)                        |
+| Metis            | [0x81246335](https://andromeda-explorer.metis.io/address/0x812463356F58fc8194645A1838ee6C52D8ca2D26/transactions) |
+| Metis-test       | [0x2cf91AD8](https://stardust-explorer.metis.io/address/0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77/transactions)  |
 
 ## Test report
 
