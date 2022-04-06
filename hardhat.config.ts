@@ -11,12 +11,13 @@ import "hardhat-gas-reporter"
 import '@openzeppelin/hardhat-upgrades'
 import "@nomiclabs/hardhat-truffle5"
 import "@nomiclabs/hardhat-etherscan";
+import "hardhat-abi-exporter";
 
 const {
-    HardhatNetworkConfig,
-    HardhatSolidityConfig,
-    HardhatGasReporterConfig,
-    EtherscanConfig,
+  HardhatNetworkConfig,
+  HardhatSolidityConfig,
+  HardhatGasReporterConfig,
+  EtherscanConfig,
 } = require('./SmartContractProjectConfig/config.js');
 
 const networks = HardhatNetworkConfig;
@@ -28,16 +29,25 @@ const etherscan = EtherscanConfig;
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-    networks,
-    mocha: {
-        timeout: 500000,
+  networks,
+  mocha: {
+    timeout: 500000,
+  },
+  solidity,
+  namedAccounts: {
+    deployer: {
+      default: 0,
     },
-    solidity,
-    namedAccounts: {
-        deployer: {
-            default: 0,
-        },
-    },
-    etherscan,
-    gasReporter,
+  },
+  etherscan,
+  gasReporter,
+  abiExporter: {
+    path: './abi',
+    runOnCompile: true,
+    flat: true,
+    only: [
+      'HappyRedPacket',
+      'HappyRedPacket_ERC721'
+    ],
+  },
 };
