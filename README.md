@@ -42,31 +42,32 @@ npm run deploy:ropsten
 
 <!-- begin RedPacket -->
 
-| Chain            |           HappyRedPacket            |         HappyRedPacket_ERC721          |
-| ---------------- | :---------------------------------: | :------------------------------------: |
-| Mainnet          |     [`0xaBBe1101`][rp-mainnet]      |     [`0x8d285739`][rp721-mainnet]      |
-| Ropsten          |     [`0x0722507c`][rp-ropsten]      |     [`0x8fF42e93`][rp721-ropsten]      |
-| BSC              |       [`0x0ca42C17`][rp-bsc]        |       [`0xf8968e1F`][rp721-bsc]        |
-| Matic            |      [`0x93e0b87A`][rp-matic]       |      [`0xf6Dc0427`][rp721-matic]       |
+| Chain            | HappyRedPacket                      | HappyRedPacket_ERC721                  |
+| ---------------- | ----------------------------------- | -------------------------------------- |
+| Mainnet          | [`0xaBBe1101`][rp-mainnet]          | [`0x8d285739`][rp721-mainnet]          |
+| Ropsten          | [`0x0722507c`][rp-ropsten]          | [`0x8fF42e93`][rp721-ropsten]          |
+| BSC              | [`0x0ca42C17`][rp-bsc]              | [`0xf8968e1F`][rp721-bsc]              |
+| Matic            | [`0x93e0b87A`][rp-matic]            | [`0xf6Dc0427`][rp721-matic]            |
 | Rinkeby_arbitrum | [`0x4A77E797`][rp-rinkeby_arbitrum] |                                        |
-| Arbitrum         |     [`0x83D6b366`][rp-arbitrum]     |     [`0x561c5f3a`][rp721-arbitrum]     |
-| xDai             |       [`0x54a0A221`][rp-xdai]       |       [`0x561c5f3a`][rp721-xdai]       |
-| Goerli           |      [`0x8bF6b979`][rp-goerli]      |      [`0x0a04e23f`][rp721-goerli]      |
-| Fantom           |      [`0x578a7Fee`][rp-fantom]      |      [`0xF9F7C149`][rp721-fantom]      |
-| Avalanche        |    [`0xF9F7C149`][rp-avalanche]     |    [`0x96c7D011`][rp721-avalanche]     |
-| Celo             |       [`0xab7b1be4`][rp-celo]       |       [`0x96c7D011`][rp721-celo]       |
+| Arbitrum         | [`0x83D6b366`][rp-arbitrum]         | [`0x561c5f3a`][rp721-arbitrum]         |
+| xDai             | [`0x54a0A221`][rp-xdai]             | [`0x561c5f3a`][rp721-xdai]             |
+| Goerli           | [`0x8bF6b979`][rp-goerli]           | [`0x0a04e23f`][rp721-goerli]           |
+| Fantom           | [`0x578a7Fee`][rp-fantom]           | [`0xF9F7C149`][rp721-fantom]           |
+| Avalanche        | [`0xF9F7C149`][rp-avalanche]        | [`0x96c7D011`][rp721-avalanche]        |
+| Celo             | [`0xab7b1be4`][rp-celo]             | [`0x96c7D011`][rp721-celo]             |
 | Kovan_optimistic | [`0x68EDbfA3`][rp-kovan_optimistic] | [`0x556F63d7`][rp721-kovan_optimistic] |
-| Optimistic       |    [`0x981be454`][rp-optimistic]    |    [`0x02Ea0720`][rp721-optimistic]    |
-| Aurora           |      [`0x19f179D7`][rp-aurora]      |      [`0x05ee315E`][rp721-aurora]      |
-| Fuse             |       [`0x561c5f3a`][rp-fuse]       |       [`0x066804d9`][rp721-fuse]       |
-| Boba             |       [`0x578a7Fee`][rp-boba]       |       [`0xF9F7C149`][rp721-boba]       |
-| Moonriver        |    [`0x578a7Fee`][rp-moonriver]     |    [`0xF9F7C149`][rp721-moonriver]     |
-| Conflux          |     [`0x96c7d011`][rp-conflux]      |     [`0x5b966f3a`][rp721-conflux]      |
-| Conflux_test     |   [`0x913975af`][rp-conflux_test]   |   [`0x71834a3f`][rp721-conflux_test]   |
-| Harmony          |     [`0xab7b1be4`][rp-harmony]      |     [`0x83d6b366`][rp721-harmony]      |
-| Harmony_test     |   [`0x96c7d011`][rp-harmony_test]   |   [`0x981be454`][rp721-harmony_test]   |
-| Metis            |      [`0x2cf91AD8`][rp-metis]       |      [`0x81246335`][rp721-metis]       |
-| Metis_test       |    [`0xAb7B1bE4`][rp-metis_test]    |    [`0x2cf91AD8`][rp721-metis_test]    |
+| Optimistic       | [`0x981be454`][rp-optimistic]       | [`0x02Ea0720`][rp721-optimistic]       |
+| Aurora           | [`0x19f179D7`][rp-aurora]           | [`0x05ee315E`][rp721-aurora]           |
+| Fuse             | [`0x561c5f3a`][rp-fuse]             | [`0x066804d9`][rp721-fuse]             |
+| Boba             | [`0x578a7Fee`][rp-boba]             | [`0xF9F7C149`][rp721-boba]             |
+| Moonriver        | [`0x578a7Fee`][rp-moonriver]        | [`0xF9F7C149`][rp721-moonriver]        |
+| Conflux          | [`0x96c7d011`][rp-conflux]          | [`0x5b966f3a`][rp721-conflux]          |
+| Conflux_test     | [`0x913975af`][rp-conflux_test]     | [`0x71834a3f`][rp721-conflux_test]     |
+| Harmony          | [`0xab7b1be4`][rp-harmony]          | [`0x83d6b366`][rp721-harmony]          |
+| Harmony_test     | [`0x96c7d011`][rp-harmony_test]     | [`0x981be454`][rp721-harmony_test]     |
+| Metis            | [`0x2cf91AD8`][rp-metis]            | [`0x81246335`][rp721-metis]            |
+| Metis_test       | [`0xAb7B1bE4`][rp-metis_test]       | [`0x2cf91AD8`][rp721-metis_test]       |
+| Kardia           | [`0x081ea643`][rp-kardia]           | [`0xc3e62b2C`][rp721-kardia]           |
 
 [rp-mainnet]: https://etherscan.io/address/0xaBBe1101FD8fa5847c452A6D70C8655532B03C33
 [rp-ropsten]: https://ropsten.etherscan.io/address/0x0722507c3b776A6B205946592016e358B0D34c3F
@@ -91,6 +92,7 @@ npm run deploy:ropsten
 [rp-harmony_test]: https://explorer.pops.one/address/0x96c7d011cdfd467f551605f0f5fce279f86f4186
 [rp-metis]: https://andromeda-explorer.metis.io/address/0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77
 [rp-metis_test]: https://stardust-explorer.metis.io/address/0xAb7B1bE4233A04e5C43a810E75657ECED8E5463B
+[rp-kardia]: https://explorer.kardiachain.io/address/0x081ea6437E73F3b4504b131443309404a9bC2054
 [rp721-mainnet]: https://etherscan.io/address/0x8d285739523FC2Ac8eC9c9C229ee863C8C9bF8C8
 [rp721-ropsten]: https://ropsten.etherscan.io/address/0x8fF42e93C19E44763FD1cD07b9E04d13bA07AD3f
 [rp721-bsc]: https://bscscan.com/address/0xf8968e1Fcf1440Be5Cec7Bb495bcee79753d5E06
@@ -113,6 +115,7 @@ npm run deploy:ropsten
 [rp721-harmony_test]: https://explorer.pops.one/address/0x981be454a930479d92c91a0092d204b64845a5d6
 [rp721-metis]: https://andromeda-explorer.metis.io/address/0x812463356F58fc8194645A1838ee6C52D8ca2D26
 [rp721-metis_test]: https://stardust-explorer.metis.io/address/0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77
+[rp721-kardia]: https://explorer.kardiachain.io/address/0xc3e62b2CC70439C32a381Bfc056aCEd1d7162cef
 
 <!-- end RedPacket -->
 

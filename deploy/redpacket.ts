@@ -25,6 +25,7 @@ const deployedContracts: MyMapLikeType = {
   conflux_eSpace_test: '0x913975af2bb8a6be4100d7dc5e9765b77f6a5d6c',
   harmony: '0xab7b1be4233a04e5c43a810e75657eced8e5463b',
   metis: '0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77',
+  kardia: '0x081ea6437E73F3b4504b131443309404a9bC2054',
 }
 
 const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {

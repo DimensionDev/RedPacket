@@ -26,7 +26,7 @@ main();
 
 function* makeTable(rows: DeployedAddressRow[]) {
   yield "| Chain | HappyRedPacket | HappyRedPacket_ERC721 |";
-  yield "| - | :-: | :-: |";
+  yield "| - | - | - |";
   for (const { Chain, HappyRedPacket, HappyRedPacket_ERC721 } of rows) {
     const rpElement = formElement(HappyRedPacket, `rp-${Chain}`);
     const nftRpElement = formElement(HappyRedPacket_ERC721, `rp721-${Chain}`);
