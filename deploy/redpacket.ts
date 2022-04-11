@@ -6,7 +6,6 @@ import path from "path";
 import { parse } from "csv-parse/sync";
 
 const ADDRESS_TABLE_PATH = path.resolve(__dirname, "..", "helper_scripts", "contract-addresses.csv");
-type MyMapLikeType = Record<string, string>
 
 const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts } = hre
@@ -45,12 +44,12 @@ const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
   }
 }
 
-async function loadDeployedAddress(): Promise<MyMapLikeType>{
+async function loadDeployedAddress(): Promise<Record<string, string>> {
   const data = await fs.readFile(ADDRESS_TABLE_PATH, "utf-8");
   const columns = ['Chain', 'HappyRedPacket', 'HappyRedPacket_ERC721'];
   const records = parse(data, { delimiter: ',', columns, from: 2 });
-  let deployedContract: MyMapLikeType = {};
-  for (const { Chain, HappyRedPacket}  of records) {
+  let deployedContract: Record<string, string> = {};
+  for (const { Chain, HappyRedPacket } of records) {
     deployedContract[Chain.toLowerCase()] = HappyRedPacket;
   }
   return deployedContract;
