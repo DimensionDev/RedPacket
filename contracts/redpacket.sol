@@ -9,8 +9,7 @@
 **/
 
 pragma solidity >= 0.8.0;
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -56,7 +55,7 @@ contract HappyRedPacket is Initializable {
         uint remaining_balance
     );
 
-    using SafeERC20 for IERC20;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
     uint32 nonce;
     mapping(bytes32 => RedPacket) redpacket_by_id;
     bytes32 private seed;
@@ -84,9 +83,9 @@ contract HappyRedPacket is Initializable {
         else if (_token_type == 1) {
             // https://github.com/DimensionDev/Maskbook/issues/4168
             // `received_amount` is not necessarily equal to `_total_tokens`
-            uint256 balance_before_transfer = IERC20(_token_addr).balanceOf(address(this));
-            IERC20(_token_addr).safeTransferFrom(msg.sender, address(this), _total_tokens);
-            uint256 balance_after_transfer = IERC20(_token_addr).balanceOf(address(this));
+            uint256 balance_before_transfer = IERC20Upgradeable(_token_addr).balanceOf(address(this));
+            IERC20Upgradeable(_token_addr).safeTransferFrom(msg.sender, address(this), _total_tokens);
+            uint256 balance_after_transfer = IERC20Upgradeable(_token_addr).balanceOf(address(this));
             received_amount = balance_after_transfer.sub(balance_before_transfer);
             require(received_amount >= _number, "#received > #packets");
         }
@@ -271,7 +270,7 @@ contract HappyRedPacket is Initializable {
     }
 
     function transfer_token(address token_address, address recipient_address, uint amount) internal{
-        IERC20(token_address).safeTransfer(recipient_address, amount);
+        IERC20Upgradeable(token_address).safeTransfer(recipient_address, amount);
     }
     
     // A boring wrapper
