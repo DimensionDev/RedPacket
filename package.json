@@ -17,7 +17,7 @@
   "dependencies": {
     "@nomiclabs/hardhat-etherscan": "^3.0.3",
     "@nomiclabs/hardhat-solhint": "^2.0.0",
-    "@openzeppelin/contracts": "^4.0.0",
+    "@openzeppelin/contracts": "^4.4.2",
     "@openzeppelin/contracts-upgradeable": "^4.5.2"
   },
   "devDependencies": {
