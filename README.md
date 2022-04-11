@@ -133,6 +133,10 @@ Any contribution is welcomed to make it better.
 
 If you have any questions, please create an [issue](https://github.com/DimensionDev/RedPacket/issues).
 
+## Security report
+
+If you have any security issue, please send to <security@mask.io>.
+
 ## License
 
 [MIT LICENSE](LICENSE)
