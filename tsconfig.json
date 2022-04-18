@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "es2019",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "outDir": "dist",
+    "esModuleInterop": true
+  },
+  "include": [
+    "./scripts",
+    "./test",
+    "./typechain-types"
+  ],
+  "files": [
+    "./hardhat.config.ts"
+  ]
+}
