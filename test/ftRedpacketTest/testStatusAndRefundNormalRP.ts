@@ -1,53 +1,52 @@
-import { ethers, waffle } from "hardhat"
-import { Signer, utils, BigNumber } from "ethers"
-import { takeSnapshot, revertToSnapShot, advanceTimeAndBlock } from "./helper"
-import { creationParams, getRevertMsg, createClaimParam } from "./constants"
-import * as lodash from "lodash"
-import chai from "chai"
-import chaiAsPromised from "chai-as-promised"
-const { expect } = chai
-const { deployContract } = waffle
-chai.use(chaiAsPromised)
+import { ethers, waffle } from "hardhat";
+import { Signer, utils, BigNumber } from "ethers";
+import { takeSnapshot, revertToSnapShot, advanceTimeAndBlock } from "../helper";
+import { creationParams, getRevertMsg, createClaimParam } from "../constants";
+import * as lodash from "lodash";
+import chai from "chai";
+import chaiAsPromised from "chai-as-promised";
+const { expect } = chai;
+const { deployContract } = waffle;
+chai.use(chaiAsPromised);
 
-import RedpacketArtifact from "../artifacts/contracts/redpacket.sol/HappyRedPacket.json"
-import { HappyRedPacket, CreationSuccessEvent } from "../types/contracts/redpacket.sol/HappyRedPacket"
-import TestTokenArtifact from "../artifacts/contracts/test_token.sol/TestToken.json"
-import { TestToken } from "../types/contracts/test_token.sol/TestToken"
-import BurnTokenArtifact from "../artifacts/contracts/burn_token.sol/BurnToken.json"
-import { BurnToken } from "../types/contracts/burn_token.sol/BurnToken"
-const rpInterface = new utils.Interface(RedpacketArtifact.abi)
+import RedpacketArtifact from "../../artifacts/contracts/redpacket.sol/HappyRedPacket.json";
+import { HappyRedPacket, CreationSuccessEvent } from "../../types/contracts/redpacket.sol/HappyRedPacket";
+import TestTokenArtifact from "../../artifacts/contracts/test_token.sol/TestToken.json";
+import { TestToken } from "../../types/contracts/test_token.sol/TestToken";
+import BurnTokenArtifact from "../../artifacts/contracts/burn_token.sol/BurnToken.json";
+import { BurnToken } from "../../types/contracts/burn_token.sol/BurnToken";
 
 describe("Test redpacket refund and status check function for FT tokens", () => {
-  let redpacket: HappyRedPacket
-  let testToken: TestToken
-  let burnToken: BurnToken
-  let signers: Signer[]
-  let signerAddresses: string[]
-  let contractCreator: Signer
-  let packetCreator: Signer
-  let snapshotId: string
+  let redpacket: HappyRedPacket;
+  let testToken: TestToken;
+  let burnToken: BurnToken;
+  let signers: Signer[];
+  let signerAddresses: string[];
+  let contractCreator: Signer;
+  let packetCreator: Signer;
+  let snapshotId: string;
 
   before(async () => {
-    signers = await ethers.getSigners()
-    contractCreator = signers[0]
-    packetCreator = signers[1]
+    signers = await ethers.getSigners();
+    contractCreator = signers[0];
+    packetCreator = signers[1];
     signerAddresses = await Promise.all(
       signers.map(async (signer): Promise<string> => {
-        return await signer.getAddress()
+        return await signer.getAddress();
       }),
-    )
-    const amount = BigNumber.from(`1${"0".repeat(27)}`)
-    redpacket = (await deployContract(contractCreator, RedpacketArtifact)) as HappyRedPacket
-    testToken = (await deployContract(packetCreator, TestTokenArtifact, [amount])) as TestToken
-    burnToken = (await deployContract(packetCreator, BurnTokenArtifact, [amount])) as BurnToken
+    );
+    const amount = BigNumber.from(`1${"0".repeat(27)}`);
+    redpacket = (await deployContract(contractCreator, RedpacketArtifact)) as HappyRedPacket;
+    testToken = (await deployContract(packetCreator, TestTokenArtifact, [amount])) as TestToken;
+    burnToken = (await deployContract(packetCreator, BurnTokenArtifact, [amount])) as BurnToken;
   });
 
   beforeEach(async () => {
-    snapshotId = await takeSnapshot()
+    snapshotId = await takeSnapshot();
   });
 
   afterEach(async () => {
-    await revertToSnapShot(snapshotId)
+    await revertToSnapShot(snapshotId);
   });
 
   describe("Redpacket status check function test", () => {
@@ -62,19 +61,19 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
 
     it("Should return red packet info after expired", async () => {
       const createSuccess = await createRedpacket(0, creationParams);
-      const pkt_id = createSuccess.args.id;
-      const claimParams = await createClaimParam(pkt_id, signerAddresses[2], signerAddresses[2]);
+      const pktId = createSuccess.args.id;
+      const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
       await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
       const claimSuccessEvent = (await redpacket.queryFilter(redpacket.filters.ClaimSuccess()))[0];
       const claimedValue = claimSuccessEvent.args.claimed_value;
       const remain = BigNumber.from(creationParams.totalTokens).sub(claimedValue);
 
       await advanceTimeAndBlock(2000);
-      const redpacketInfo = await redpacket.connect(signers[2]).check_availability(pkt_id);
+      const redpacketInfo = await redpacket.connect(signers[2]).check_availability(pktId);
       expect(redpacketInfo.claimed.toString()).to.be.eq("1");
       expect(redpacketInfo.token_address).to.be.eq(`0x${"0".repeat(40)}`);
       expect(redpacketInfo.total.toString()).to.be.eq("3");
-      expect(redpacketInfo.claimed_amount).to.be.eq(claimedValue)
+      expect(redpacketInfo.claimed_amount).to.be.eq(claimedValue);
       expect(redpacketInfo.balance).to.be.eq(remain);
       expect(redpacketInfo.expired).to.be.true;
     });
@@ -86,15 +85,15 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
       erc20CreationParams.number = 5;
       erc20CreationParams.tokenAddr = testToken.address;
       const createSuccess = await createRedpacket(1, erc20CreationParams);
-      const pkt_id = createSuccess.args.id;
-      const claimParams = await createClaimParam(pkt_id, signerAddresses[2], signerAddresses[2]);
+      const pktId = createSuccess.args.id;
+      const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
       await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
       const claimSuccessEvent = (await redpacket.queryFilter(redpacket.filters.ClaimSuccess()))[0];
       const claimedValue = claimSuccessEvent.args.claimed_value;
-      const remain = BigNumber.from(erc20CreationParams.totalTokens).sub(claimedValue)
+      const remain = BigNumber.from(erc20CreationParams.totalTokens).sub(claimedValue);
 
       await advanceTimeAndBlock(2000);
-      const redpacketInfo = await redpacket.connect(signers[2]).check_availability(pkt_id);
+      const redpacketInfo = await redpacket.connect(signers[2]).check_availability(pktId);
       expect(redpacketInfo.claimed.toString()).to.be.eq("1");
       expect(redpacketInfo.token_address).to.be.eq(testToken.address);
       expect(redpacketInfo.total.toString()).to.be.eq("5");
@@ -105,17 +104,17 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
 
     it("Should return red packet info after refund", async () => {
       const createSuccess = await createRedpacket(0, creationParams);
-      const pkt_id = createSuccess.args.id;
-      const claimParams = await createClaimParam(pkt_id, signerAddresses[2], signerAddresses[2]);
+      const pktId = createSuccess.args.id;
+      const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
       await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
       const claimSuccessEvent = (await redpacket.queryFilter(redpacket.filters.ClaimSuccess()))[0];
       const claimedValue = claimSuccessEvent.args.claimed_value;
       await advanceTimeAndBlock(2000);
 
-      await redpacket.connect(packetCreator).refund(pkt_id);
-      const redpacketInfo = await redpacket.connect(signers[2]).check_availability(pkt_id);
+      await redpacket.connect(packetCreator).refund(pktId);
+      const redpacketInfo = await redpacket.connect(signers[2]).check_availability(pktId);
       expect(redpacketInfo.claimed.toString()).to.be.eq("1");
-      expect(redpacketInfo.token_address).to.be.eq(`0x${'0'.repeat(40)}`);
+      expect(redpacketInfo.token_address).to.be.eq(`0x${"0".repeat(40)}`);
       expect(redpacketInfo.total.toString()).to.be.eq("3");
       expect(redpacketInfo.claimed_amount).to.be.eq(claimedValue);
       expect(redpacketInfo.balance.toNumber()).to.be.eq(0);
@@ -129,15 +128,15 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
       erc20CreationParams.number = 5;
       erc20CreationParams.tokenAddr = testToken.address;
       const createSuccess = await createRedpacket(1, erc20CreationParams);
-      const pkt_id = createSuccess.args.id;
-      const claimParams = await createClaimParam(pkt_id, signerAddresses[2], signerAddresses[2]);
+      const pktId = createSuccess.args.id;
+      const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
       await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
       const claimSuccessEvent = (await redpacket.queryFilter(redpacket.filters.ClaimSuccess()))[0];
       const claimedValue = claimSuccessEvent.args.claimed_value;
       await advanceTimeAndBlock(2000);
 
-      await redpacket.connect(packetCreator).refund(pkt_id);
-      const redpacketInfo = await redpacket.connect(signers[2]).check_availability(pkt_id);
+      await redpacket.connect(packetCreator).refund(pktId);
+      const redpacketInfo = await redpacket.connect(signers[2]).check_availability(pktId);
       expect(redpacketInfo.claimed.toString()).to.be.eq("1");
       expect(redpacketInfo.token_address).to.be.eq(testToken.address);
       expect(redpacketInfo.total.toString()).to.be.eq("5");
@@ -150,18 +149,18 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
   describe("Redpacket refund function test", () => {
     it("Should refund eth successfully", async () => {
       const createSuccess = await createRedpacket(0, creationParams);
-      const pkt_id = createSuccess.args.id;
-      const claimParams = await createClaimParam(pkt_id, signerAddresses[2], signerAddresses[2]);
+      const pktId = createSuccess.args.id;
+      const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
       await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
       const claimSuccessEvent = (await redpacket.queryFilter(redpacket.filters.ClaimSuccess()))[0];
       const claimedValue = claimSuccessEvent.args.claimed_value;
       const remain = creationParams.totalTokens - claimedValue.toNumber();
       await advanceTimeAndBlock(2000);
 
-      await redpacket.connect(packetCreator).refund(pkt_id);
+      await redpacket.connect(packetCreator).refund(pktId);
       const refundSuccessEvent = (await redpacket.queryFilter(redpacket.filters.RefundSuccess()))[0];
       expect(refundSuccessEvent.args).to.have.property("id");
-      expect(refundSuccessEvent.args.token_address).to.be.eq(`0x${'0'.repeat(40)}`);
+      expect(refundSuccessEvent.args.token_address).to.be.eq(`0x${"0".repeat(40)}`);
       expect(refundSuccessEvent.args.remaining_balance.toNumber()).to.be.eq(remain);
     });
 
@@ -172,8 +171,8 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
       erc20CreationParams.number = 5;
       erc20CreationParams.tokenAddr = testToken.address;
       const createSuccess = await createRedpacket(1, erc20CreationParams);
-      const pkt_id = createSuccess.args.id;
-      const claimParams = await createClaimParam(pkt_id, signerAddresses[2], signerAddresses[2]);
+      const pktId = createSuccess.args.id;
+      const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
       await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
       const claimSuccessEvent = (await redpacket.queryFilter(redpacket.filters.ClaimSuccess()))[0];
       const claimedValue = claimSuccessEvent.args.claimed_value;
@@ -181,7 +180,7 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
       await advanceTimeAndBlock(2000);
 
       const balanceBeforeRefund = await testToken.balanceOf(signerAddresses[1]);
-      await redpacket.connect(packetCreator).refund(pkt_id);
+      await redpacket.connect(packetCreator).refund(pktId);
       const balanceAfterRefund = await testToken.balanceOf(signerAddresses[1]);
       expect(remain.add(balanceBeforeRefund)).to.be.eq(balanceAfterRefund);
 
@@ -195,17 +194,17 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
       let avgCreationParam = Object.assign({}, creationParams);
       avgCreationParam.ifrandom = false;
       const createSuccess = await createRedpacket(0, avgCreationParam);
-      const pkt_id = createSuccess.args.id;
-      const claimParams = await createClaimParam(pkt_id, signerAddresses[2], signerAddresses[2]);
+      const pktId = createSuccess.args.id;
+      const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
       await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
       const claimSuccessEvent = (await redpacket.queryFilter(redpacket.filters.ClaimSuccess()))[0];
       const claimedValue = claimSuccessEvent.args.claimed_value;
       await advanceTimeAndBlock(2000);
 
-      await redpacket.connect(packetCreator).refund(pkt_id);
+      await redpacket.connect(packetCreator).refund(pktId);
       const refundSuccessEvent = (await redpacket.queryFilter(redpacket.filters.RefundSuccess()))[0];
-      expect(refundSuccessEvent.args).to.have.property('id');
-      expect(refundSuccessEvent.args.token_address).to.be.eq(`0x${'0'.repeat(40)}`);
+      expect(refundSuccessEvent.args).to.have.property("id");
+      expect(refundSuccessEvent.args.token_address).to.be.eq(`0x${"0".repeat(40)}`);
       expect(refundSuccessEvent.args.remaining_balance.toNumber()).to.be.eq(66666667);
     });
 
@@ -215,48 +214,51 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
       largeScaleCreationParams.number = 100;
       largeScaleCreationParams.tokenType = 1;
       largeScaleCreationParams.tokenAddr = testToken.address;
-      const pkt_id = await testSuitCreateAndClaimManyRedPackets(50, largeScaleCreationParams);
+      const pktId = await testSuitCreateAndClaimManyRedPackets(50, largeScaleCreationParams);
       const claimEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
       const claimedValues = claimEvents.map((event) => event.args.claimed_value);
-      const claimedTotal = claimedValues.reduce((prev, cur) => prev.add(cur), BigNumber.from('0'));
+      const claimedTotal = claimedValues.reduce((prev, cur) => prev.add(cur), BigNumber.from("0"));
       const remain = BigNumber.from("10000").sub(claimedTotal);
 
       await advanceTimeAndBlock(2000);
       const balanceBeforeRefund = await testToken.balanceOf(signerAddresses[1]);
-      await redpacket.connect(packetCreator).refund(pkt_id);
+      await redpacket.connect(packetCreator).refund(pktId);
       const balanceAfterRefund = await testToken.balanceOf(signerAddresses[1]);
       const refundSuccessEvent = (await redpacket.queryFilter(redpacket.filters.RefundSuccess()))[0];
-      expect(refundSuccessEvent.args).to.have.property('id');
+      expect(refundSuccessEvent.args).to.have.property("id");
       expect(refundSuccessEvent.args.token_address).to.be.eq(testToken.address);
       expect(refundSuccessEvent.args.remaining_balance).to.be.eq(remain);
     });
   });
 
-  async function testSuitCreateAndClaimManyRedPackets(claimers: number, largeScaleCreationParams: any): Promise<string> {
-    const createSuccess = await createRedpacket(1, largeScaleCreationParams)
-    const pkt_id = createSuccess.args.id
+  async function testSuitCreateAndClaimManyRedPackets(
+    claimers: number,
+    largeScaleCreationParams: any,
+  ): Promise<string> {
+    const createSuccess = await createRedpacket(1, largeScaleCreationParams);
+    const pktId = createSuccess.args.id;
     await Promise.all(
       lodash.range(claimers).map(async (i) => {
-        const claimParams = await createClaimParam(pkt_id, signerAddresses[i], signerAddresses[i])
-        claimParams['txParameter'] = {
+        const claimParams = await createClaimParam(pktId, signerAddresses[i], signerAddresses[i]);
+        claimParams["txParameter"] = {
           gasLimit: 6000000,
-        }
-        await redpacket.connect(signers[i]).claim.apply(null, Object.values(claimParams))
+        };
+        await redpacket.connect(signers[i]).claim.apply(null, Object.values(claimParams));
       }),
-    )
+    );
 
-    return pkt_id;
+    return pktId;
   }
 
   async function createRedpacket(tokenType: number, param: any): Promise<CreationSuccessEvent> {
     if (tokenType == 0) {
       await redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(param));
     } else if (tokenType == 1) {
-      await testToken.connect(packetCreator).approve(redpacket.address, param.totalTokens)
-      await redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(param))
+      await testToken.connect(packetCreator).approve(redpacket.address, param.totalTokens);
+      await redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(param));
     } else {
-      await burnToken.connect(packetCreator).approve(redpacket.address, param.totalTokens)
-      await redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(param))
+      await burnToken.connect(packetCreator).approve(redpacket.address, param.totalTokens);
+      await redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(param));
     }
     const successEvent = (await redpacket.queryFilter(redpacket.filters.CreationSuccess()))[0];
     return successEvent;

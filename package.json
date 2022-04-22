@@ -9,8 +9,7 @@
     "lint": "hardhat check",
     "compile": "hardhat compile",
     "deploy": "hardhat deploy --network",
-    "test:erc721": "hardhat test ./test/TestRP_erc721.js",
-    "test:normal": "hardhat test ./test/TestRedPacket.js",
+    "generateReadme": "ts-node ./generate-readme.ts",
     "prettier:solidity": "prettier --write contracts/**/*.sol",
     "format": "prettier --write './test/*.js' './deploy/*.ts'"
   },
