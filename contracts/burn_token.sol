@@ -353,7 +353,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
             _balances[sender] = senderBalance - amount;
         }
         // burn half of the `transfered` tokens
-        uint256 received_amount = amount/2;
+        uint256 received_amount = amount / 2;
         _balances[recipient] += received_amount;
 
         emit Transfer(sender, recipient, received_amount);
@@ -477,7 +477,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 }
 
 contract BurnToken is ERC20 {
-    constructor(uint initialSupply) ERC20("TestToken", "TEST") {
+    constructor(uint256 initialSupply) ERC20("TestToken", "TEST") {
         _mint(msg.sender, initialSupply);
     }
 }

@@ -1,10 +1,10 @@
-import "hardhat-deploy"
-import "hardhat-deploy-ethers"
-import "@nomiclabs/hardhat-waffle"
-import "@nomiclabs/hardhat-ethers"
-import "solidity-coverage"
-import "hardhat-gas-reporter"
-import "@openzeppelin/hardhat-upgrades"
+import "hardhat-deploy";
+import "hardhat-deploy-ethers";
+import "@nomiclabs/hardhat-waffle";
+import "@nomiclabs/hardhat-ethers";
+import "solidity-coverage";
+import "hardhat-gas-reporter";
+import "@openzeppelin/hardhat-upgrades";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-etherscan";
 import "hardhat-abi-exporter";
@@ -13,7 +13,7 @@ import {
   HardhatSolidityConfig,
   HardhatGasReporterConfig,
   EtherscanConfig,
-} from './SmartContractProjectConfig/config'
+} from "./SmartContractProjectConfig/config";
 
 const networks = getHardhatNetworkConfig();
 const solidity = HardhatSolidityConfig;
@@ -37,14 +37,14 @@ export default {
   etherscan,
   gasReporter,
   abiExporter: {
-    path: './abi',
+    path: "./abi",
     runOnCompile: true,
     flat: true,
-    only: ['HappyRedPacket', 'HappyRedPacket_ERC721'],
+    only: ["HappyRedPacket", "HappyRedPacket_ERC721"],
   },
   typechain: {
-    outDir: 'types',
-    target: 'ethers-v5',
+    outDir: "types",
+    target: "ethers-v5",
     alwaysGenerateOverloads: false,
   },
-}
+};

@@ -34,8 +34,17 @@ npm run test:erc721
 
 To deploy the smart contract on Ethereum ropsten testnet
 
+> **NOTE:**
+>
+> Before run deploy scripts, please configure the `.env` file according to `.env.example` file.
+>
+> - For `verify`: if set `false`, the contract won't be verified during deployment, and vice versa.
+> - For `upgrade`: if set `false`, the script will deploy a new contract on the specified chain. Otherwise, the script will upgrade the contract.
+>
+> If you don't configure the `.env` file properly, the script will deploy a new contract and won't verify contract by default;
+
 ```bash
-npm run deploy:ropsten
+npm run deploy ropsten
 ```
 
 ## Deployed Contract Address
