@@ -19,6 +19,7 @@
     "ethereum-waffle": "^3.4.4"
   },
   "devDependencies": {
+    "@dimensiondev/eslint-plugin": "^0.0.2-20220421073251-dfd64c5",
     "@nomiclabs/buidler": "^1.4.8",
     "@nomiclabs/hardhat-ethers": "^2.0.5",
     "@nomiclabs/hardhat-waffle": "^2.0.3",
@@ -28,11 +29,13 @@
     "@types/chai-as-promised": "^7.1.5",
     "@types/mocha": "^9.1.0",
     "@types/prettier": "^2.4.4",
+    "@typescript-eslint/parser": "^5.20.0",
     "bignumber.js": "^9.0.2",
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
     "csv-parse": "^5.0.4",
     "dotenv": "^16.0.0",
+    "eslint": "^8.14.0",
     "ethers": "^5.4.7",
     "hardhat": "^2.5.0",
     "hardhat-abi-exporter": "^2.8.0",

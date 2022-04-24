@@ -270,7 +270,7 @@ describe("Test claim redpacket function for FT tokens", () => {
       await burnToken.connect(packetCreator).approve(redpacket.address, param.totalTokens);
       await redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(param));
     }
-    const successEvent = (await redpacket.queryFilter(redpacket.filters.CreationSuccess()))[0];
-    return successEvent;
+
+    return (await redpacket.queryFilter(redpacket.filters.CreationSuccess()))[0];
   }
 });

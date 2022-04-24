@@ -48,6 +48,7 @@ describe("Test claim nft redpacket", () => {
     await revertToSnapShot(snapshotId);
   });
 
+  //#region claim() test
   it("Should throw error when redpacket id does not exist", async () => {
     const claimParams = await createClaimParam(
       utils.hexlify(utils.toUtf8Bytes("not exist")),
@@ -169,7 +170,9 @@ describe("Test claim nft redpacket", () => {
     const mismatchedTokenIds = lodash.difference(lodash.range(100, 200), claimedIds);
     expect(mismatchedTokenIds.length).to.be.eq(0);
   });
+  //#endregion
 
+  //#region check_claimed_id() test
   it("Should return claimed id when everything is OK", async () => {
     let creationParam = Object.assign({}, nftCreationParams);
     creationParam.erc721TokenIds = [13, 14, 15];
@@ -195,7 +198,9 @@ describe("Test claim nft redpacket", () => {
     expect(claimedId.toNumber()).to.be.gte(201).and.to.be.lte(203);
     expect(claimedId).to.be.eq(loggedClaimedId);
   });
+  //#endregion
 
+  //#region check_erc721_remain_ids() test
   it("Should return remained id when everything is OK", async () => {
     let creationParam = Object.assign({}, nftCreationParams);
     creationParam.erc721TokenIds = [16, 17, 18];
@@ -230,6 +235,7 @@ describe("Test claim nft redpacket", () => {
     const isSet = (remainIds.bit_status.toNumber() & (1 << claimedIndex)) != 0;
     expect(isSet).to.be.eq(true);
   });
+  //#endregion
 
   function countSetBits(n: number) {
     var count = 0;
