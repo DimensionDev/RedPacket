@@ -2,7 +2,7 @@ import { ethers, waffle } from "hardhat";
 import { Signer, utils, BigNumber } from "ethers";
 import { takeSnapshot, revertToSnapShot, advanceTimeAndBlock } from "../helper";
 import { nftCreationParams, getRevertMsg, createClaimParam } from "../constants";
-import * as lodash from "lodash";
+import { range, first } from "lodash";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 const { expect } = chai;
@@ -51,7 +51,7 @@ describe("Test nft redpacket worst cases", () => {
 
   it("Should claim NFT success if there exists available nft", async () => {
     let creationParam = Object.assign({}, nftCreationParams);
-    creationParam.erc721TokenIds = lodash.range(0, 256);
+    creationParam.erc721TokenIds = range(0, 256);
     const pktId = await createRedPacket(creationParam);
 
     // random pick two nfts as the available nfts
@@ -62,7 +62,7 @@ describe("Test nft redpacket worst cases", () => {
     }
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     const claimParams2 = await createClaimParam(pktId, signerAddresses[3], signerAddresses[3]);
-    for (const i of lodash.range(0, 256)) {
+    for (const i of range(0, 256)) {
       if (i == remainId1 || i == remainId2) continue;
       await testToken.connect(packetCreator).transferFrom(signerAddresses[1], signerAddresses[3], i);
     }
@@ -75,7 +75,8 @@ describe("Test nft redpacket worst cases", () => {
       gasLimit: finalEstimatedGas,
     };
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
-    const claimEvent = (await redpacket.queryFilter(redpacket.filters.ClaimSuccess()))[0];
+    const claimEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
+    const claimEvent = first(claimEvents);
     const claimedId1 = claimEvent.args.claimed_token_id;
     expect(claimedId1.toNumber()).to.be.oneOf([remainId1, remainId2]);
 
@@ -95,9 +96,9 @@ describe("Test nft redpacket worst cases", () => {
 
   it("Should throw error if all NFTs are transferred", async () => {
     let creationParam = Object.assign({}, nftCreationParams);
-    creationParam.erc721TokenIds = lodash.range(0, 256);
+    creationParam.erc721TokenIds = range(0, 256);
     const pktId = await createRedPacket(creationParam);
-    for (const i of lodash.range(0, 256)) {
+    for (const i of range(0, 256)) {
       await testToken.connect(packetCreator).transferFrom(signerAddresses[1], signerAddresses[3], i);
     }
 
@@ -112,7 +113,7 @@ describe("Test nft redpacket worst cases", () => {
 
   async function createRedPacket(creationParams: any): Promise<string> {
     await redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(creationParams));
-    const createSuccess = (await redpacket.queryFilter(redpacket.filters.CreationSuccess()))[0];
-    return createSuccess.args.id;
+    const createSuccessEvents = await redpacket.queryFilter(redpacket.filters.CreationSuccess());
+    return first(createSuccessEvents).args.id;
   }
 });

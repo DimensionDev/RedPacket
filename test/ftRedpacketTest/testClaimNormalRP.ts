@@ -2,7 +2,7 @@ import { ethers, waffle } from "hardhat";
 import { Signer, utils, BigNumber } from "ethers";
 import { takeSnapshot, revertToSnapShot } from "../helper";
 import { creationParams, getRevertMsg, createClaimParam } from "../constants";
-import * as lodash from "lodash";
+import { take, range, first } from "lodash";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 const { expect } = chai;
@@ -106,7 +106,8 @@ describe("Test claim redpacket function for FT tokens", () => {
     const pktId = createSuccess.args.id;
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
-    const claimSuccessEvent = (await redpacket.queryFilter(redpacket.filters.ClaimSuccess()))[0];
+    const claimSuccessEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
+    const claimSuccessEvent = first(claimSuccessEvents);
     expect(claimSuccessEvent.args).to.have.property("id").to.be.not.null;
   });
 
@@ -120,7 +121,8 @@ describe("Test claim redpacket function for FT tokens", () => {
     const pktId = createSuccess.args.id;
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
-    const claimSuccessEvent = (await redpacket.queryFilter(redpacket.filters.ClaimSuccess()))[0];
+    const claimSuccessEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
+    const claimSuccessEvent = first(claimSuccessEvents);
     expect(claimSuccessEvent.args).to.have.property("id").to.be.not.null;
   });
 
@@ -155,7 +157,7 @@ describe("Test claim redpacket function for FT tokens", () => {
 
     const claimEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
     const claimedValues = claimEvents.map((event) => event.args.claimed_value);
-    expect(lodash.take(claimedValues, 3).every((v) => v.toString() === claimedValues[3].toString())).to.be.false;
+    expect(take(claimedValues, 3).every((v) => v.toString() === claimedValues[3].toString())).to.be.false;
     expect(
       BigNumber.from(burnTokenCreationParams.totalTokens).gt(
         claimedValues[0].add(claimedValues[1]).add(claimedValues[2]).add(claimedValues[3]).toNumber(),
@@ -192,7 +194,7 @@ describe("Test claim redpacket function for FT tokens", () => {
 
     const claimEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
     const claimedValues = claimEvents.map((event) => event.args.claimed_value);
-    expect(lodash.take(claimedValues, 3).every((v) => v.toString() === claimedValues[3].toString())).to.be.false;
+    expect(take(claimedValues, 3).every((v) => v.toString() === claimedValues[3].toString())).to.be.false;
     expect(
       BigNumber.from(randomCreationParams.totalTokens).eq(
         claimedValues[0].add(claimedValues[1]).add(claimedValues[2]).add(claimedValues[3]).toNumber(),
@@ -250,7 +252,7 @@ describe("Test claim redpacket function for FT tokens", () => {
     const createSuccess = await createRedpacket(1, largeScaleCreationParams);
     const pktId = createSuccess.args.id;
     await Promise.all(
-      lodash.range(claimers).map(async (i) => {
+      range(claimers).map(async (i) => {
         const claimParams = await createClaimParam(pktId, signerAddresses[i], signerAddresses[i]);
         claimParams["txParameter"] = {
           gasLimit: 6000000,
@@ -270,7 +272,7 @@ describe("Test claim redpacket function for FT tokens", () => {
       await burnToken.connect(packetCreator).approve(redpacket.address, param.totalTokens);
       await redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(param));
     }
-
-    return (await redpacket.queryFilter(redpacket.filters.CreationSuccess()))[0];
+    const createSuccessEvents = await redpacket.queryFilter(redpacket.filters.CreationSuccess());
+    return first(createSuccessEvents);
   }
 });

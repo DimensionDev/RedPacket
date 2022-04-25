@@ -2,7 +2,7 @@ import { ethers, waffle } from "hardhat";
 import { Signer, utils, BigNumber } from "ethers";
 import { takeSnapshot, revertToSnapShot, advanceTimeAndBlock } from "../helper";
 import { nftCreationParams, getRevertMsg, createClaimParam } from "../constants";
-import * as lodash from "lodash";
+import { range, difference, first } from "lodash";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 const { expect } = chai;
@@ -133,7 +133,8 @@ describe("Test claim nft redpacket", () => {
     }
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
-    const claimSuccess = (await redpacket.queryFilter(redpacket.filters.ClaimSuccess()))[0];
+    const claimedSuccessEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
+    const claimSuccess = first(claimedSuccessEvents);
     expect(claimSuccess.args).to.have.property("id").that.to.be.not.null;
 
     const claimedId = claimSuccess.args.claimed_token_id;
@@ -152,7 +153,8 @@ describe("Test claim nft redpacket", () => {
     const pktId = await createRedPacket(creationParam);
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
-    const claimSuccess = (await redpacket.queryFilter(redpacket.filters.ClaimSuccess()))[0];
+    const claimedSuccessEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
+    const claimSuccess = first(claimedSuccessEvents);
     expect(claimSuccess.args).to.have.property("id").that.to.be.not.null;
 
     const claimedId = claimSuccess.args.claimed_token_id;
@@ -164,10 +166,10 @@ describe("Test claim nft redpacket", () => {
   });
 
   it("Should create and claim successfully with 100 red packets and 100 claimers", async () => {
-    await testSuitCreateAndClaimManyRedPackets(lodash.range(100, 200), 100);
+    await testSuitCreateAndClaimManyRedPackets(range(100, 200), 100);
     const claimEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
     const claimedIds = claimEvents.map((event) => event.args.claimed_token_id.toNumber());
-    const mismatchedTokenIds = lodash.difference(lodash.range(100, 200), claimedIds);
+    const mismatchedTokenIds = difference(range(100, 200), claimedIds);
     expect(mismatchedTokenIds.length).to.be.eq(0);
   });
   //#endregion
@@ -189,7 +191,8 @@ describe("Test claim nft redpacket", () => {
     const pktId = await createRedPacket(creationParam);
     const claimParam = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParam));
-    const claimSuccess = (await redpacket.queryFilter(redpacket.filters.ClaimSuccess()))[0];
+    const claimedSuccessEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
+    const claimSuccess = first(claimedSuccessEvents);
     const loggedClaimedId = claimSuccess.args.claimed_token_id;
 
     await advanceTimeAndBlock(2000);
@@ -251,7 +254,7 @@ describe("Test claim nft redpacket", () => {
     creationParam.erc721TokenIds = tokenList;
     const pktId = await createRedPacket(creationParam);
     await Promise.all(
-      lodash.range(claimers).map(async (i) => {
+      range(claimers).map(async (i) => {
         const claimParams = await createClaimParam(pktId, signerAddresses[i], signerAddresses[i]);
         claimParams["txParameter"] = {
           gasLimit: 6000000,
@@ -263,7 +266,8 @@ describe("Test claim nft redpacket", () => {
 
   async function createRedPacket(creationParams: any): Promise<string> {
     await redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(creationParams));
-    const createSuccess = (await redpacket.queryFilter(redpacket.filters.CreationSuccess()))[0];
-    return createSuccess.args.id;
+    const createSuccessEvents = await redpacket.queryFilter(redpacket.filters.CreationSuccess());
+    const createdSuccess = first(createSuccessEvents);
+    return createdSuccess.args.id;
   }
 });

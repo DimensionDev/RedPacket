@@ -2,7 +2,7 @@ import { ethers, waffle } from "hardhat";
 import { Signer, BigNumber } from "ethers";
 import { takeSnapshot, revertToSnapShot } from "../helper";
 import { nftCreationParams, getRevertMsg } from "../constants";
-import * as lodash from "lodash";
+import { first, range } from "lodash";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 const { expect } = chai;
@@ -58,7 +58,7 @@ describe("Test Create RedPacket function for NFT", () => {
 
   it("Should throw error when token number is more than 256", async () => {
     let invalidParams = Object.assign({}, nftCreationParams);
-    invalidParams.erc721TokenIds = lodash.range(258);
+    invalidParams.erc721TokenIds = range(258);
     await expect(
       redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(invalidParams)),
     ).to.be.revertedWith(getRevertMsg("At most 256 recipient"));
@@ -83,8 +83,8 @@ describe("Test Create RedPacket function for NFT", () => {
 
   it("Should emit CreationSuccess when everything is OK", async () => {
     await redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(nftCreationParams));
-    const createSuccess = (await redpacket.queryFilter(redpacket.filters.CreationSuccess()))[0];
-    const result = createSuccess.args;
+    const createSuccess = await redpacket.queryFilter(redpacket.filters.CreationSuccess());
+    const result = first(createSuccess).args;
     expect(result.total_tokens.toNumber()).to.be.eq(nftCreationParams.erc721TokenIds.length);
     expect(result).to.have.property("id").that.to.be.not.null;
     expect(result).to.have.property("name").that.to.be.eq(nftCreationParams.name);
@@ -117,8 +117,8 @@ describe("Test Create RedPacket function for NFT", () => {
 
   it("Should return availability status when everything is OK", async () => {
     await redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(nftCreationParams));
-    const createSuccess = (await redpacket.queryFilter(redpacket.filters.CreationSuccess()))[0];
-    const pktId = createSuccess.args.id;
+    const createSuccess = await redpacket.queryFilter(redpacket.filters.CreationSuccess());
+    const pktId = first(createSuccess).args.id;
     const pktInfo = await redpacket.check_availability(pktId);
     expect(pktInfo.token_address).to.be.eq(testToken.address);
     expect(pktInfo.expired).to.be.false;
