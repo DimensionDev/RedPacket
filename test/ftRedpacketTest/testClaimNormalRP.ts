@@ -2,7 +2,7 @@ import { ethers, waffle } from "hardhat";
 import { Signer, utils, BigNumber } from "ethers";
 import { takeSnapshot, revertToSnapShot } from "../helper";
 import { creationParams, getRevertMsg, createClaimParam } from "../constants";
-import { take, range, first } from "lodash";
+import { take, first, times } from "lodash";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 const { expect } = chai;
@@ -252,12 +252,12 @@ describe("Test claim redpacket function for FT tokens", () => {
     const createSuccess = await createRedpacket(1, largeScaleCreationParams);
     const pktId = createSuccess.args.id;
     await Promise.all(
-      range(claimers).map(async (i) => {
-        const claimParams = await createClaimParam(pktId, signerAddresses[i], signerAddresses[i]);
+      times(claimers, async (index) => {
+        const claimParams = await createClaimParam(pktId, signerAddresses[index], signerAddresses[index]);
         claimParams["txParameter"] = {
           gasLimit: 6000000,
         };
-        await redpacket.connect(signers[i]).claim.apply(null, Object.values(claimParams));
+        await redpacket.connect(signers[index]).claim.apply(null, Object.values(claimParams));
       }),
     );
   }

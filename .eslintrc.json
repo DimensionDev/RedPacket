@@ -69,6 +69,7 @@
         "allowComparingNullableBooleansToTrue": true
       }
     ],
+    "@typescript-eslint/strict-boolean-expressions": "error",
     "@typescript-eslint/no-unnecessary-condition": "warn",
     "@typescript-eslint/no-unnecessary-type-constraint": "warn",
     "@typescript-eslint/prefer-for-of": "warn",

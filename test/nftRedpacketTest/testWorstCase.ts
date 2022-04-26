@@ -2,7 +2,7 @@ import { ethers, waffle } from "hardhat";
 import { Signer, utils, BigNumber } from "ethers";
 import { takeSnapshot, revertToSnapShot, advanceTimeAndBlock } from "../helper";
 import { nftCreationParams, getRevertMsg, createClaimParam } from "../constants";
-import { range, first } from "lodash";
+import { range, first, times } from "lodash";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 const { expect } = chai;
@@ -62,10 +62,12 @@ describe("Test nft redpacket worst cases", () => {
     }
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     const claimParams2 = await createClaimParam(pktId, signerAddresses[3], signerAddresses[3]);
-    for (const i of range(0, 256)) {
-      if (i == remainId1 || i == remainId2) continue;
-      await testToken.connect(packetCreator).transferFrom(signerAddresses[1], signerAddresses[3], i);
-    }
+    await Promise.all(
+      times(256, async (index) => {
+        if (index == remainId1 || index == remainId2) return;
+        await testToken.connect(packetCreator).transferFrom(signerAddresses[1], signerAddresses[3], index);
+      }),
+    );
 
     const estimatedGas: BigNumber = await redpacket
       .connect(signers[2])
@@ -98,9 +100,11 @@ describe("Test nft redpacket worst cases", () => {
     let creationParam = Object.assign({}, nftCreationParams);
     creationParam.erc721TokenIds = range(0, 256);
     const pktId = await createRedPacket(creationParam);
-    for (const i of range(0, 256)) {
-      await testToken.connect(packetCreator).transferFrom(signerAddresses[1], signerAddresses[3], i);
-    }
+    await Promise.all(
+      times(256, async (index) => {
+        await testToken.connect(packetCreator).transferFrom(signerAddresses[1], signerAddresses[3], index);
+      }),
+    );
 
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     claimParams["txParameter"] = {
