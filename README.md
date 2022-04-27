@@ -68,6 +68,7 @@ npm run deploy:ropsten
 | Metis               | [`0x2cf91AD8`][rp-metis]               | [`0x81246335`][rp721-metis]               |
 | Metis_test          | [`0xAb7B1bE4`][rp-metis_test]          | [`0x2cf91AD8`][rp721-metis_test]          |
 | Kardia              | [`0x081ea643`][rp-kardia]              | [`0xc3e62b2C`][rp721-kardia]              |
+| Astar               | [`0x2cF46Db8`][rp-astar]               | [`0xc3e62b2C`][rp721-astar]               |
 
 [rp-mainnet]: https://etherscan.io/address/0xaBBe1101FD8fa5847c452A6D70C8655532B03C33
 [rp-ropsten]: https://ropsten.etherscan.io/address/0x0722507c3b776A6B205946592016e358B0D34c3F
@@ -93,6 +94,7 @@ npm run deploy:ropsten
 [rp-metis]: https://andromeda-explorer.metis.io/address/0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77
 [rp-metis_test]: https://stardust-explorer.metis.io/address/0xAb7B1bE4233A04e5C43a810E75657ECED8E5463B
 [rp-kardia]: https://explorer.kardiachain.io/address/0x081ea6437E73F3b4504b131443309404a9bC2054
+[rp-astar]: https://blockscout.com/astar/address/0x2cF46Db820e279c5fBF778367D49d9C931D54524
 [rp721-mainnet]: https://etherscan.io/address/0x8d285739523FC2Ac8eC9c9C229ee863C8C9bF8C8
 [rp721-ropsten]: https://ropsten.etherscan.io/address/0x8fF42e93C19E44763FD1cD07b9E04d13bA07AD3f
 [rp721-bsc]: https://bscscan.com/address/0xf8968e1Fcf1440Be5Cec7Bb495bcee79753d5E06
@@ -116,6 +118,7 @@ npm run deploy:ropsten
 [rp721-metis]: https://andromeda-explorer.metis.io/address/0x812463356F58fc8194645A1838ee6C52D8ca2D26
 [rp721-metis_test]: https://stardust-explorer.metis.io/address/0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77
 [rp721-kardia]: https://explorer.kardiachain.io/address/0xc3e62b2CC70439C32a381Bfc056aCEd1d7162cef
+[rp721-astar]: https://blockscout.com/astar/address/0xc3e62b2CC70439C32a381Bfc056aCEd1d7162cef
 
 <!-- end RedPacket -->
 
