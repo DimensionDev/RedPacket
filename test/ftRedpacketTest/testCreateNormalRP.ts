@@ -14,7 +14,6 @@ import TestTokenArtifact from "../../artifacts/contracts/test_token.sol/TestToke
 import { TestToken } from "../../types/contracts/test_token.sol/TestToken";
 import BurnTokenArtifact from "../../artifacts/contracts/burn_token.sol/BurnToken.json";
 import { BurnToken } from "../../types/contracts/burn_token.sol/BurnToken";
-const rpInterface = new utils.Interface(RedpacketArtifact.abi);
 
 describe("Test Create RedPacket function for Fungible Tokens", () => {
   let redpacket: HappyRedPacket;
@@ -29,7 +28,7 @@ describe("Test Create RedPacket function for Fungible Tokens", () => {
     signers = await ethers.getSigners();
     contractCreator = signers[0];
     packetCreator = signers[1];
-    const amount = BigNumber.from(`1${"0".repeat(10)}`);
+    const amount = utils.parseUnits("1.0", 10); // 1e10
     redpacket = (await deployContract(contractCreator, RedpacketArtifact)) as HappyRedPacket;
     testToken = (await deployContract(contractCreator, TestTokenArtifact, [amount])) as TestToken;
     burnToken = (await deployContract(contractCreator, BurnTokenArtifact, [amount])) as BurnToken;

@@ -1,7 +1,7 @@
 import { ethers, waffle } from "hardhat";
 import { Signer, utils, BigNumber } from "ethers";
 import { takeSnapshot, revertToSnapShot, advanceTimeAndBlock } from "../helper";
-import { creationParams, getRevertMsg, createClaimParam } from "../constants";
+import { creationParams, getRevertMsg, createClaimParam, BNSum } from "../constants";
 import { first, times } from "lodash";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -35,7 +35,7 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
         return await signer.getAddress();
       }),
     );
-    const amount = BigNumber.from(`1${"0".repeat(27)}`);
+    const amount = utils.parseUnits("1.0", 27); //1e27
     redpacket = (await deployContract(contractCreator, RedpacketArtifact)) as HappyRedPacket;
     testToken = (await deployContract(packetCreator, TestTokenArtifact, [amount])) as TestToken;
     burnToken = (await deployContract(packetCreator, BurnTokenArtifact, [amount])) as BurnToken;
@@ -226,7 +226,7 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
       const pktId = await testSuitCreateAndClaimManyRedPackets(50, largeScaleCreationParams);
       const claimEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
       const claimedValues = claimEvents.map((event) => event.args.claimed_value);
-      const claimedTotal = claimedValues.reduce((prev, cur) => prev.add(cur), BigNumber.from("0"));
+      const claimedTotal = BNSum(claimedValues);
       const remain = BigNumber.from("10000").sub(claimedTotal);
 
       await advanceTimeAndBlock(2000);

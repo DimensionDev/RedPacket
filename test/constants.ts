@@ -38,3 +38,7 @@ export const createClaimParam = async (id: string, recipient: string, caller: st
 };
 export const getRevertMsg = (msg: string): string =>
   `VM Exception while processing transaction: reverted with reason string '${msg}'`;
+
+export const BNSum = (input: BigNumber[]): BigNumber => {
+  return input.reduce((prev, cur) => prev.add(cur), BigNumber.from("0"));
+};

@@ -1,7 +1,7 @@
 import { ethers, waffle } from "hardhat";
 import { Signer, utils, BigNumber } from "ethers";
 import { takeSnapshot, revertToSnapShot } from "../helper";
-import { creationParams, getRevertMsg, createClaimParam } from "../constants";
+import { creationParams, getRevertMsg, createClaimParam, BNSum } from "../constants";
 import { take, first, times } from "lodash";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -35,7 +35,8 @@ describe("Test claim redpacket function for FT tokens", () => {
         return await signer.getAddress();
       }),
     );
-    const amount = BigNumber.from(`1${"0".repeat(27)}`);
+
+    const amount = utils.parseUnits("1.0", 27); //1e27
     redpacket = (await deployContract(contractCreator, RedpacketArtifact)) as HappyRedPacket;
     testToken = (await deployContract(packetCreator, TestTokenArtifact, [amount])) as TestToken;
     burnToken = (await deployContract(packetCreator, BurnTokenArtifact, [amount])) as BurnToken;
@@ -101,7 +102,7 @@ describe("Test claim redpacket function for FT tokens", () => {
     );
   });
 
-  it("should emit ClaimSuccess when everything is OK", async () => {
+  it("Should emit ClaimSuccess when everything is OK", async () => {
     const createSuccess = await createRedpacket(0, creationParams);
     const pktId = createSuccess.args.id;
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
@@ -157,12 +158,8 @@ describe("Test claim redpacket function for FT tokens", () => {
 
     const claimEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
     const claimedValues = claimEvents.map((event) => event.args.claimed_value);
-    expect(take(claimedValues, 3).every((v) => v.toString() === claimedValues[3].toString())).to.be.false;
-    expect(
-      BigNumber.from(burnTokenCreationParams.totalTokens).gt(
-        claimedValues[0].add(claimedValues[1]).add(claimedValues[2]).add(claimedValues[3]).toNumber(),
-      ),
-    ).to.be.true;
+    expect(take(claimedValues, 3).every((v) => v.eq(claimedValues[3]))).to.be.false;
+    expect(BigNumber.from(burnTokenCreationParams.totalTokens).gt(BNSum(claimedValues.slice(0.3)))).to.be.true;
   });
 
   it("Should claim average amount if not set random", async () => {
@@ -194,7 +191,7 @@ describe("Test claim redpacket function for FT tokens", () => {
 
     const claimEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
     const claimedValues = claimEvents.map((event) => event.args.claimed_value);
-    expect(take(claimedValues, 3).every((v) => v.toString() === claimedValues[3].toString())).to.be.false;
+    expect(take(claimedValues, 3).every((v) => v.eq(claimedValues[3]))).to.be.false;
     expect(
       BigNumber.from(randomCreationParams.totalTokens).eq(
         claimedValues[0].add(claimedValues[1]).add(claimedValues[2]).add(claimedValues[3]).toNumber(),
@@ -215,7 +212,7 @@ describe("Test claim redpacket function for FT tokens", () => {
 
     const claimEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
     const claimedValues = claimEvents.map((event) => event.args.claimed_value);
-    expect(claimedValues.every((v) => v.toString() === "1")).to.be.true;
+    expect(claimedValues.every((v) => v.eq(ethers.constants.One))).to.be.true;
   });
 
   //#region large scale test
@@ -229,9 +226,9 @@ describe("Test claim redpacket function for FT tokens", () => {
     await testSuitCreateAndClaimManyRedPackets(100, largeScaleCreationParams);
     const claimEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
     const claimedValues = claimEvents.map((event) => event.args.claimed_value);
-    const claimedTotal = claimedValues.reduce((prev, cur) => prev.add(cur), BigNumber.from("0"));
+    const claimedTotal = BNSum(claimedValues);
     expect(claimedTotal.toNumber()).to.be.eq(largeScaleCreationParams.totalTokens);
-    expect(claimedValues.every((v) => v.toString() === claimedValues[0].toString())).to.be.true;
+    expect(claimedValues.every((v) => v.eq(claimedValues[0]))).to.be.true;
   });
 
   it("Should create and claim successfully with 100 random red packets and 100 claimers", async () => {
@@ -243,7 +240,7 @@ describe("Test claim redpacket function for FT tokens", () => {
     await testSuitCreateAndClaimManyRedPackets(100, largeScaleCreationParams);
     const claimEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
     const claimedValues = claimEvents.map((event) => event.args.claimed_value);
-    const claimedTotal = claimedValues.reduce((prev, cur) => prev.add(cur), BigNumber.from("0"));
+    const claimedTotal = BNSum(claimedValues);
     expect(claimedTotal.toNumber()).to.be.eq(largeScaleCreationParams.totalTokens);
   });
   //#endregion
