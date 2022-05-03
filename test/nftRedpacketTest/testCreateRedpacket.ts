@@ -3,11 +3,10 @@ import { Signer, BigNumber } from "ethers";
 import { takeSnapshot, revertToSnapShot } from "../helper";
 import { nftCreationParams, getRevertMsg } from "../constants";
 import { first, range } from "lodash";
-import chai from "chai";
+import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
-const { expect } = chai;
+const { expect } = use(chaiAsPromised);
 const { deployContract } = waffle;
-chai.use(chaiAsPromised);
 
 import RedPacket721Artifact from "../../artifacts/contracts/redpacket_erc721.sol/HappyRedPacket_ERC721.json";
 import { HappyRedPacket_ERC721 } from "../../types/contracts/redpacket_erc721.sol/HappyRedPacket_ERC721";

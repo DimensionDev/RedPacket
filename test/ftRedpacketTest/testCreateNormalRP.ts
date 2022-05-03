@@ -2,11 +2,10 @@ import { ethers, waffle } from "hardhat";
 import { Signer, utils, BigNumber } from "ethers";
 import { takeSnapshot, revertToSnapShot } from "../helper";
 import { creationParams, getRevertMsg } from "../constants";
-import chai from "chai";
+import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
-const { expect } = chai;
+const { expect } = use(chaiAsPromised);
 const { deployContract } = waffle;
-chai.use(chaiAsPromised);
 
 import RedpacketArtifact from "../../artifacts/contracts/redpacket.sol/HappyRedPacket.json";
 import { HappyRedPacket } from "../../types/contracts/redpacket.sol/HappyRedPacket";

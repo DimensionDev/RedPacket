@@ -1,20 +1,12 @@
 {
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "eslint.format.enable": true,
-  "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true,
-    "editor.formatOnPaste": false,
-    "editor.codeActionsOnSave": {
-      "source.fixAll.eslint": true
-    },
-    "editor.tabSize": 2
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true
   },
-  "[solidity]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true,
-    "editor.tabSize": 4
-  },
+  "cSpell.language": "en",
+  "cSpell.enabled": true,
   "[json]": {
     "editor.quickSuggestions": {
       "strings": true

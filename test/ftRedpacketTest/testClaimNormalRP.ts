@@ -3,11 +3,10 @@ import { Signer, utils, BigNumber } from "ethers";
 import { takeSnapshot, revertToSnapShot } from "../helper";
 import { creationParams, getRevertMsg, createClaimParam, BNSum } from "../constants";
 import { take, first, times } from "lodash";
-import chai from "chai";
+import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
-const { expect } = chai;
+const { expect } = use(chaiAsPromised);
 const { deployContract } = waffle;
-chai.use(chaiAsPromised);
 
 import RedpacketArtifact from "../../artifacts/contracts/redpacket.sol/HappyRedPacket.json";
 import { HappyRedPacket, CreationSuccessEvent } from "../../types/contracts/redpacket.sol/HappyRedPacket";

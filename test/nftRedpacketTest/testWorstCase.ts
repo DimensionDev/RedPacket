@@ -1,13 +1,12 @@
 import { ethers, waffle } from "hardhat";
-import { Signer, utils, BigNumber } from "ethers";
-import { takeSnapshot, revertToSnapShot, advanceTimeAndBlock } from "../helper";
+import { Signer, BigNumber } from "ethers";
+import { takeSnapshot, revertToSnapShot } from "../helper";
 import { nftCreationParams, getRevertMsg, createClaimParam } from "../constants";
 import { range, first, times } from "lodash";
-import chai from "chai";
+import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
-const { expect } = chai;
+const { expect } = use(chaiAsPromised);
 const { deployContract } = waffle;
-chai.use(chaiAsPromised);
 
 import RedPacket721Artifact from "../../artifacts/contracts/redpacket_erc721.sol/HappyRedPacket_ERC721.json";
 import { HappyRedPacket_ERC721 } from "../../types/contracts/redpacket_erc721.sol/HappyRedPacket_ERC721";
