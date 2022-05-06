@@ -18,45 +18,19 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const proxyAddress = deployedContracts[network];
   const verify = process.env.FT_VERIFY == "true";
   const upgrade = process.env.FT_UPGRADE == "true";
-
+  let impl: string;
   // console.log(isFtUpgradeNeeded);
   if (!upgrade) {
-    /**
-     * Deploy, we normally do this only once
-     * You may suffer such error: Contract `xxxxx` is not upgrade safe since
-     * SafeERC20 and SafeERC721 are using address.sol which has some functions using delegatecall.
-     * FIXME: add { unsafeAllow: ['delegatecall'] } as param for deployProxy()
-     * TODO: For long-term consideration, we could replace safeERC20 with SafeERC20Upgradeable (same for ERC721)
-     * see detail at: https://forum.openzeppelin.com/t/error-contract-is-not-upgrade-safe-use-of-delegatecall-is-not-allowed/16859
-     */
-    const HappyRedPacketImpl = await ethers.getContractFactory("HappyRedPacket");
-    const HappyRedPacketProxy = await upgrades.deployProxy(HappyRedPacketImpl, [], {
-      unsafeAllow: ["delegatecall"],
-    });
-    await HappyRedPacketProxy.deployed();
-    console.log("HappyRedPacketProxy: " + HappyRedPacketProxy.address);
-    const admin = await upgrades.admin.getInstance();
-    const impl_addr = await admin.getProxyImplementation(HappyRedPacketProxy.address);
-    if (!verify) return;
-    await hre.run("verify:verify", {
-      address: impl_addr,
-      constructorArguments: [],
-    });
+    impl = await deployContract();
   } else {
-    // upgrade contract
-    const HappyRedPacketImpl = await ethers.getContractFactory("HappyRedPacket");
-    const instance = await upgrades.upgradeProxy(proxyAddress, HappyRedPacketImpl);
-
-    await instance.deployTransaction.wait();
-    const admin = await upgrades.admin.getInstance();
-    const impl = await admin.getProxyImplementation(proxyAddress);
-    // example: `npx hardhat verify --network rinkeby 0x8974Ce3955eE1306bA89687C558B6fC1E5be777B`;
-    if (!verify) return;
-    await hre.run("verify:verify", {
-      address: impl,
-      constructorArguments: [],
-    });
+    impl = await upgradeContract(proxyAddress);
   }
+
+  if (!verify) return;
+  await hre.run("verify:verify", {
+    address: impl,
+    constructorArguments: [],
+  });
 };
 
 async function loadDeployedAddress(): Promise<Record<string, string>> {
@@ -68,6 +42,35 @@ async function loadDeployedAddress(): Promise<Record<string, string>> {
     deployedContract[Chain.toLowerCase()] = HappyRedPacket;
   }
   return deployedContract;
+}
+
+async function deployContract(): Promise<string> {
+  /**
+   * Deploy, we normally do this only once
+   * You may suffer such error: Contract `xxxxx` is not upgrade safe since
+   * SafeERC20 and SafeERC721 are using address.sol which has some functions using delegatecall.
+   * FIXME: add { unsafeAllow: ['delegatecall'] } as param for deployProxy()
+   * TODO: For long-term consideration, we could replace safeERC20 with SafeERC20Upgradeable (same for ERC721)
+   * see detail at: https://forum.openzeppelin.com/t/error-contract-is-not-upgrade-safe-use-of-delegatecall-is-not-allowed/16859
+   */
+  const HappyRedPacketImpl = await ethers.getContractFactory("HappyRedPacket");
+  const HappyRedPacketProxy = await upgrades.deployProxy(HappyRedPacketImpl, [], {
+    unsafeAllow: ["delegatecall"],
+  });
+  await HappyRedPacketProxy.deployed();
+  console.log("HappyRedPacketProxy: " + HappyRedPacketProxy.address);
+  const admin = await upgrades.admin.getInstance();
+  return await admin.getProxyImplementation(HappyRedPacketProxy.address);
+}
+
+async function upgradeContract(proxyAddress: string): Promise<string> {
+  // upgrade contract
+  const HappyRedPacketImpl = await ethers.getContractFactory("HappyRedPacket");
+  const instance = await upgrades.upgradeProxy(proxyAddress, HappyRedPacketImpl);
+
+  await instance.deployTransaction.wait();
+  const admin = await upgrades.admin.getInstance();
+  return await admin.getProxyImplementation(proxyAddress);
 }
 
 func.tags = ["HappyRedPacket"];

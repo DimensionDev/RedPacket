@@ -42,58 +42,70 @@ describe("Test Create RedPacket function for Fungible Tokens", () => {
   });
 
   it("Should throw error when expiration_time is greater than 2106", async () => {
-    let invalidParams = Object.assign({}, creationParams);
-    invalidParams.duration = 2 ** 32;
+    const invalidParams = {
+      ...creationParams,
+      duration: 2 ** 32,
+    };
     await expect(
       redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(invalidParams)),
     ).to.be.revertedWith(getRevertMsg("Value out of range BOX"));
   });
 
   it("Should throw error when token type is unrecognizable", async () => {
-    let invalidParams = Object.assign({}, creationParams);
-    invalidParams.tokenType = 4;
+    const invalidParams = {
+      ...creationParams,
+      tokenType: 4,
+    };
     await expect(
       redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(invalidParams)),
     ).to.be.revertedWith(getRevertMsg("Unrecognizable token type"));
   });
 
   it("Should throw error when total tokens is less than number", async () => {
-    let invalidParams = Object.assign({}, creationParams);
-    invalidParams.number = 11;
-    invalidParams.totalTokens = 10;
+    const invalidParams = {
+      ...creationParams,
+      number: 11,
+      totalTokens: 10,
+    };
     await expect(
       redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(invalidParams)),
     ).to.be.revertedWith(getRevertMsg("#tokens > #packets"));
   });
 
-  it("Should throw error when the received token amount is not enough", async () => {
-    // For Eth redpacket
-    {
-      let invalidParams = Object.assign({}, creationParams);
-      invalidParams.number = 10;
-      invalidParams.txParameters = { gasLimit: 1000000, value: BigNumber.from("0") };
-      await expect(
-        redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(invalidParams)),
-      ).to.be.revertedWith(getRevertMsg("No enough ETH"));
-    }
-    // For burn token redpacket
-    {
-      let invalidParams = Object.assign({}, creationParams);
-      invalidParams.tokenType = 1;
-      invalidParams.number = 10;
-      invalidParams.totalTokens = 10;
-      invalidParams.tokenAddr = burnToken.address;
-      await burnToken.connect(contractCreator).approve(redpacket.address, invalidParams.totalTokens);
+  it("Should throw error when the received token amount is not enough (ETH)", async () => {
+    const invalidParams = {
+      ...creationParams,
+      number: 10,
+      txParameters: {
+        gasLimit: BigNumber.from("1000000"),
+        value: BigNumber.from("0"),
+      },
+    };
+    await expect(
+      redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(invalidParams)),
+    ).to.be.revertedWith(getRevertMsg("No enough ETH"));
+  });
 
-      await expect(
-        redpacket.connect(contractCreator).create_red_packet.apply(null, Object.values(invalidParams)),
-      ).to.be.revertedWith(getRevertMsg("#received > #packets"));
-    }
+  it("Should throw error when the received token amount is not enough (burn token)", async () => {
+    const invalidParams = {
+      ...creationParams,
+      tokenType: 1,
+      number: 10,
+      totalTokens: 10,
+      tokenAddr: burnToken.address,
+    };
+    await burnToken.connect(contractCreator).approve(redpacket.address, invalidParams.totalTokens);
+
+    await expect(
+      redpacket.connect(contractCreator).create_red_packet.apply(null, Object.values(invalidParams)),
+    ).to.be.revertedWith(getRevertMsg("#received > #packets"));
   });
 
   it("Should throw error when number is invalid", async () => {
-    let invalidParams = Object.assign({}, creationParams);
-    invalidParams.number = 0;
+    let invalidParams = {
+      ...creationParams,
+      number: 0,
+    };
     await expect(
       redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(invalidParams)),
     ).to.be.revertedWith(getRevertMsg("At least 1 recipient"));
@@ -105,9 +117,11 @@ describe("Test Create RedPacket function for Fungible Tokens", () => {
   });
 
   it("Should throw error for not enough ERC20 allowance", async () => {
-    let invalidParams = Object.assign({}, creationParams);
-    invalidParams.tokenType = 1;
-    invalidParams.tokenAddr = testToken.address;
+    const invalidParams = {
+      ...creationParams,
+      tokenType: 1,
+      tokenAddr: testToken.address,
+    };
     await testToken.connect(contractCreator).approve(redpacket.address, invalidParams.totalTokens - 1);
 
     await expect(

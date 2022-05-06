@@ -1,7 +1,7 @@
 import { ethers, waffle } from "hardhat";
 import { Signer, BigNumber } from "ethers";
 import { takeSnapshot, revertToSnapShot } from "../helper";
-import { nftCreationParams, getRevertMsg } from "../constants";
+import { nftCreationParams, getRevertMsg, NftCreationParamType } from "../constants";
 import { first, range } from "lodash";
 import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -48,16 +48,14 @@ describe("Test Create RedPacket function for NFT", () => {
   });
 
   it("Should throw error when token number is less than 1", async () => {
-    let invalidParams = Object.assign({}, nftCreationParams);
-    invalidParams.erc721TokenIds = [];
+    const invalidParams = formCreationParam([]);
     await expect(
       redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(invalidParams)),
     ).to.be.revertedWith(getRevertMsg("At least 1 recipient"));
   });
 
   it("Should throw error when token number is more than 256", async () => {
-    let invalidParams = Object.assign({}, nftCreationParams);
-    invalidParams.erc721TokenIds = range(258);
+    const invalidParams = formCreationParam(range(258));
     await expect(
       redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(invalidParams)),
     ).to.be.revertedWith(getRevertMsg("At most 256 recipient"));
@@ -72,8 +70,7 @@ describe("Test Create RedPacket function for NFT", () => {
 
   it("Should return false when trying to check ownership with nft ids which doesn't belong to user", async () => {
     await testToken.connect(packetCreator).transferFrom(signerAddresses[1], signerAddresses[3], 20);
-    let invalidParams = Object.assign({}, nftCreationParams);
-    invalidParams.erc721TokenIds = [20, 21, 22];
+    const invalidParams = formCreationParam([20, 21, 22]);
     const isOwner = await redpacket
       .connect(packetCreator)
       .check_ownership(invalidParams.erc721TokenIds, testToken.address);
@@ -126,4 +123,11 @@ describe("Test Create RedPacket function for NFT", () => {
     expect(pktInfo.claimed_id.toNumber()).to.be.eq(0);
     expect(pktInfo.bit_status.toNumber()).to.be.eq(0);
   });
+
+  function formCreationParam(erc721TokenIds: number[]): NftCreationParamType {
+    return {
+      ...nftCreationParams,
+      erc721TokenIds,
+    };
+  }
 });

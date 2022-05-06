@@ -1,7 +1,7 @@
 import { ethers, waffle } from "hardhat";
 import { Signer, utils, BigNumber } from "ethers";
 import { takeSnapshot, revertToSnapShot } from "../helper";
-import { creationParams, getRevertMsg, createClaimParam, BNSum } from "../constants";
+import { creationParams, getRevertMsg, createClaimParam, BNSum, FtCreationParamType } from "../constants";
 import { take, first, times } from "lodash";
 import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -24,6 +24,9 @@ describe("Test claim redpacket function for FT tokens", () => {
   let contractCreator: Signer;
   let packetCreator: Signer;
   let snapshotId: string;
+  let erc20CreationParams: FtCreationParamType;
+  let burnTokenCreationParams: FtCreationParamType;
+  let largeScaleCreationParams: FtCreationParamType;
 
   before(async () => {
     signers = await ethers.getSigners();
@@ -39,6 +42,28 @@ describe("Test claim redpacket function for FT tokens", () => {
     redpacket = (await deployContract(contractCreator, RedpacketArtifact)) as HappyRedPacket;
     testToken = (await deployContract(packetCreator, TestTokenArtifact, [amount])) as TestToken;
     burnToken = (await deployContract(packetCreator, BurnTokenArtifact, [amount])) as BurnToken;
+
+    //CreationParam Initialize
+    erc20CreationParams = {
+      ...creationParams,
+      tokenType: 1,
+      totalTokens: 20,
+      number: 5,
+      tokenAddr: testToken.address,
+    };
+    burnTokenCreationParams = {
+      ...creationParams,
+      tokenType: 1,
+      number: 4,
+      tokenAddr: burnToken.address,
+    };
+    largeScaleCreationParams = {
+      ...creationParams,
+      totalTokens: 10000,
+      number: 100,
+      tokenType: 1,
+      tokenAddr: testToken.address,
+    };
   });
 
   beforeEach(async () => {
@@ -59,8 +84,10 @@ describe("Test claim redpacket function for FT tokens", () => {
   });
 
   it("Should throw error when expired", async () => {
-    let invalidParam = Object.assign({}, creationParams);
-    invalidParam.duration = 0;
+    const invalidParam = {
+      ...creationParams,
+      duration: 0,
+    };
     const createSuccess = await createRedpacket(0, invalidParam);
     const pktId = createSuccess.args.id;
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
@@ -70,8 +97,10 @@ describe("Test claim redpacket function for FT tokens", () => {
   });
 
   it("Should throw error when out of stock", async () => {
-    let invalidParam = Object.assign({}, creationParams);
-    invalidParam.number = 1;
+    const invalidParam = {
+      ...creationParams,
+      number: 1,
+    };
     const createSuccess = await createRedpacket(0, invalidParam);
     const pktId = createSuccess.args.id;
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
@@ -112,11 +141,6 @@ describe("Test claim redpacket function for FT tokens", () => {
   });
 
   it("Should emit ClaimSuccess when everything is OK (token type: 1)", async () => {
-    let erc20CreationParams = Object.assign({}, creationParams);
-    erc20CreationParams.tokenType = 1;
-    erc20CreationParams.totalTokens = 20;
-    erc20CreationParams.number = 5;
-    erc20CreationParams.tokenAddr = testToken.address;
     const createSuccess = await createRedpacket(1, erc20CreationParams);
     const pktId = createSuccess.args.id;
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
@@ -127,12 +151,7 @@ describe("Test claim redpacket function for FT tokens", () => {
   });
 
   it("Should BurnToken single-token redpacket work", async () => {
-    let burnTokenCreationParams = Object.assign({}, creationParams);
     burnTokenCreationParams.totalTokens = 8;
-    burnTokenCreationParams.number = 4;
-    burnTokenCreationParams.tokenType = 1;
-    burnTokenCreationParams.tokenAddr = burnToken.address;
-
     const createSuccess = await createRedpacket(2, burnTokenCreationParams);
     const pktId = createSuccess.args.id;
     for (const i of [2, 3, 4, 5]) {
@@ -142,12 +161,7 @@ describe("Test claim redpacket function for FT tokens", () => {
   });
 
   it("Should claim BurnToken work", async () => {
-    let burnTokenCreationParams = Object.assign({}, creationParams);
     burnTokenCreationParams.totalTokens = 1000;
-    burnTokenCreationParams.number = 4;
-    burnTokenCreationParams.tokenType = 1;
-    burnTokenCreationParams.tokenAddr = burnToken.address;
-
     const createSuccess = await createRedpacket(2, burnTokenCreationParams);
     const pktId = createSuccess.args.id;
     for (const i of [2, 3, 4, 5]) {
@@ -162,9 +176,11 @@ describe("Test claim redpacket function for FT tokens", () => {
   });
 
   it("Should claim average amount if not set random", async () => {
-    let avgCreationParams = Object.assign({}, creationParams);
-    avgCreationParams.ifrandom = false;
-    avgCreationParams.number = 2;
+    const avgCreationParams = {
+      ...creationParams,
+      ifrandom: false,
+      number: 2,
+    };
     const createSuccess = await createRedpacket(0, avgCreationParams);
     const pktId = createSuccess.args.id;
     const claimParams1 = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
@@ -178,8 +194,10 @@ describe("Test claim redpacket function for FT tokens", () => {
   });
 
   it("Should claim random amount if set random", async () => {
-    let randomCreationParams = Object.assign({}, creationParams);
-    randomCreationParams.number = 4;
+    const randomCreationParams = {
+      ...creationParams,
+      number: 4,
+    };
     const createSuccess = await createRedpacket(0, randomCreationParams);
     const pktId = createSuccess.args.id;
 
@@ -199,8 +217,10 @@ describe("Test claim redpacket function for FT tokens", () => {
   });
 
   it("Should claim at least 1 token when random token is 0", async () => {
-    let randomCreationParams = Object.assign({}, creationParams);
-    randomCreationParams.totalTokens = 3;
+    const randomCreationParams = {
+      ...creationParams,
+      totalTokens: 3,
+    };
     const createSuccess = await createRedpacket(0, randomCreationParams);
     const pktId = createSuccess.args.id;
 
@@ -216,11 +236,6 @@ describe("Test claim redpacket function for FT tokens", () => {
 
   //#region large scale test
   it("Should create and claim successfully with 100 red packets and 100 claimers", async () => {
-    let largeScaleCreationParams = Object.assign({}, creationParams);
-    largeScaleCreationParams.totalTokens = 10000;
-    largeScaleCreationParams.number = 100;
-    largeScaleCreationParams.tokenType = 1;
-    largeScaleCreationParams.tokenAddr = testToken.address;
     largeScaleCreationParams.ifrandom = false;
     await testSuitCreateAndClaimManyRedPackets(100, largeScaleCreationParams);
     const claimEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
@@ -231,11 +246,7 @@ describe("Test claim redpacket function for FT tokens", () => {
   });
 
   it("Should create and claim successfully with 100 random red packets and 100 claimers", async () => {
-    let largeScaleCreationParams = Object.assign({}, creationParams);
-    largeScaleCreationParams.totalTokens = 10000;
-    largeScaleCreationParams.number = 100;
-    largeScaleCreationParams.tokenType = 1;
-    largeScaleCreationParams.tokenAddr = testToken.address;
+    largeScaleCreationParams.ifrandom = true;
     await testSuitCreateAndClaimManyRedPackets(100, largeScaleCreationParams);
     const claimEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
     const claimedValues = claimEvents.map((event) => event.args.claimed_value);

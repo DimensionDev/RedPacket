@@ -1,7 +1,7 @@
 import { ethers, waffle } from "hardhat";
 import { Signer, utils, BigNumber } from "ethers";
 import { takeSnapshot, revertToSnapShot, advanceTimeAndBlock } from "../helper";
-import { creationParams, createClaimParam, BNSum } from "../constants";
+import { creationParams, createClaimParam, BNSum, FtCreationParamType } from "../constants";
 import { first, times } from "lodash";
 import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -24,6 +24,7 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
   let contractCreator: Signer;
   let packetCreator: Signer;
   let snapshotId: string;
+  let erc20CreationParams: FtCreationParamType;
 
   before(async () => {
     signers = await ethers.getSigners();
@@ -38,6 +39,14 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
     redpacket = (await deployContract(contractCreator, RedpacketArtifact)) as HappyRedPacket;
     testToken = (await deployContract(packetCreator, TestTokenArtifact, [amount])) as TestToken;
     burnToken = (await deployContract(packetCreator, BurnTokenArtifact, [amount])) as BurnToken;
+
+    erc20CreationParams = {
+      ...creationParams,
+      tokenType: 1,
+      totalTokens: 20,
+      number: 5,
+      tokenAddr: testToken.address,
+    };
   });
 
   beforeEach(async () => {
@@ -79,11 +88,6 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
     });
 
     it("Should return red packet info after expired (erc20)", async () => {
-      let erc20CreationParams = Object.assign({}, creationParams);
-      erc20CreationParams.tokenType = 1;
-      erc20CreationParams.totalTokens = 20;
-      erc20CreationParams.number = 5;
-      erc20CreationParams.tokenAddr = testToken.address;
       const createSuccess = await createRedpacket(1, erc20CreationParams);
       const pktId = createSuccess.args.id;
       const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
@@ -124,11 +128,6 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
     });
 
     it("Should return red packet info after refund (erc20)", async () => {
-      let erc20CreationParams = Object.assign({}, creationParams);
-      erc20CreationParams.tokenType = 1;
-      erc20CreationParams.totalTokens = 20;
-      erc20CreationParams.number = 5;
-      erc20CreationParams.tokenAddr = testToken.address;
       const createSuccess = await createRedpacket(1, erc20CreationParams);
       const pktId = createSuccess.args.id;
       const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
@@ -170,11 +169,6 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
     });
 
     it("Should refund erc20 successfully", async () => {
-      let erc20CreationParams = Object.assign({}, creationParams);
-      erc20CreationParams.tokenType = 1;
-      erc20CreationParams.totalTokens = 20;
-      erc20CreationParams.number = 5;
-      erc20CreationParams.tokenAddr = testToken.address;
       const createSuccess = await createRedpacket(1, erc20CreationParams);
       const pktId = createSuccess.args.id;
       const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
@@ -198,8 +192,10 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
     });
 
     it("Should refund eth successfully (not random)", async () => {
-      let avgCreationParam = Object.assign({}, creationParams);
-      avgCreationParam.ifrandom = false;
+      const avgCreationParam = {
+        ...creationParams,
+        ifrandom: false,
+      };
       const createSuccess = await createRedpacket(0, avgCreationParam);
       const pktId = createSuccess.args.id;
       const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
@@ -217,11 +213,13 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
     });
 
     it("Should refund erc20 successfully when there're 100 red packets and 50 claimers", async () => {
-      let largeScaleCreationParams = Object.assign({}, creationParams);
-      largeScaleCreationParams.totalTokens = 10000;
-      largeScaleCreationParams.number = 100;
-      largeScaleCreationParams.tokenType = 1;
-      largeScaleCreationParams.tokenAddr = testToken.address;
+      const largeScaleCreationParams = {
+        ...creationParams,
+        totalTokens: 10000,
+        number: 100,
+        tokenType: 1,
+        tokenAddr: testToken.address,
+      };
       const pktId = await testSuitCreateAndClaimManyRedPackets(50, largeScaleCreationParams);
       const claimEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
       const claimedValues = claimEvents.map((event) => event.args.claimed_value);
@@ -237,6 +235,7 @@ describe("Test redpacket refund and status check function for FT tokens", () => 
       expect(refundSuccessEvent.args).to.have.property("id");
       expect(refundSuccessEvent.args.token_address).to.be.eq(testToken.address);
       expect(refundSuccessEvent.args.remaining_balance).to.be.eq(remain);
+      expect(balanceAfterRefund.eq(remain.add(balanceBeforeRefund))).to.be.true;
     });
   });
 

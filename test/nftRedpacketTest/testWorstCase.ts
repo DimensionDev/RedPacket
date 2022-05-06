@@ -1,7 +1,7 @@
 import { ethers, waffle } from "hardhat";
 import { Signer, BigNumber } from "ethers";
 import { takeSnapshot, revertToSnapShot } from "../helper";
-import { nftCreationParams, getRevertMsg, createClaimParam } from "../constants";
+import { nftCreationParams, getRevertMsg, createClaimParam, NftCreationParamType } from "../constants";
 import { range, first, times } from "lodash";
 import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -22,6 +22,7 @@ describe("Test nft redpacket worst cases", () => {
   let contractCreator: Signer;
   let packetCreator: Signer;
   let snapshotId: string;
+  let creationParam: NftCreationParamType;
 
   before(async () => {
     signers = await ethers.getSigners();
@@ -40,7 +41,11 @@ describe("Test nft redpacket worst cases", () => {
     snapshotId = await takeSnapshot();
     const amount = BigNumber.from("260");
     testToken = (await deployContract(packetCreator, TestTokenArtifact, [amount])) as TestToken_721;
-    nftCreationParams.tokenAddr = testToken.address;
+    creationParam = {
+      ...nftCreationParams,
+      tokenAddr: testToken.address,
+      erc721TokenIds: range(0, 256),
+    };
     await testToken.connect(packetCreator).setApprovalForAll(redpacket.address, true);
   });
 
@@ -49,8 +54,6 @@ describe("Test nft redpacket worst cases", () => {
   });
 
   it("Should claim NFT success if there exists available nft", async () => {
-    let creationParam = Object.assign({}, nftCreationParams);
-    creationParam.erc721TokenIds = range(0, 256);
     const pktId = await createRedPacket(creationParam);
 
     // random pick two nfts as the available nfts
@@ -96,8 +99,6 @@ describe("Test nft redpacket worst cases", () => {
   });
 
   it("Should throw error if all NFTs are transferred", async () => {
-    let creationParam = Object.assign({}, nftCreationParams);
-    creationParam.erc721TokenIds = range(0, 256);
     const pktId = await createRedPacket(creationParam);
     await Promise.all(
       times(256, async (index) => {

@@ -1,7 +1,7 @@
 import { ethers, waffle } from "hardhat";
 import { Signer, utils, BigNumber } from "ethers";
 import { takeSnapshot, revertToSnapShot, advanceTimeAndBlock } from "../helper";
-import { nftCreationParams, getRevertMsg, createClaimParam } from "../constants";
+import { nftCreationParams, getRevertMsg, createClaimParam, NftCreationParamType } from "../constants";
 import { range, difference, first, times } from "lodash";
 import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -58,8 +58,7 @@ describe("Test claim nft redpacket", () => {
   });
 
   it("Should throw error when the nft is transferred to others before claim", async () => {
-    let invalidParam = Object.assign({}, nftCreationParams);
-    invalidParam.erc721TokenIds = [6];
+    const invalidParam = formCreationParam([6]);
     const pktId = await createRedPacket(invalidParam);
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await testToken.connect(packetCreator).transferFrom(signerAddresses[1], signerAddresses[3], 6);
@@ -69,8 +68,10 @@ describe("Test claim nft redpacket", () => {
   });
 
   it("Should throw error when expired", async () => {
-    let invalidParam = Object.assign({}, nftCreationParams);
-    invalidParam.duration = 0;
+    const invalidParam = {
+      ...nftCreationParams,
+      duration: 0,
+    };
     const pktId = await createRedPacket(invalidParam);
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await expect(redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams))).to.be.revertedWith(
@@ -79,8 +80,7 @@ describe("Test claim nft redpacket", () => {
   });
 
   it("Should throw error when out of stock", async () => {
-    let invalidParam = Object.assign({}, nftCreationParams);
-    invalidParam.erc721TokenIds = [30];
+    const invalidParam = formCreationParam([30]);
     const pktId = await createRedPacket(invalidParam);
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     const anotherClaim = await createClaimParam(pktId, signerAddresses[3], signerAddresses[3]);
@@ -113,8 +113,7 @@ describe("Test claim nft redpacket", () => {
   });
 
   it("Should throw error when already claimed", async () => {
-    let invalidParam = Object.assign({}, nftCreationParams);
-    invalidParam.erc721TokenIds = [40, 41, 42];
+    const invalidParam = formCreationParam([40, 41, 42]);
     const pktId = await createRedPacket(invalidParam);
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
@@ -124,8 +123,7 @@ describe("Test claim nft redpacket", () => {
   });
 
   it("Should emit ClaimSuccess when part of the nft is transferred to others before claim", async () => {
-    let creationParam = Object.assign({}, nftCreationParams);
-    creationParam.erc721TokenIds = [7, 8, 9];
+    const creationParam = formCreationParam([7, 8, 9]);
     const pktId = await createRedPacket(creationParam);
     for (const i of [7, 8]) {
       await testToken.connect(packetCreator).transferFrom(signerAddresses[1], signerAddresses[3], i);
@@ -147,8 +145,7 @@ describe("Test claim nft redpacket", () => {
   });
 
   it("Should emit ClaimSuccess when everything is OK", async () => {
-    let creationParam = Object.assign({}, nftCreationParams);
-    creationParam.erc721TokenIds = [3, 4, 5];
+    const creationParam = formCreationParam([3, 4, 5]);
     const pktId = await createRedPacket(creationParam);
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
@@ -175,8 +172,7 @@ describe("Test claim nft redpacket", () => {
 
   //#region check_claimed_id() test
   it("Should return claimed id when everything is OK", async () => {
-    let creationParam = Object.assign({}, nftCreationParams);
-    creationParam.erc721TokenIds = [13, 14, 15];
+    const creationParam = formCreationParam([13, 14, 15]);
     const pktId = await createRedPacket(creationParam);
     const claimParam = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParam));
@@ -185,8 +181,7 @@ describe("Test claim nft redpacket", () => {
   });
 
   it("Should return claimed id when everything is OK (after expire)", async () => {
-    let creationParam = Object.assign({}, nftCreationParams);
-    creationParam.erc721TokenIds = [201, 202, 203];
+    const creationParam = formCreationParam([201, 202, 203]);
     const pktId = await createRedPacket(creationParam);
     const claimParam = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParam));
@@ -204,8 +199,7 @@ describe("Test claim nft redpacket", () => {
 
   //#region check_erc721_remain_ids() test
   it("Should return remained id when everything is OK", async () => {
-    let creationParam = Object.assign({}, nftCreationParams);
-    creationParam.erc721TokenIds = [16, 17, 18];
+    const creationParam = formCreationParam([16, 17, 18]);
     const pktId = await createRedPacket(creationParam);
     const claimParam = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParam));
@@ -220,8 +214,7 @@ describe("Test claim nft redpacket", () => {
   });
 
   it("Should return remained id when everything is OK (after expire)", async () => {
-    let creationParam = Object.assign({}, nftCreationParams);
-    creationParam.erc721TokenIds = [204, 205, 206];
+    const creationParam = formCreationParam([204, 205, 206]);
     const pktId = await createRedPacket(creationParam);
     const claimParam = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParam));
@@ -246,6 +239,13 @@ describe("Test claim nft redpacket", () => {
       n >>= 1;
     }
     return count;
+  }
+
+  function formCreationParam(erc721TokenIds: number[]): NftCreationParamType {
+    return {
+      ...nftCreationParams,
+      erc721TokenIds,
+    };
   }
 
   async function testSuitCreateAndClaimManyRedPackets(tokenList: number[], claimers: number) {
