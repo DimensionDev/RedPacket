@@ -4,8 +4,9 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "outDir": "dist",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "strictNullChecks": true
   },
-  "include": ["./scripts", "./test", "./typechain-types"],
+  "include": ["./scripts", "./test", "./typechain-types", "./SmartContractProjectConfig"],
   "files": ["./hardhat.config.ts"]
 }

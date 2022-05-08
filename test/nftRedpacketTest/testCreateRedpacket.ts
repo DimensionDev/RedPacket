@@ -79,8 +79,10 @@ describe("Test Create RedPacket function for NFT", () => {
 
   it("Should emit CreationSuccess when everything is OK", async () => {
     await redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(nftCreationParams));
-    const createSuccess = await redpacket.queryFilter(redpacket.filters.CreationSuccess());
-    const result = first(createSuccess).args;
+    const createSuccessEvents = await redpacket.queryFilter(redpacket.filters.CreationSuccess());
+    const createSuccess = first(createSuccessEvents);
+    if (!createSuccess) throw "No CreationSuccess emitted";
+    const result = createSuccess.args;
     expect(result.total_tokens.toNumber()).to.be.eq(nftCreationParams.erc721TokenIds.length);
     expect(result).to.have.property("id").that.to.be.not.null;
     expect(result).to.have.property("name").that.to.be.eq(nftCreationParams.name);
@@ -113,8 +115,10 @@ describe("Test Create RedPacket function for NFT", () => {
 
   it("Should return availability status when everything is OK", async () => {
     await redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(nftCreationParams));
-    const createSuccess = await redpacket.queryFilter(redpacket.filters.CreationSuccess());
-    const pktId = first(createSuccess).args.id;
+    const createSuccessEvents = await redpacket.queryFilter(redpacket.filters.CreationSuccess());
+    const createSuccess = first(createSuccessEvents);
+    if (!createSuccess) throw "No CreationSuccess emitted";
+    const pktId = createSuccess.args.id;
     const pktInfo = await redpacket.check_availability(pktId);
     expect(pktInfo.token_address).to.be.eq(testToken.address);
     expect(pktInfo.expired).to.be.false;

@@ -132,6 +132,7 @@ describe("Test claim nft redpacket", () => {
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
     const claimedSuccessEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
     const claimSuccess = first(claimedSuccessEvents);
+    if (!claimSuccess) throw "No ClaimSuccess Emitted";
     expect(claimSuccess.args).to.have.property("id").that.to.be.not.null;
 
     const claimedId = claimSuccess.args.claimed_token_id;
@@ -151,6 +152,7 @@ describe("Test claim nft redpacket", () => {
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
     const claimedSuccessEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
     const claimSuccess = first(claimedSuccessEvents);
+    if (!claimSuccess) throw "No ClaimSuccess Emitted";
     expect(claimSuccess.args).to.have.property("id").that.to.be.not.null;
 
     const claimedId = claimSuccess.args.claimed_token_id;
@@ -187,6 +189,7 @@ describe("Test claim nft redpacket", () => {
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParam));
     const claimedSuccessEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
     const claimSuccess = first(claimedSuccessEvents);
+    if (!claimSuccess) throw "No ClaimSuccess Emitted";
     const loggedClaimedId = claimSuccess.args.claimed_token_id;
 
     await advanceTimeAndBlock(2000);
@@ -209,7 +212,7 @@ describe("Test claim nft redpacket", () => {
     const claimedId = await redpacket.connect(signers[2]).check_claimed_id(pktId);
     const remainIds = await redpacket.check_erc721_remain_ids(pktId);
     const claimedIndex = creationParam.erc721TokenIds.indexOf(claimedId.toNumber());
-    const isSet = (remainIds.bit_status.toNumber() & (1 << claimedIndex)) != 0;
+    const isSet = (remainIds.bit_status.toNumber() & (1 << claimedIndex)) !== 0;
     expect(isSet).to.be.true;
   });
 
@@ -227,7 +230,7 @@ describe("Test claim nft redpacket", () => {
 
     const remainIds = await redpacket.check_erc721_remain_ids(pktId);
     const claimedIndex = creationParam.erc721TokenIds.indexOf(claimedId.toNumber());
-    const isSet = (remainIds.bit_status.toNumber() & (1 << claimedIndex)) != 0;
+    const isSet = (remainIds.bit_status.toNumber() & (1 << claimedIndex)) !== 0;
     expect(isSet).to.be.eq(true);
   });
   //#endregion
@@ -267,6 +270,7 @@ describe("Test claim nft redpacket", () => {
     await redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(creationParams));
     const createSuccessEvents = await redpacket.queryFilter(redpacket.filters.CreationSuccess());
     const createdSuccess = first(createSuccessEvents);
+    if (!createdSuccess) throw "No CreationSuccess emitted";
     return createdSuccess.args.id;
   }
 });

@@ -89,6 +89,7 @@ describe("Test claim redpacket function for FT tokens", () => {
       duration: 0,
     };
     const createSuccess = await createRedpacket(0, invalidParam);
+    if (!createSuccess) throw "No CreationSuccess emitted";
     const pktId = createSuccess.args.id;
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await expect(redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams))).to.be.revertedWith(
@@ -102,6 +103,7 @@ describe("Test claim redpacket function for FT tokens", () => {
       number: 1,
     };
     const createSuccess = await createRedpacket(0, invalidParam);
+    if (!createSuccess) throw "No CreationSuccess emitted";
     const pktId = createSuccess.args.id;
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     const anotherParams = await createClaimParam(pktId, signerAddresses[3], signerAddresses[3]);
@@ -113,6 +115,7 @@ describe("Test claim redpacket function for FT tokens", () => {
 
   it("Should throw error when password is wrong", async () => {
     const createSuccess = await createRedpacket(0, creationParams);
+    if (!createSuccess) throw "No CreationSuccess emitted";
     const pktId = createSuccess.args.id;
     const wrongClaimParams = await createClaimParam(pktId, signerAddresses[3], signerAddresses[3]);
     await expect(redpacket.connect(signers[2]).claim.apply(null, Object.values(wrongClaimParams))).to.be.revertedWith(
@@ -122,6 +125,7 @@ describe("Test claim redpacket function for FT tokens", () => {
 
   it("Should throw error when already claimed", async () => {
     const createSuccess = await createRedpacket(0, creationParams);
+    if (!createSuccess) throw "No CreationSuccess emitted";
     const pktId = createSuccess.args.id;
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
@@ -132,27 +136,30 @@ describe("Test claim redpacket function for FT tokens", () => {
 
   it("Should emit ClaimSuccess when everything is OK", async () => {
     const createSuccess = await createRedpacket(0, creationParams);
+    if (!createSuccess) throw "No CreationSuccess emitted";
     const pktId = createSuccess.args.id;
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
     const claimSuccessEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
     const claimSuccessEvent = first(claimSuccessEvents);
-    expect(claimSuccessEvent.args).to.have.property("id").to.be.not.null;
+    expect(claimSuccessEvent?.args).to.have.property("id").to.be.not.null;
   });
 
   it("Should emit ClaimSuccess when everything is OK (token type: 1)", async () => {
     const createSuccess = await createRedpacket(1, erc20CreationParams);
+    if (!createSuccess) throw "No CreationSuccess emitted";
     const pktId = createSuccess.args.id;
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
     const claimSuccessEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
     const claimSuccessEvent = first(claimSuccessEvents);
-    expect(claimSuccessEvent.args).to.have.property("id").to.be.not.null;
+    expect(claimSuccessEvent?.args).to.have.property("id").to.be.not.null;
   });
 
   it("Should BurnToken single-token redpacket work", async () => {
     burnTokenCreationParams.totalTokens = 8;
     const createSuccess = await createRedpacket(2, burnTokenCreationParams);
+    if (!createSuccess) throw "No CreationSuccess emitted";
     const pktId = createSuccess.args.id;
     for (const i of [2, 3, 4, 5]) {
       const claimParam = await createClaimParam(pktId, signerAddresses[i], signerAddresses[i]);
@@ -163,6 +170,7 @@ describe("Test claim redpacket function for FT tokens", () => {
   it("Should claim BurnToken work", async () => {
     burnTokenCreationParams.totalTokens = 1000;
     const createSuccess = await createRedpacket(2, burnTokenCreationParams);
+    if (!createSuccess) throw "No CreationSuccess emitted";
     const pktId = createSuccess.args.id;
     for (const i of [2, 3, 4, 5]) {
       const claimParam = await createClaimParam(pktId, signerAddresses[i], signerAddresses[i]);
@@ -182,6 +190,7 @@ describe("Test claim redpacket function for FT tokens", () => {
       number: 2,
     };
     const createSuccess = await createRedpacket(0, avgCreationParams);
+    if (!createSuccess) throw "No CreationSuccess emitted";
     const pktId = createSuccess.args.id;
     const claimParams1 = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams1));
@@ -199,6 +208,7 @@ describe("Test claim redpacket function for FT tokens", () => {
       number: 4,
     };
     const createSuccess = await createRedpacket(0, randomCreationParams);
+    if (!createSuccess) throw "No CreationSuccess emitted";
     const pktId = createSuccess.args.id;
 
     for (const i of [2, 3, 4, 5]) {
@@ -222,6 +232,7 @@ describe("Test claim redpacket function for FT tokens", () => {
       totalTokens: 3,
     };
     const createSuccess = await createRedpacket(0, randomCreationParams);
+    if (!createSuccess) throw "No CreationSuccess emitted";
     const pktId = createSuccess.args.id;
 
     for (const i of [2, 3, 4]) {
@@ -257,6 +268,7 @@ describe("Test claim redpacket function for FT tokens", () => {
 
   async function testSuitCreateAndClaimManyRedPackets(claimers: number, largeScaleCreationParams: any) {
     const createSuccess = await createRedpacket(1, largeScaleCreationParams);
+    if (!createSuccess) throw "No CreationSuccess emitted";
     const pktId = createSuccess.args.id;
     await Promise.all(
       times(claimers, async (index) => {
@@ -269,10 +281,10 @@ describe("Test claim redpacket function for FT tokens", () => {
     );
   }
 
-  async function createRedpacket(tokenType: number, param: any): Promise<CreationSuccessEvent> {
-    if (tokenType == 0) {
+  async function createRedpacket(tokenType: number, param: any): Promise<CreationSuccessEvent | undefined> {
+    if (tokenType === 0) {
       await redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(param));
-    } else if (tokenType == 1) {
+    } else if (tokenType === 1) {
       await testToken.connect(packetCreator).approve(redpacket.address, param.totalTokens);
       await redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(param));
     } else {

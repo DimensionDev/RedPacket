@@ -8,6 +8,7 @@ import "@openzeppelin/hardhat-upgrades";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-etherscan";
 import "hardhat-abi-exporter";
+import { HardhatUserConfig } from "hardhat/config";
 import {
   getHardhatNetworkConfig,
   HardhatSolidityConfig,
@@ -20,10 +21,7 @@ const solidity = HardhatSolidityConfig;
 const gasReporter = HardhatGasReporterConfig;
 const etherscan = EtherscanConfig;
 
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
-export default {
+const config: HardhatUserConfig = {
   networks,
   mocha: {
     timeout: 500000,
@@ -48,3 +46,5 @@ export default {
     alwaysGenerateOverloads: false,
   },
 };
+
+export default config;

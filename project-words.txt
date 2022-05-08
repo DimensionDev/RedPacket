@@ -1,12 +1,15 @@
 arbitrum
 arrayify
+astar
 bignumber
+blockscout
 boba
 buidler
 celo
 chainlink
 Dapplet
 endregion
+eqeqeq
 espace
 hardfork
 hexlify

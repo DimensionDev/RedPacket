@@ -59,14 +59,14 @@ describe("Test nft redpacket worst cases", () => {
     // random pick two nfts as the available nfts
     var remainId1 = Math.floor(Math.random() * 256);
     var remainId2 = Math.floor(Math.random() * 256);
-    while (remainId1 == remainId2) {
+    while (remainId1 === remainId2) {
       remainId2 = Math.floor(Math.random() * 256);
     }
     const claimParams = await createClaimParam(pktId, signerAddresses[2], signerAddresses[2]);
     const claimParams2 = await createClaimParam(pktId, signerAddresses[3], signerAddresses[3]);
     await Promise.all(
       times(256, async (index) => {
-        if (index == remainId1 || index == remainId2) return;
+        if (index === remainId1 || index === remainId2) return;
         await testToken.connect(packetCreator).transferFrom(signerAddresses[1], signerAddresses[3], index);
       }),
     );
@@ -81,6 +81,7 @@ describe("Test nft redpacket worst cases", () => {
     await redpacket.connect(signers[2]).claim.apply(null, Object.values(claimParams));
     const claimEvents = await redpacket.queryFilter(redpacket.filters.ClaimSuccess());
     const claimEvent = first(claimEvents);
+    if (!claimEvent) throw "No ClaimSuccess Emitted";
     const claimedId1 = claimEvent.args.claimed_token_id;
     expect(claimedId1.toNumber()).to.be.oneOf([remainId1, remainId2]);
 
@@ -94,7 +95,7 @@ describe("Test nft redpacket worst cases", () => {
     await redpacket.connect(signers[3]).claim.apply(null, Object.values(claimParams2));
     const claimEvent2 = (await redpacket.queryFilter(redpacket.filters.ClaimSuccess()))[1];
     const claimedId2 = claimEvent2.args.claimed_token_id;
-    const supposedToRemain = [remainId1, remainId2].find((ele) => ele != claimedId1.toNumber());
+    const supposedToRemain = [remainId1, remainId2].find((ele) => ele !== claimedId1.toNumber());
     expect(claimedId2.toNumber()).to.be.eq(supposedToRemain);
   });
 
@@ -118,6 +119,8 @@ describe("Test nft redpacket worst cases", () => {
   async function createRedPacket(creationParams: any): Promise<string> {
     await redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(creationParams));
     const createSuccessEvents = await redpacket.queryFilter(redpacket.filters.CreationSuccess());
-    return first(createSuccessEvents).args.id;
+    const createSuccess = first(createSuccessEvents);
+    if (!createSuccess) throw "No CreationSuccess emitted";
+    return createSuccess.args.id;
   }
 });
