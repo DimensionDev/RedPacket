@@ -10,13 +10,10 @@
 
 pragma solidity >=0.8.0;
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract HappyRedPacket is Initializable {
-    using SafeMath for uint256;
-
     struct RedPacket {
         Packed packed;
         mapping(address => uint256) claimed_list;
@@ -84,7 +81,7 @@ contract HappyRedPacket is Initializable {
             uint256 balance_before_transfer = IERC20Upgradeable(_token_addr).balanceOf(address(this));
             IERC20Upgradeable(_token_addr).safeTransferFrom(msg.sender, address(this), _total_tokens);
             uint256 balance_after_transfer = IERC20Upgradeable(_token_addr).balanceOf(address(this));
-            received_amount = balance_after_transfer.sub(balance_before_transfer);
+            received_amount = balance_after_transfer - balance_before_transfer;
             require(received_amount >= _number, "#received > #packets");
         }
 
@@ -140,14 +137,11 @@ contract HappyRedPacket is Initializable {
         uint256 remaining_tokens = unbox(packed.packed1, 128, 96);
         if (ifrandom == 1) {
             if (total_number - claimed_number == 1) claimed_tokens = remaining_tokens;
-            else
-                claimed_tokens =
-                    random(seed, nonce) %
-                    SafeMath.div(SafeMath.mul(remaining_tokens, 2), total_number - claimed_number);
+            else claimed_tokens = random(seed, nonce) % ((remaining_tokens * 2) / (total_number - claimed_number));
             if (claimed_tokens == 0) claimed_tokens = 1;
         } else {
             if (total_number - claimed_number == 1) claimed_tokens = remaining_tokens;
-            else claimed_tokens = SafeMath.div(remaining_tokens, (total_number - claimed_number));
+            else claimed_tokens = remaining_tokens / (total_number - claimed_number);
         }
         rp.packed.packed1 = rewriteBox(packed.packed1, 128, 96, remaining_tokens - claimed_tokens);
 
