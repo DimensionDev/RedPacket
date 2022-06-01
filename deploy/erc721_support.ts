@@ -17,8 +17,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const deployedContracts = await loadDeployedAddress();
   const proxyAddress = deployedContracts[network];
 
-  const verify = process.env.NFT_VERIFY == "true";
-  const upgrade = process.env.NFT_UPGRADE == "true";
+  const verify = process.env.NFT_VERIFY === "true";
+  const upgrade = process.env.NFT_UPGRADE === "true";
   let impl: string;
 
   if (!upgrade) {

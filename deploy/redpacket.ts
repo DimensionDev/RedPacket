@@ -13,11 +13,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  const network = hre.hardhatArguments.network ? hre.hardhatArguments.network : "ropsten";
+  const network = hre.hardhatArguments.network ?? "ropsten";
   const deployedContracts = await loadDeployedAddress();
   const proxyAddress = deployedContracts[network];
-  const verify = process.env.FT_VERIFY == "true";
-  const upgrade = process.env.FT_UPGRADE == "true";
+  const verify = process.env.FT_VERIFY === "true";
+  const upgrade = process.env.FT_UPGRADE === "true";
   let impl: string;
   // console.log(isFtUpgradeNeeded);
   if (!upgrade) {
