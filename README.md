@@ -34,8 +34,17 @@ npm run test:erc721
 
 To deploy the smart contract on Ethereum ropsten testnet
 
+> **NOTE:**
+>
+> Before run deploy scripts, please configure the `.env` file according to `.env.example` file.
+>
+> - For `verify`: if set `false`, the contract won't be verified during deployment, and vice versa.
+> - For `upgrade`: if set `false`, the script will deploy a new contract on the specified chain. Otherwise, the script will upgrade the contract.
+>
+> If you don't configure the `.env` file properly, the script will deploy a new contract and won't verify contract by default;
+
 ```bash
-npm run deploy:ropsten
+npm run deploy ropsten
 ```
 
 ## Deployed Contract Address
@@ -44,31 +53,31 @@ npm run deploy:ropsten
 
 | Chain               | HappyRedPacket                         | HappyRedPacket_ERC721                     |
 | ------------------- | -------------------------------------- | ----------------------------------------- |
-| Mainnet             | [`0xaBBe1101`][rp-mainnet]             | [`0x8d285739`][rp721-mainnet]             |
-| Ropsten             | [`0x0722507c`][rp-ropsten]             | [`0x8fF42e93`][rp721-ropsten]             |
-| BSC                 | [`0x0ca42C17`][rp-bsc]                 | [`0xf8968e1F`][rp721-bsc]                 |
-| Matic               | [`0x93e0b87A`][rp-matic]               | [`0xf6Dc0427`][rp721-matic]               |
-| Arbitrum_rinkeby    | [`0x4A77E797`][rp-arbitrum_rinkeby]    |                                           |
-| Arbitrum            | [`0x83D6b366`][rp-arbitrum]            | [`0x561c5f3a`][rp721-arbitrum]            |
-| xDai                | [`0x54a0A221`][rp-xdai]                | [`0x561c5f3a`][rp721-xdai]                |
-| Goerli              | [`0x8bF6b979`][rp-goerli]              | [`0x0a04e23f`][rp721-goerli]              |
-| Fantom              | [`0x578a7Fee`][rp-fantom]              | [`0xF9F7C149`][rp721-fantom]              |
-| Avalanche           | [`0xF9F7C149`][rp-avalanche]           | [`0x96c7D011`][rp721-avalanche]           |
-| Celo                | [`0xab7b1be4`][rp-celo]                | [`0x96c7D011`][rp721-celo]                |
-| Optimism_kovan      | [`0x68EDbfA3`][rp-optimism_kovan]      | [`0x556F63d7`][rp721-optimism_kovan]      |
-| Optimism            | [`0x981be454`][rp-optimism]            | [`0x02Ea0720`][rp721-optimism]            |
-| Aurora              | [`0x19f179D7`][rp-aurora]              | [`0x05ee315E`][rp721-aurora]              |
-| Fuse                | [`0x561c5f3a`][rp-fuse]                | [`0x066804d9`][rp721-fuse]                |
-| Boba                | [`0x578a7Fee`][rp-boba]                | [`0xF9F7C149`][rp721-boba]                |
-| Moonriver           | [`0x578a7Fee`][rp-moonriver]           | [`0xF9F7C149`][rp721-moonriver]           |
-| Conflux_espace      | [`0x96c7d011`][rp-conflux_espace]      | [`0x5b966f3a`][rp721-conflux_espace]      |
-| Conflux_espace_test | [`0x913975af`][rp-conflux_espace_test] | [`0x71834a3f`][rp721-conflux_espace_test] |
-| Harmony             | [`0xab7b1be4`][rp-harmony]             | [`0x83d6b366`][rp721-harmony]             |
-| Harmony_test        | [`0x96c7d011`][rp-harmony_test]        | [`0x981be454`][rp721-harmony_test]        |
-| Metis               | [`0x2cf91AD8`][rp-metis]               | [`0x81246335`][rp721-metis]               |
-| Metis_test          | [`0xAb7B1bE4`][rp-metis_test]          | [`0x2cf91AD8`][rp721-metis_test]          |
-| Kardia              | [`0x081ea643`][rp-kardia]              | [`0xc3e62b2C`][rp721-kardia]              |
-| Astar               | [`0x2cF46Db8`][rp-astar]               | [`0xc3e62b2C`][rp721-astar]               |
+| mainnet             | [`0xaBBe1101`][rp-mainnet]             | [`0x8d285739`][rp721-mainnet]             |
+| ropsten             | [`0x0722507c`][rp-ropsten]             | [`0x8fF42e93`][rp721-ropsten]             |
+| bsc                 | [`0x0ca42C17`][rp-bsc]                 | [`0xf8968e1F`][rp721-bsc]                 |
+| matic               | [`0x93e0b87A`][rp-matic]               | [`0xf6Dc0427`][rp721-matic]               |
+| arbitrum_rinkeby    | [`0x4A77E797`][rp-arbitrum_rinkeby]    |                                           |
+| arbitrum            | [`0x83D6b366`][rp-arbitrum]            | [`0x561c5f3a`][rp721-arbitrum]            |
+| xdai                | [`0x54a0A221`][rp-xdai]                | [`0x561c5f3a`][rp721-xdai]                |
+| goerli              | [`0x8bF6b979`][rp-goerli]              | [`0x0a04e23f`][rp721-goerli]              |
+| fantom              | [`0x578a7Fee`][rp-fantom]              | [`0xF9F7C149`][rp721-fantom]              |
+| avalanche           | [`0xF9F7C149`][rp-avalanche]           | [`0x96c7D011`][rp721-avalanche]           |
+| celo                | [`0xab7b1be4`][rp-celo]                | [`0x96c7D011`][rp721-celo]                |
+| optimism_kovan      | [`0x68EDbfA3`][rp-optimism_kovan]      | [`0x556F63d7`][rp721-optimism_kovan]      |
+| optimism            | [`0x981be454`][rp-optimism]            | [`0x02Ea0720`][rp721-optimism]            |
+| aurora              | [`0x19f179D7`][rp-aurora]              | [`0x05ee315E`][rp721-aurora]              |
+| fuse                | [`0x561c5f3a`][rp-fuse]                | [`0x066804d9`][rp721-fuse]                |
+| boba                | [`0x578a7Fee`][rp-boba]                | [`0xF9F7C149`][rp721-boba]                |
+| moonriver           | [`0x578a7Fee`][rp-moonriver]           | [`0xF9F7C149`][rp721-moonriver]           |
+| conflux_espace      | [`0x96c7d011`][rp-conflux_espace]      | [`0x5b966f3a`][rp721-conflux_espace]      |
+| conflux_espace_test | [`0x913975af`][rp-conflux_espace_test] | [`0x71834a3f`][rp721-conflux_espace_test] |
+| harmony             | [`0xab7b1be4`][rp-harmony]             | [`0x83d6b366`][rp721-harmony]             |
+| harmony_test        | [`0x96c7d011`][rp-harmony_test]        | [`0x981be454`][rp721-harmony_test]        |
+| metis               | [`0x2cf91AD8`][rp-metis]               | [`0x81246335`][rp721-metis]               |
+| metis_test          | [`0xAb7B1bE4`][rp-metis_test]          | [`0x2cf91AD8`][rp721-metis_test]          |
+| kardia              | [`0x081ea643`][rp-kardia]              | [`0xc3e62b2C`][rp721-kardia]              |
+| astar               | [`0x2cF46Db8`][rp-astar]               | [`0xc3e62b2C`][rp721-astar]               |
 
 [rp-mainnet]: https://etherscan.io/address/0xaBBe1101FD8fa5847c452A6D70C8655532B03C33
 [rp-ropsten]: https://ropsten.etherscan.io/address/0x0722507c3b776A6B205946592016e358B0D34c3F
