@@ -13,7 +13,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  const network = hre.hardhatArguments.network ? hre.hardhatArguments.network : "ropsten";
+  const network = hre.hardhatArguments.network ?? "ropsten";
   const deployedContracts = await loadDeployedAddress();
   const proxyAddress = deployedContracts[network];
 
