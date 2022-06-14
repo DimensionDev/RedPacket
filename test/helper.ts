@@ -1,5 +1,5 @@
-import { network, ethers } from "hardhat";
 import { providers } from "ethers";
+import { ethers, network } from "hardhat";
 
 /**
  * @param {number} time second
