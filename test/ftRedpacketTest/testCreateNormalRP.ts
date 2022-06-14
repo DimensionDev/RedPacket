@@ -1,18 +1,18 @@
-import { ethers, waffle } from "hardhat";
-import { Signer, utils, BigNumber } from "ethers";
-import { takeSnapshot, revertToSnapShot } from "../helper";
-import { creationParams, getRevertMsg } from "../constants";
 import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
+import { BigNumber, Signer, utils } from "ethers";
+import { ethers, waffle } from "hardhat";
+import { creationParams, getRevertMsg } from "../constants";
+import { revertToSnapShot, takeSnapshot } from "../helper";
 const { expect } = use(chaiAsPromised);
 const { deployContract } = waffle;
 
-import RedpacketArtifact from "../../artifacts/contracts/redpacket.sol/HappyRedPacket.json";
-import { HappyRedPacket } from "../../types/contracts/redpacket.sol/HappyRedPacket";
-import TestTokenArtifact from "../../artifacts/contracts/test_token.sol/TestToken.json";
-import { TestToken } from "../../types/contracts/test_token.sol/TestToken";
 import BurnTokenArtifact from "../../artifacts/contracts/burn_token.sol/BurnToken.json";
+import RedpacketArtifact from "../../artifacts/contracts/redpacket.sol/HappyRedPacket.json";
+import TestTokenArtifact from "../../artifacts/contracts/test_token.sol/TestToken.json";
 import { BurnToken } from "../../types/contracts/burn_token.sol/BurnToken";
+import { HappyRedPacket } from "../../types/contracts/redpacket.sol/HappyRedPacket";
+import { TestToken } from "../../types/contracts/test_token.sol/TestToken";
 
 describe("Test Create RedPacket function for Fungible Tokens", () => {
   let redpacket: HappyRedPacket;

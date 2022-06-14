@@ -1,4 +1,4 @@
-import { Wallet, utils, BigNumber } from "ethers";
+import { BigNumber, utils, Wallet } from "ethers";
 const testWallet = Wallet.createRandom();
 export const testPrivateKey: string = testWallet.privateKey;
 const testAddress: string = testWallet.address;

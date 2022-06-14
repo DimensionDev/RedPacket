@@ -1,10 +1,10 @@
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { DeployFunction } from "hardhat-deploy/types";
-import { ethers, upgrades } from "hardhat";
-import fs from "fs/promises";
-import path from "path";
 import { parse } from "csv-parse/sync";
 import { config as envConfig } from "dotenv";
+import fs from "fs/promises";
+import { ethers, upgrades } from "hardhat";
+import { DeployFunction } from "hardhat-deploy/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import path from "path";
 
 const ADDRESS_TABLE_PATH = path.resolve(__dirname, "..", "contract-addresses.csv");
 envConfig({ path: path.resolve(__dirname, "./.env") });

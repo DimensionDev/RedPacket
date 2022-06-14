@@ -1,16 +1,16 @@
-import { ethers, waffle } from "hardhat";
-import { Signer, BigNumber } from "ethers";
-import { takeSnapshot, revertToSnapShot } from "../helper";
-import { nftCreationParams, getRevertMsg, NftCreationParamType } from "../constants";
-import { first, range } from "lodash";
 import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
+import { BigNumber, Signer } from "ethers";
+import { ethers, waffle } from "hardhat";
+import { first, range } from "lodash";
+import { getRevertMsg, nftCreationParams, NftCreationParamType } from "../constants";
+import { revertToSnapShot, takeSnapshot } from "../helper";
 const { expect } = use(chaiAsPromised);
 const { deployContract } = waffle;
 
 import RedPacket721Artifact from "../../artifacts/contracts/redpacket_erc721.sol/HappyRedPacket_ERC721.json";
-import { HappyRedPacket_ERC721 } from "../../types/contracts/redpacket_erc721.sol/HappyRedPacket_ERC721";
 import TestTokenArtifact from "../../artifacts/contracts/test_token_erc721.sol/TestToken_721.json";
+import { HappyRedPacket_ERC721 } from "../../types/contracts/redpacket_erc721.sol/HappyRedPacket_ERC721";
 import { TestToken_721 } from "../../types/contracts/test_token_erc721.sol/TestToken_721";
 
 describe("Test Create RedPacket function for NFT", () => {
