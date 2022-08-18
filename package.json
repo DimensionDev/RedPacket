@@ -15,7 +15,7 @@
     "@nomiclabs/hardhat-etherscan": "^3.0.3",
     "@nomiclabs/hardhat-solhint": "^2.0.0",
     "@openzeppelin/contracts": "^4.0.0",
-    "@openzeppelin/contracts-upgradeable": "^4.5.2",
+    "@openzeppelin/contracts-upgradeable": "^4.7.3",
     "ethereum-waffle": "^3.4.4"
   },
   "devDependencies": {
