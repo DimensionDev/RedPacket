@@ -1,8 +1,8 @@
-import path from "path";
+import { parse } from "csv-parse/sync";
 import fs from "fs/promises";
+import path from "path";
 import { format } from "prettier";
 import { getAllBrowserPath } from "./SmartContractProjectConfig/chains";
-import { parse } from "csv-parse/sync";
 
 const README_PATH = path.resolve(__dirname, "README.md");
 const ADDRESS_TABLE_PATH = path.resolve(__dirname, "contract-addresses.csv");
@@ -47,14 +47,14 @@ async function loadDeployedAddressRows(): Promise<DeployedAddressRow[]> {
 }
 
 function formElement(address: string, linkTag: string) {
-  if (address == "") {
+  if (address === "") {
     return "";
   }
   return `[\`${address.slice(0, 10)}\`][${linkTag}]`;
 }
 
 function formLink(address: string, chain: string, contract: string) {
-  if (address == "") {
+  if (address === "") {
     return null;
   }
   const browserPath = contractPath[chain] + address;
@@ -62,6 +62,6 @@ function formLink(address: string, chain: string, contract: string) {
 }
 
 function replace(content: string, replace: string) {
-  const pattern = new RegExp(`(<!-- begin RedPacket -->)(.+)(<!-- end RedPacket -->)`, "gs");
+  const pattern = new RegExp("(<!-- begin RedPacket -->)(.+)(<!-- end RedPacket -->)", "gs");
   return content.replace(pattern, `$1\n${replace}\n$3`);
 }

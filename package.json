@@ -12,7 +12,6 @@
     "format": "prettier --write ./"
   },
   "dependencies": {
-    "@nomiclabs/hardhat-etherscan": "^3.0.3",
     "@nomiclabs/hardhat-solhint": "^2.0.0",
     "@openzeppelin/contracts": "^4.0.0",
     "@openzeppelin/contracts-upgradeable": "^4.5.2",
@@ -20,6 +19,7 @@
   },
   "devDependencies": {
     "@dimensiondev/eslint-plugin": "^0.0.2-20220421073251-dfd64c5",
+    "@nomicfoundation/hardhat-verify": "^1.1.1",
     "@nomiclabs/buidler": "^1.4.8",
     "@nomiclabs/hardhat-ethers": "^2.0.5",
     "@nomiclabs/hardhat-waffle": "^2.0.3",

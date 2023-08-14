@@ -7,6 +7,6 @@
     "esModuleInterop": true,
     "strictNullChecks": true
   },
-  "include": ["./scripts", "./test", "./types", "./SmartContractProjectConfig", "./deploy"],
+  "include": ["./scripts", "./test", "./types", "./SmartContractProjectConfig", "./deploy", "./generate-readme.ts"],
   "files": ["./hardhat.config.ts"]
 }
