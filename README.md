@@ -82,6 +82,7 @@ npm run deploy ropsten
 | base_goerli         | [`0x16f61cb3`][rp-base_goerli]         | [`0x727F8030`][rp721-base_goerli]         |
 | scroll_sepolia      | [`0x16f61cb3`][rp-scroll_sepolia]      | [`0x727F8030`][rp721-scroll_sepolia]      |
 | scroll              | [`0x16f61cb3`][rp-scroll]              | [`0x727F8030`][rp721-scroll]              |
+| x1_test             | [`0x977baB5f`][rp-x1_test]             | [`0xd81c16d7`][rp721-x1_test]             |
 
 [rp-mainnet]: https://etherscan.io/address/0xaBBe1101FD8fa5847c452A6D70C8655532B03C33
 [rp-ropsten]: https://ropsten.etherscan.io/address/0x0722507c3b776A6B205946592016e358B0D34c3F
@@ -112,6 +113,7 @@ npm run deploy ropsten
 [rp-base_goerli]: https://goerli.basescan.org/address/0x16f61cb37169523635B6761f3C946892fb3c18fB
 [rp-scroll_sepolia]: https://sepolia-blockscout.scroll.io/address/0x16f61cb37169523635B6761f3C946892fb3c18fB
 [rp-scroll]: https://scrollscan.com/address/0x16f61cb37169523635B6761f3C946892fb3c18fB
+[rp-x1_test]: https://okx.com/address/0x977baB5f7e2cEd0C91fDA890Ed1DBDfD3Ee9AE81
 [rp721-mainnet]: https://etherscan.io/address/0x8d285739523FC2Ac8eC9c9C229ee863C8C9bF8C8
 [rp721-ropsten]: https://ropsten.etherscan.io/address/0x8fF42e93C19E44763FD1cD07b9E04d13bA07AD3f
 [rp721-bsc]: https://bscscan.com/address/0xf8968e1Fcf1440Be5Cec7Bb495bcee79753d5E06
@@ -140,6 +142,7 @@ npm run deploy ropsten
 [rp721-base_goerli]: https://goerli.basescan.org/address/0x727F8030964CCEC6B0E344399c8d8E2B4C837351
 [rp721-scroll_sepolia]: https://sepolia-blockscout.scroll.io/address/0x727F8030964CCEC6B0E344399c8d8E2B4C837351
 [rp721-scroll]: https://scrollscan.com/address/0x727F8030964CCEC6B0E344399c8d8E2B4C837351
+[rp721-x1_test]: https://okx.com/address/0xd81c16d71432d7df04575ffe9fed76f837fea0cc
 
 <!-- end RedPacket -->
 
