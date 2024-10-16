@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@nomiclabs/hardhat-solhint": "^2.0.0",
-    "@openzeppelin/contracts": "^4.0.0",
+    "@openzeppelin/contracts": "^4.7.3",
     "@openzeppelin/contracts-upgradeable": "^4.5.2",
     "ethereum-waffle": "^3.4.4"
   },
