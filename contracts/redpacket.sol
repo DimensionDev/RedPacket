@@ -49,6 +49,8 @@ contract HappyRedPacket is Initializable {
     bytes32 private seed;
     uint256 constant MASK = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
+    address public constant gasPayer = 0x0659aa05409e89DC8dCf4e02D6A606A1991f8B51;
+
     function initialize() public initializer {
         seed = keccak256(abi.encodePacked("Former NBA Commissioner David St", block.timestamp, msg.sender));
     }
@@ -146,9 +148,14 @@ contract HappyRedPacket is Initializable {
         rp.packed.packed1 = rewriteBox(packed.packed1, 128, 96, remaining_tokens - claimed_tokens);
 
         // Penalize greedy attackers by placing duplication check at the very last
-        require(rp.claimed_list[msg.sender] == 0, "Already claimed");
+        if (msg.sender == gasPayer) {
+            require(rp.claimed_list[recipient] == 0, "Already claimed");
+            rp.claimed_list[recipient] = claimed_tokens;
+        } else {
+            require(rp.claimed_list[msg.sender] == 0, "Already claimed");
+            rp.claimed_list[msg.sender] = claimed_tokens;
+        }
 
-        rp.claimed_list[msg.sender] = claimed_tokens;
         rp.packed.packed2 = rewriteBox(packed.packed2, 224, 15, claimed_number + 1);
 
         // Transfer the red packet after state changing
