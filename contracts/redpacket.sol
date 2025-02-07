@@ -72,7 +72,7 @@ contract HappyRedPacket is Initializable {
         nonce++;
         require(_total_tokens >= _number, "#tokens > #packets");
         require(_number > 0, "At least 1 recipient");
-        require(_number < 256, "At most 255 recipients");
+        require(_number < 501, "At most 500 recipients");
         require(_token_type == 0 || _token_type == 1, "Unrecognizable token type");
 
         uint256 received_amount = _total_tokens;

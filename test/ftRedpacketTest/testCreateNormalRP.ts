@@ -110,10 +110,10 @@ describe("Test Create RedPacket function for Fungible Tokens", () => {
       redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(invalidParams)),
     ).to.be.revertedWith(getRevertMsg("At least 1 recipient"));
 
-    invalidParams.number = 256;
+    invalidParams.number = 501;
     await expect(
       redpacket.connect(packetCreator).create_red_packet.apply(null, Object.values(invalidParams)),
-    ).to.be.revertedWith(getRevertMsg("At most 255 recipients"));
+    ).to.be.revertedWith(getRevertMsg("At most 500 recipients"));
   });
 
   it("Should throw error for not enough ERC20 allowance", async () => {
