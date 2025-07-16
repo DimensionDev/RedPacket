@@ -88,6 +88,8 @@ npm run deploy ropsten
 | zksync_era          | [`0x5916FEE6`][rp-zksync_era]          | [`0x191805D4`][rp721-zksync_era]          |
 | x1                  | [`0xDb847f1D`][rp-x1]                  | [`0x977baB5f`][rp721-x1]                  |
 | sei                 | [`0xB349AC5E`][rp-sei]                 | [`0x8A42F700`][rp721-sei]                 |
+| lens_testnet        | [`0xE42da51a`][rp-lenstest]            | [`0x4F830a4e`][rp721-lenstest]            |
+| lens                | [`0x2CB304F1`][rp-lens]                | [`0x55E667E5`][rp721-lens]                |
 
 [rp-mainnet]: https://etherscan.io/address/0xaBBe1101FD8fa5847c452A6D70C8655532B03C33
 [rp-ropsten]: https://ropsten.etherscan.io/address/0x0722507c3b776A6B205946592016e358B0D34c3F
@@ -124,6 +126,8 @@ npm run deploy ropsten
 [rp-zksync_era]: https://explorer.zksync.io/address/0x5916FEE647A7f0aC234D6828Fe76636bd730B40A
 [rp-x1]: https://okx.com/explorer/xlayer/address/0xDb847f1D8099C5b15519ECfd0b0C981d719bccE6
 [rp-sei]: https://seitrace.com/address/0xB349AC5E5C037C2ecb2AE9fCDc8F122b5f384620
+[rp-lenstest]: https://explorer.testnet.lens.xyz/address/0xE42da51a5BEef75b7f3C973021cbEf039c0b5a35
+[rp-lens]: https://explorer.lens.xyz/address/0x2CB304F176775Fcb4D9763f488c486B0Af9A6Bf8
 [rp721-mainnet]: https://etherscan.io/address/0x8d285739523FC2Ac8eC9c9C229ee863C8C9bF8C8
 [rp721-ropsten]: https://ropsten.etherscan.io/address/0x8fF42e93C19E44763FD1cD07b9E04d13bA07AD3f
 [rp721-bsc]: https://bscscan.com/address/0xf8968e1Fcf1440Be5Cec7Bb495bcee79753d5E06
@@ -158,6 +162,8 @@ npm run deploy ropsten
 [rp721-zksync_era]: https://explorer.zksync.io/address/0x191805D475ea34B9FF941cf9be615FD87997cC5A
 [rp721-x1]: https://okx.com/explorer/xlayer/address/0x977baB5f7e2cEd0C91fDA890Ed1DBDfD3Ee9AE81
 [rp721-sei]: https://seitrace.com/address/0x8A42F70047a99298822dD1dbA34b454fc49913F2
+[rp721-lenstest]: https://explorer.testnet.lens.xyz/address/0x4F830a4ecBDDE6f95fD9e7620D0769B66502737F
+[rp721-lens]: https://explorer.lens.xyz/address/0x55E667E5d35C34C0681eC1b2D5fA596c518aa05f
 
 <!-- end RedPacket -->
 

@@ -10,3 +10,6 @@ artifacts/
 .openzeppelin/
 .env
 types/
+cache-zk/
+artifacts-zk/
+.upgradable/
